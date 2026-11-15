@@ -35,7 +35,7 @@ val BackendKind.isSubsonicFamily: Boolean
 val BackendKind.isImplemented: Boolean
     get() = isJellyfinFamily || isSubsonicFamily || this == BackendKind.PLEX ||
         this == BackendKind.AUDIOBOOKSHELF || this == BackendKind.LOCAL ||
-        this == BackendKind.KODI
+        this == BackendKind.KODI || this == BackendKind.WEBDAV
 
 /**
  * A persisted session. [serverUrl] is the address used at login; [internalUrl]

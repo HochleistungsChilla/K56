@@ -104,7 +104,9 @@ class LoginViewModel(private val repository: MediaRepository) : ViewModel() {
             error = "Serveradresse fehlt."
             return
         }
-        if (backend != BackendKind.KODI && backend != BackendKind.LOCAL && username.isBlank()) {
+        if (backend != BackendKind.KODI && backend != BackendKind.LOCAL &&
+            backend != BackendKind.WEBDAV && username.isBlank()
+        ) {
             error = "Benutzername fehlt."
             return
         }

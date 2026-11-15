@@ -76,6 +76,9 @@ interface MediaRepository {
 
     suspend fun playbackSource(track: Track): PlaybackSource
 
+    /** Extra HTTP headers required by the active backend (e.g. WebDAV basic auth). */
+    fun playbackHeaders(): Map<String, String> = emptyMap()
+
     suspend fun reportPlaybackStart(itemId: String, playSessionId: String, positionTicks: Long)
     suspend fun reportPlaybackProgress(
         itemId: String,

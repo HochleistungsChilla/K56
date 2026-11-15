@@ -19,6 +19,7 @@ import app.resona.player.data.abs.AbsRepository
 import app.resona.player.data.jellyfin.JellyfinRepository
 import app.resona.player.data.kodi.KodiRepository
 import app.resona.player.data.local.LocalRepository
+import app.resona.player.data.webdav.WebDavRepository
 import app.resona.player.data.plex.PlexRepository
 import app.resona.player.data.subsonic.SubsonicRepository
 import kotlinx.coroutines.flow.StateFlow
@@ -40,6 +41,7 @@ class RepositoryRouter(
     private val abs = AbsRepository(sessionStore, settingsStore, networkMonitor)
     private val local = LocalRepository(context.applicationContext, sessionStore, settingsStore, networkMonitor)
     private val kodi = KodiRepository(sessionStore, settingsStore, networkMonitor)
+    private val webdav = WebDavRepository(sessionStore, settingsStore, networkMonitor)
 
     override val sessionFlow: StateFlow<Session?> = sessionStore.session
     override val forceTranscode: StateFlow<Boolean> = settingsStore.forceTranscode
@@ -55,6 +57,7 @@ class RepositoryRouter(
             backend == BackendKind.AUDIOBOOKSHELF -> abs
             backend == BackendKind.LOCAL -> local
             backend == BackendKind.KODI -> kodi
+            backend == BackendKind.WEBDAV -> webdav
             else -> null
         }
     }
@@ -77,6 +80,7 @@ class RepositoryRouter(
         backend == BackendKind.AUDIOBOOKSHELF -> abs.login(backend, internalUrl, externalUrl, username, password)
         backend == BackendKind.LOCAL -> local.login(backend, internalUrl, externalUrl, username, password)
         backend == BackendKind.KODI -> kodi.login(backend, internalUrl, externalUrl, username, password)
+        backend == BackendKind.WEBDAV -> webdav.login(backend, internalUrl, externalUrl, username, password)
         else -> throw UnsupportedBackendException(backend)
     }
 
@@ -99,6 +103,7 @@ class RepositoryRouter(
         abs.logout()
         local.logout()
         kodi.logout()
+        webdav.logout()
     }
 
     override fun setForceTranscode(value: Boolean) {
@@ -142,6 +147,9 @@ class RepositoryRouter(
         delegate().setFavorite(itemId, favorite)
 
     override suspend fun playbackSource(track: Track): PlaybackSource = delegate().playbackSource(track)
+
+    override fun playbackHeaders(): Map<String, String> =
+        delegateOrNull()?.playbackHeaders().orEmpty()
 
     override suspend fun reportPlaybackStart(itemId: String, playSessionId: String, positionTicks: Long) =
         delegate().reportPlaybackStart(itemId, playSessionId, positionTicks)
