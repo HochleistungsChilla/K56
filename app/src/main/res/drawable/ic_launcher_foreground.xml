@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Original mark: five waveform bars in Resona amber. -->
+    <path
+        android:fillColor="#FFB74D"
+        android:pathData="M30,56h5.5v22h-5.5z" />
+    <path
+        android:fillColor="#FFB74D"
+        android:pathData="M41,44h5.5v34h-5.5z" />
+    <path
+        android:fillColor="#FFCC80"
+        android:pathData="M52,32h5.5v46h-5.5z" />
+    <path
+        android:fillColor="#FFB74D"
+        android:pathData="M63,46h5.5v32h-5.5z" />
+    <path
+        android:fillColor="#FFB74D"
+        android:pathData="M74,58h5.5v20h-5.5z" />
+</vector>
