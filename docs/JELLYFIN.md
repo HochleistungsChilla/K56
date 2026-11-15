@@ -20,7 +20,7 @@ Emby nutzt dieselbe API, unterliegt aber nicht der Jellyfin-Versionsprüfung.
 Header an allen API-Aufrufen:
 
 ```
-Authorization: MediaBrowser Client="Resona", Device="Android",
+Authorization: MediaBrowser Client="Nadelton", Device="Android",
   DeviceId="<install-uuid>", Version="0.1.0"
 X-Emby-Authorization: <gleicher Wert>
 X-Emby-Token: <access-token>

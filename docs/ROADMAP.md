@@ -14,8 +14,8 @@ nicht gestalterisch identisch.
 | Audiobookshelf | ✅ |
 | Kodi | ✅ |
 | Lokale Dateien (MediaStore) | ✅ |
+| WebDAV | ✅ (Ordner-Scan, ohne Tags/Cover) |
 | SMB (v2/v3) | ⬜ |
-| WebDAV | ⬜ |
 | Google Drive | ⬜ |
 | OneDrive | ⬜ |
 | Dropbox | ⬜ |
@@ -28,7 +28,7 @@ vorbereitet; die Adapter folgen.
 
 ## Funktionen
 
-| Bereich | Resona 0.1.0 | Nächster Schritt |
+| Bereich | Nadelton 0.1.0 | Nächster Schritt |
 |---|---|---|
 | Bibliothek (Alben/Interpreten/Titel) | ✅ | Genres, Jahre, Sortierungen |
 | Suche | ✅ | Server- und lokale Volltextsuche |

@@ -4,7 +4,7 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- Original mark: five waveform bars in Resona amber. -->
+    <!-- Original mark: five waveform bars in Nadelton amber. -->
     <path
         android:fillColor="#FFB74D"
         android:pathData="M30,56h5.5v22h-5.5z" />

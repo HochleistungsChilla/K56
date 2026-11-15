@@ -14,5 +14,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Resona"
+rootProject.name = "Nadelton"
 include(":app")

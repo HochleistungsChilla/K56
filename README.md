@@ -1,4 +1,4 @@
-# Resona
+# Nadelton
 
 Quelloffener Android-Musikplayer als **Cleanroom-Neuentwicklung** mit
 Multi-Backend-Architektur. Kein Code, keine Grafiken und keine Marke von
@@ -28,7 +28,8 @@ Hintergrundwiedergabe und LAN/WAN-Routing.
 | **Audiobookshelf** | ✅ | Adresse, Benutzer/Passwort; Bücher → Alben, Kapitel → Tracks |
 | **Kodi** | ✅ | JSON-RPC, optional HTTP-Basic-Auth |
 | **Lokale Dateien** | ✅ | MediaStore-Freigabe (Android 9/13+ Berechtigungen) |
-| WebDAV / SMB | ⬜ geplant | Datei-Backend |
+| **WebDAV** | ✅ | Adresse, optional Basic Auth; Ordner-Scan ohne Tag-/Cover-Lesen |
+| SMB (v2/v3) | ⬜ geplant | Datei-Backend |
 | Google Drive / OneDrive / Dropbox / Box / pCloud | ⬜ geplant | OAuth-Backend |
 
 Die Adapter liegen hinter `MediaRepository`; weitere Quellen ändern nur die
@@ -73,7 +74,7 @@ gefunden (`who is JellyfinServer?`).
 ## Architektur
 
 ```
-app/src/main/java/app/resona/player/
+app/src/main/java/app/nadelton/player/
 ├── core/model/          Domänenmodelle + BackendKind
 ├── core/net/            NetworkMonitor, EndpointResolver, URL-Normalisierung
 ├── data/                SessionStore, SettingsStore, MediaRepository, Router
@@ -106,14 +107,16 @@ echo "sdk.dir=$HOME/Android/Sdk" > local.properties
   `getRandomSongs` und sortiert lokal. Ein lokaler Sync-Index ist geplant.
 - Kodi löst Wiedergabe-URLs pro Queue-Eintrag über `Files.PrepareDownload`
   auf; sehr große Queues starten dadurch langsamer.
-- WebDAV, SMB und Cloud-Laufwerke sind noch nicht implementiert (siehe
+- WebDAV liest Metadaten aus Ordner-/Dateinamen (kein TagLib, keine Cover);
+  der Scan ist auf 300 Ordner/5.000 Dateien begrenzt.
+- SMB und Cloud-Laufwerke sind noch nicht implementiert (siehe
   [docs/ROADMAP.md](docs/ROADMAP.md)).
 - Tokens liegen in privaten SharedPreferences; Keystore-Verschlüsselung ist
   als Härtung vorgesehen.
 
 ## Rechtliches
 
-Resona ist eine unabhängige Reimplementierung öffentlich dokumentierter
+Nadelton ist eine unabhängige Reimplementierung öffentlich dokumentierter
 Schnittstellen. Der Prozess ist in [docs/CLEANROOM.md](docs/CLEANROOM.md)
 festgehalten. „Symfonium“ ist eine Marke des jeweiligen Inhabers; dieses
 Projekt steht in keiner Verbindung dazu.

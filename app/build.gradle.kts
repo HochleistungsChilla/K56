@@ -6,11 +6,11 @@ plugins {
 }
 
 android {
-    namespace = "app.resona.player"
+    namespace = "app.nadelton.player"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "app.resona.player"
+        applicationId = "app.nadelton.player"
         // Android 9 (API 28) is the supported floor.
         minSdk = 28
         targetSdk = 35
