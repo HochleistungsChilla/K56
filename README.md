@@ -1,5 +1,8 @@
 # K56
 
+[![Android](https://github.com/HochleistungsChilla/K56/actions/workflows/android.yml/badge.svg)](https://github.com/HochleistungsChilla/K56/actions/workflows/android.yml)
+[![Lizenz: GPL-3.0-or-later](https://img.shields.io/badge/Lizenz-GPL--3.0--orlater-blue.svg)](LICENSE)
+
 Quelloffener Android-Musikplayer als **Cleanroom-Neuentwicklung** mit
 Multi-Backend-Architektur. Kein Code, keine Grafiken und keine Marke von
 Symfonium wurden übernommen.
@@ -123,6 +126,11 @@ K56 ist eine unabhängige Reimplementierung öffentlich dokumentierter
 Schnittstellen. Der Prozess ist in [docs/CLEANROOM.md](docs/CLEANROOM.md)
 festgehalten. „Symfonium“ ist eine Marke des jeweiligen Inhabers; dieses
 Projekt steht in keiner Verbindung dazu.
+
+## Mitmachen
+
+Pull Requests sind willkommen — Regeln und Build-Anleitung stehen in
+[CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Lizenz
 
