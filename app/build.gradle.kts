@@ -6,11 +6,11 @@ plugins {
 }
 
 android {
-    namespace = "app.nadelton.player"
+    namespace = "app.k56.player"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "app.nadelton.player"
+        applicationId = "app.k56.player"
         // Android 9 (API 28) is the supported floor.
         minSdk = 28
         targetSdk = 35

@@ -1,8 +1,8 @@
 # Kotlinx serialization keeps generated serializers.
 -keepattributes *Annotation*, InnerClasses
 -dontnote kotlinx.serialization.**
--keepclassmembers class app.nadelton.player.**$$serializer { *; }
--keepclasseswithmembers class app.nadelton.player.** {
+-keepclassmembers class app.k56.player.**$$serializer { *; }
+-keepclasseswithmembers class app.k56.player.** {
     kotlinx.serialization.KSerializer serializer(...);
 }
 
@@ -13,4 +13,4 @@
 }
 
 # Media3 session service
--keep class app.nadelton.player.playback.PlaybackService { *; }
+-keep class app.k56.player.playback.PlaybackService { *; }

@@ -28,7 +28,7 @@ vorbereitet; die Adapter folgen.
 
 ## Funktionen
 
-| Bereich | Nadelton 0.1.0 | Nächster Schritt |
+| Bereich | K56 0.1.0 | Nächster Schritt |
 |---|---|---|
 | Bibliothek (Alben/Interpreten/Titel) | ✅ | Genres, Jahre, Sortierungen |
 | Suche | ✅ | Server- und lokale Volltextsuche |

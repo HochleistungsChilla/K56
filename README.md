@@ -1,4 +1,4 @@
-# Nadelton
+# K56
 
 Quelloffener Android-Musikplayer als **Cleanroom-Neuentwicklung** mit
 Multi-Backend-Architektur. Kein Code, keine Grafiken und keine Marke von
@@ -6,6 +6,9 @@ Symfonium wurden übernommen.
 
 **Status:** 0.1.0 — lauffähiger Multi-Server-Client mit Bibliothek, Suche,
 Hintergrundwiedergabe und LAN/WAN-Routing.
+
+**K56** · **Domain:** `k56.wtf` (geplant) · **Theme:** Monochrom · **Easter Egg:** ATDT  
+Claim: „56k für die Ohren.“
 
 ## Plattform
 
@@ -74,7 +77,7 @@ gefunden (`who is JellyfinServer?`).
 ## Architektur
 
 ```
-app/src/main/java/app/nadelton/player/
+app/src/main/java/app/k56/player/
 ├── core/model/          Domänenmodelle + BackendKind
 ├── core/net/            NetworkMonitor, EndpointResolver, URL-Normalisierung
 ├── data/                SessionStore, SettingsStore, MediaRepository, Router
@@ -116,7 +119,7 @@ echo "sdk.dir=$HOME/Android/Sdk" > local.properties
 
 ## Rechtliches
 
-Nadelton ist eine unabhängige Reimplementierung öffentlich dokumentierter
+K56 ist eine unabhängige Reimplementierung öffentlich dokumentierter
 Schnittstellen. Der Prozess ist in [docs/CLEANROOM.md](docs/CLEANROOM.md)
 festgehalten. „Symfonium“ ist eine Marke des jeweiligen Inhabers; dieses
 Projekt steht in keiner Verbindung dazu.
