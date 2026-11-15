@@ -26,6 +26,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.resona.player.BuildConfig
+import app.resona.player.core.model.BackendKind
+import app.resona.player.core.net.NetworkTransport
 import app.resona.player.data.MediaRepository
 
 @Composable
@@ -33,6 +35,7 @@ fun SettingsScreen(repository: MediaRepository) {
     val session by repository.sessionFlow.collectAsStateWithLifecycle()
     val forceTranscode by repository.forceTranscode.collectAsStateWithLifecycle()
     val preferExternal by repository.preferExternal.collectAsStateWithLifecycle()
+    val networkStatus by repository.networkStatus.collectAsStateWithLifecycle()
 
     Column(
         modifier = Modifier
@@ -57,6 +60,27 @@ fun SettingsScreen(repository: MediaRepository) {
                 InfoRow("Internet", session?.externalUrl ?: "—")
                 InfoRow("Benutzer", session?.userName ?: "—")
                 InfoRow("Version", session?.serverVersion ?: "—")
+                InfoRow(
+                    "Netz",
+                    when (networkStatus.transport) {
+                        NetworkTransport.WIFI -> "WLAN"
+                        NetworkTransport.CELLULAR -> "Mobilfunk"
+                        NetworkTransport.ETHERNET -> "Ethernet"
+                        NetworkTransport.OTHER -> "anderes Netz"
+                        NetworkTransport.OFFLINE -> "offline"
+                    },
+                )
+                InfoRow(
+                    "Route",
+                    when {
+                        session?.backend == BackendKind.LOCAL -> "lokal"
+                        preferExternal -> "externe Adresse (erzwungen)"
+                        networkStatus.transport == NetworkTransport.CELLULAR -> "externe Adresse"
+                        session?.externalUrl.isNullOrBlank() -> "LAN-Adresse"
+                        session?.internalUrl.isNullOrBlank() -> "externe Adresse"
+                        else -> "LAN, falls erreichbar"
+                    },
+                )
             }
         }
 

@@ -14,6 +14,7 @@ import app.resona.player.core.model.Track
 import app.resona.player.core.model.isJellyfinFamily
 import app.resona.player.core.model.isSubsonicFamily
 import app.resona.player.core.net.NetworkMonitor
+import app.resona.player.core.net.NetworkStatus
 import app.resona.player.data.abs.AbsRepository
 import app.resona.player.data.jellyfin.JellyfinRepository
 import app.resona.player.data.kodi.KodiRepository
@@ -37,12 +38,13 @@ class RepositoryRouter(
     private val subsonic = SubsonicRepository(sessionStore, settingsStore, networkMonitor)
     private val plex = PlexRepository(sessionStore, settingsStore, networkMonitor)
     private val abs = AbsRepository(sessionStore, settingsStore, networkMonitor)
-    private val local = LocalRepository(context.applicationContext, sessionStore, settingsStore)
+    private val local = LocalRepository(context.applicationContext, sessionStore, settingsStore, networkMonitor)
     private val kodi = KodiRepository(sessionStore, settingsStore, networkMonitor)
 
     override val sessionFlow: StateFlow<Session?> = sessionStore.session
     override val forceTranscode: StateFlow<Boolean> = settingsStore.forceTranscode
     override val preferExternal: StateFlow<Boolean> = settingsStore.preferExternal
+    override val networkStatus: StateFlow<NetworkStatus> = networkMonitor.status
 
     private fun delegateOrNull(): MediaRepository? {
         val backend = sessionStore.session.value?.backend ?: return null

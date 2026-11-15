@@ -14,6 +14,8 @@ import app.resona.player.core.model.PlaybackSource
 import app.resona.player.core.model.SearchResults
 import app.resona.player.core.model.Session
 import app.resona.player.core.model.Track
+import app.resona.player.core.net.NetworkMonitor
+import app.resona.player.core.net.NetworkStatus
 import app.resona.player.data.MediaRepository
 import app.resona.player.data.NotAuthenticatedException
 import app.resona.player.data.SessionStore
@@ -30,6 +32,7 @@ class LocalRepository(
     private val context: Context,
     private val sessionStore: SessionStore,
     private val settingsStore: SettingsStore,
+    networkMonitor: NetworkMonitor,
 ) : MediaRepository {
 
     @Volatile
@@ -44,6 +47,7 @@ class LocalRepository(
     override val sessionFlow: StateFlow<Session?> = sessionStore.session
     override val forceTranscode: StateFlow<Boolean> = settingsStore.forceTranscode
     override val preferExternal: StateFlow<Boolean> = settingsStore.preferExternal
+    override val networkStatus: StateFlow<NetworkStatus> = networkMonitor.status
 
     override suspend fun login(
         backend: BackendKind,

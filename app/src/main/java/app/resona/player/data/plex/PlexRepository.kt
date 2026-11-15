@@ -13,6 +13,7 @@ import app.resona.player.core.model.Session
 import app.resona.player.core.model.Track
 import app.resona.player.core.net.EndpointResolver
 import app.resona.player.core.net.NetworkMonitor
+import app.resona.player.core.net.NetworkStatus
 import app.resona.player.core.net.NetworkTransport
 import app.resona.player.core.net.ServerUrl
 import app.resona.player.data.MediaRepository
@@ -52,6 +53,7 @@ class PlexRepository(
     override val sessionFlow: StateFlow<Session?> = sessionStore.session
     override val forceTranscode: StateFlow<Boolean> = settingsStore.forceTranscode
     override val preferExternal: StateFlow<Boolean> = settingsStore.preferExternal
+    override val networkStatus: StateFlow<NetworkStatus> = networkMonitor.status
 
     override suspend fun login(
         backend: BackendKind,

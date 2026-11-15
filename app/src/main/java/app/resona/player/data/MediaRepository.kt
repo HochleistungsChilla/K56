@@ -11,6 +11,7 @@ import app.resona.player.core.model.PlaybackSource
 import app.resona.player.core.model.SearchResults
 import app.resona.player.core.model.Session
 import app.resona.player.core.model.Track
+import app.resona.player.core.net.NetworkStatus
 import kotlinx.coroutines.flow.StateFlow
 
 /**
@@ -23,6 +24,7 @@ interface MediaRepository {
     val sessionFlow: StateFlow<Session?>
     val forceTranscode: StateFlow<Boolean>
     val preferExternal: StateFlow<Boolean>
+    val networkStatus: StateFlow<NetworkStatus>
 
     fun setForceTranscode(value: Boolean)
     fun setPreferExternal(value: Boolean)
