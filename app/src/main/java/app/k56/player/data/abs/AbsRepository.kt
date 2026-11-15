@@ -117,7 +117,7 @@ class AbsRepository(
         internalUrl: String,
         externalUrl: String?,
         onCode: (String) -> Unit,
-    ): Session = throw IllegalStateException("Quick Connect wird von Audiobookshelf nicht unterstützt.")
+    ): Session = throw IllegalStateException("Quick Connect is not supported by Audiobookshelf.")
 
     override fun logout() {
         sessionStore.clear()
@@ -171,9 +171,9 @@ class AbsRepository(
     override suspend fun libraries(): List<LibraryView> {
         val response = ensureClient().libraries()
         val views = response.libraries.orEmpty().map {
-            LibraryView(it.id.orEmpty(), it.name ?: "Hörbücher", it.mediaType)
+            LibraryView(it.id.orEmpty(), it.name ?: "Audiobooks", it.mediaType)
         }
-        return views.ifEmpty { listOf(LibraryView("", "Hörbücher", "book")) }
+        return views.ifEmpty { listOf(LibraryView("", "Audiobooks", "book")) }
     }
 
     override suspend fun defaultLibraryId(): String? {
@@ -319,7 +319,7 @@ class AbsRepository(
         val meta = media?.metadata
         return Album(
             id = id.orEmpty(),
-            name = meta?.title ?: "Unbekanntes Hörbuch",
+            name = meta?.title ?: "Unknown audiobook",
             artist = meta?.authorName,
             artistId = meta?.authorName?.let(::authorId),
             year = meta?.publishedYear,
@@ -333,7 +333,7 @@ class AbsRepository(
         val bookId = id.orEmpty()
         val album = Album(
             id = bookId,
-            name = meta?.title ?: "Unbekanntes Hörbuch",
+            name = meta?.title ?: "Unknown audiobook",
             artist = meta?.authorName,
             artistId = meta?.authorName?.let(::authorId),
             year = meta?.publishedYear,

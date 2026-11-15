@@ -107,7 +107,7 @@ class SubsonicRepository(
         externalUrl: String?,
         onCode: (String) -> Unit,
     ): Session = throw IllegalStateException(
-        "Quick Connect wird von ${backend.label} nicht unterstützt.",
+        "Quick Connect is not supported by ${backend.label}.",
     )
 
     override fun logout() {

@@ -26,12 +26,12 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.StateFlow
 
 class UnsupportedServerException(version: String, minimum: String) : IllegalStateException(
-    "Jellyfin $version ist zu alt. K56 benötigt mindestens Jellyfin $minimum.",
+    "Jellyfin $version is too old. K56 requires at least Jellyfin $minimum.",
 )
 
 class QuickConnectDisabledException : IllegalStateException("Quick Connect ist auf diesem Server deaktiviert.")
 
-class QuickConnectTimeoutException : IllegalStateException("Quick Connect wurde nicht bestätigt.")
+class QuickConnectTimeoutException : IllegalStateException("Quick Connect was not confirmed.")
 
 /**
  * Jellyfin and Emby share the same REST surface for everything K56 uses.

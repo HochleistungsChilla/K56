@@ -1,5 +1,6 @@
 package app.k56.player.ui.screens
 
+import android.content.Context
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -25,11 +26,15 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import app.k56.player.R
 import app.k56.player.core.model.AlbumDetails
 import app.k56.player.core.model.Track
 import app.k56.player.data.MediaRepository
@@ -45,6 +50,7 @@ import kotlinx.coroutines.launch
 class AlbumViewModel(
     private val repository: MediaRepository,
     private val albumId: String,
+    private val appContext: Context,
 ) : ViewModel() {
 
     var details by mutableStateOf<AlbumDetails?>(null)
@@ -65,7 +71,7 @@ class AlbumViewModel(
             try {
                 details = repository.albumDetails(albumId)
             } catch (e: Exception) {
-                error = e.userMessage()
+                error = e.userMessage(appContext)
             } finally {
                 loading = false
             }
@@ -81,10 +87,11 @@ fun AlbumScreen(
     onOpenArtist: (String) -> Unit,
     onPlay: (List<Track>, Int) -> Unit,
 ) {
-    val vm = appViewModel { AlbumViewModel(repository, albumId) }
+    val context = LocalContext.current
+    val vm = appViewModel { AlbumViewModel(repository, albumId, context.applicationContext) }
 
     Column(Modifier.fillMaxSize()) {
-        ScreenHeader(title = "Album", onBack = onBack)
+        ScreenHeader(title = stringResource(R.string.album_title), onBack = onBack)
 
         val details = vm.details
         val error = vm.error
@@ -159,11 +166,13 @@ private fun AlbumHeader(
                 },
             )
         }
+        val trackCount = pluralStringResource(
+            R.plurals.plural_tracks,
+            details.tracks.size,
+            details.tracks.size,
+        )
         Text(
-            text = listOfNotNull(
-                album.year?.toString(),
-                "${details.tracks.size} Titel",
-            ).joinToString(" · "),
+            text = listOfNotNull(album.year?.toString(), trackCount).joinToString(" · "),
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -171,7 +180,7 @@ private fun AlbumHeader(
         Button(onClick = onPlay, enabled = details.tracks.isNotEmpty()) {
             Icon(Icons.Rounded.PlayArrow, contentDescription = null)
             Spacer(Modifier.width(8.dp))
-            Text("Abspielen")
+            Text(stringResource(R.string.common_play))
         }
         Spacer(Modifier.height(8.dp))
     }

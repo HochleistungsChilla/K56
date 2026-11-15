@@ -118,7 +118,7 @@ class PlexRepository(
             }
             delay(PIN_INTERVAL_MS)
         }
-        throw IllegalStateException("Plex-Login wurde nicht bestätigt.")
+        throw IllegalStateException("Plex sign-in was not confirmed.")
     }
 
     override suspend fun quickConnect(

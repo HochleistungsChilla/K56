@@ -65,7 +65,7 @@ class LocalRepository(
             internalUrl = null,
             externalUrl = null,
             preferExternal = false,
-            serverName = "Dieses Gerät",
+            serverName = "This device",
             serverVersion = "",
             serverId = "",
             userId = "",
@@ -106,7 +106,7 @@ class LocalRepository(
 
     override suspend fun libraries(): List<LibraryView> {
         requireSession()
-        return listOf(LibraryView(LIBRARY_ID, "Auf diesem Gerät", "music"))
+        return listOf(LibraryView(LIBRARY_ID, "On this device", "music"))
     }
 
     override suspend fun defaultLibraryId(): String = LIBRARY_ID
@@ -196,7 +196,7 @@ class LocalRepository(
     override suspend fun playbackSource(track: Track): PlaybackSource {
         val uri = ContentUris.withAppendedId(
             MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
-            track.id.toLongOrNull() ?: throw IllegalStateException("Ungültige lokale Track-ID."),
+            track.id.toLongOrNull() ?: throw IllegalStateException("Invalid local track id."),
         )
         return PlaybackSource(
             url = uri.toString(),

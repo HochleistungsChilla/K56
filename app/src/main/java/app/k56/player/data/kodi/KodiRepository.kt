@@ -228,7 +228,7 @@ class KodiRepository(
 
     override suspend fun albumDetails(albumId: String): AlbumDetails {
         val client = ensureClient()
-        val albumKey = albumId.toIntOrNull() ?: throw IllegalStateException("Ungültige Kodi-Album-ID.")
+        val albumKey = albumId.toIntOrNull() ?: throw IllegalStateException("Invalid Kodi album id.")
         val details = client.call(
             method = "AudioLibrary.GetAlbumDetails",
             params = buildJsonObject {
@@ -259,7 +259,7 @@ class KodiRepository(
 
     override suspend fun artistDetails(artistId: String): ArtistDetails {
         val client = ensureClient()
-        val artistKey = artistId.toIntOrNull() ?: throw IllegalStateException("Ungültige Kodi-Artist-ID.")
+        val artistKey = artistId.toIntOrNull() ?: throw IllegalStateException("Invalid Kodi artist id.")
         val details = client.call(
             method = "AudioLibrary.GetArtistDetails",
             params = buildJsonObject {

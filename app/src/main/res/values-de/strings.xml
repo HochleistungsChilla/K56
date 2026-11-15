@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_tagline">Deine Musik. Dein Server. Dein Player.</string>
+
+    <string name="common_cancel">Abbrechen</string>
+    <string name="common_retry">Erneut versuchen</string>
+    <string name="common_play">Abspielen</string>
+    <string name="common_pause">Pause</string>
+    <string name="common_or">oder</string>
+    <string name="common_show">Zeigen</string>
+    <string name="common_hide">Verbergen</string>
+    <string name="common_back">Zurück</string>
+    <string name="common_soon">%1$s · bald</string>
+
+    <string name="nav_home">Start</string>
+    <string name="nav_library">Bibliothek</string>
+    <string name="nav_search">Suche</string>
+    <string name="nav_settings">Einstellungen</string>
+
+    <string name="login_server_section">Server</string>
+    <string name="login_lan_label">LAN-Adresse</string>
+    <string name="login_lan_hint">http://192.168.1.10:8096</string>
+    <string name="login_external_label">Externe Adresse (optional)</string>
+    <string name="login_external_hint">https://music.example.com</string>
+    <string name="login_detect">Server im Netzwerk suchen</string>
+    <string name="login_username">Benutzer</string>
+    <string name="login_password">Passwort</string>
+    <string name="login_sign_in">Anmelden</string>
+    <string name="login_quick_connect">Quick Connect</string>
+    <string name="login_quick_connect_grant">Diesen Code in Jellyfin freigeben:</string>
+    <string name="login_quick_connect_path">Jellyfin → Einstellungen → Quick Connect</string>
+    <string name="login_waiting_server">Warte auf Server …</string>
+    <string name="login_plex_title">Plex-Login</string>
+    <string name="login_plex_sign_in">Mit Plex anmelden</string>
+    <string name="login_plex_code_instruction">Code auf plex.tv/link eingeben:</string>
+    <string name="login_waiting_plex">Warte auf Plex …</string>
+    <string name="login_plex_hint">K56 meldet sich über plex.tv an und findet deinen Server automatisch. Du bekommst einen Code, den du auf plex.tv/link eingibst.</string>
+    <string name="login_local_grant">Lokale Musik freigeben</string>
+    <string name="login_local_hint">K56 liest die Audiodateien auf diesem Gerät über MediaStore. Es werden keine Daten hochgeladen und keine Netzwerkverbindung benötigt.</string>
+    <string name="login_routing_hint">Im WLAN wird die LAN-Adresse bevorzugt, im Mobilfunk die externe. Dafür ist keine Standortberechtigung nötig.</string>
+    <string name="login_footer_compat">Android 9+ · Jellyfin ab %1$s · GPL-3.0</string>
+
+    <string name="home_greeting">Servus</string>
+    <string name="home_recently_added">Zuletzt hinzugefügt</string>
+    <string name="home_empty_title">Bibliothek ist leer</string>
+    <string name="home_empty_body">Auf dem Jellyfin-Server wurde noch keine Musik gefunden.</string>
+
+    <string name="library_tab_albums">Alben</string>
+    <string name="library_tab_artists">Interpreten</string>
+    <string name="library_tab_tracks">Titel</string>
+    <string name="library_empty_title">Bibliothek ist leer</string>
+    <string name="library_empty_body">Dieser Server hat keine Einträge geliefert.</string>
+
+    <string name="album_title">Album</string>
+    <string name="artist_title">Interpret</string>
+    <string name="artist_albums">Alben</string>
+
+    <string name="search_hint">Titel, Alben, Interpreten</string>
+    <string name="search_no_results">Keine Treffer für „%1$s“.</string>
+
+    <string name="player_now_playing">Jetzt läuft</string>
+    <string name="player_nothing_title">Nichts läuft</string>
+    <string name="player_nothing_body">Starte einen Titel aus deiner Bibliothek.</string>
+    <string name="player_close">Player schließen</string>
+    <string name="player_shuffle">Zufallswiedergabe</string>
+    <string name="player_previous">Vorheriger Titel</string>
+    <string name="player_next">Nächster Titel</string>
+    <string name="player_repeat">Wiederholen</string>
+
+    <string name="settings_connection">Verbindung</string>
+    <string name="settings_network">Netz</string>
+    <string name="settings_route">Route</string>
+    <string name="settings_type">Typ</string>
+    <string name="settings_version">Version</string>
+    <string name="settings_server">Server</string>
+    <string name="settings_prefer_external">Externe Adresse bevorzugen</string>
+    <string name="settings_prefer_external_body">Aus: Im WLAN wird die LAN-Adresse genutzt, wenn sie erreichbar ist; im Mobilfunk immer die externe Adresse. Keine Standortberechtigung nötig.</string>
+    <string name="settings_force_transcode">Transcoding erzwingen</string>
+    <string name="settings_force_transcode_body">AAC/HLS statt Direct Play. Nützlich, wenn ein Codec auf dem Gerät nicht läuft.</string>
+    <string name="settings_sign_out">Abmelden</string>
+    <string name="settings_about_title">Über K56</string>
+    <string name="settings_about_version">Version %1$s · GPL-3.0-or-later</string>
+    <string name="settings_about_body">K56 ist eine unabhängige, quelloffene Cleanroom-Neuentwicklung eines Android-Musikplayers. Kein Code, keine Assets und keine Marke von Symfonium wurden übernommen. Jellyfin-Mindestversion: %1$s.</string>
+
+    <string name="net_wifi">WLAN</string>
+    <string name="net_cellular">Mobilfunk</string>
+    <string name="net_ethernet">Ethernet</string>
+    <string name="net_other">anderes Netz</string>
+    <string name="net_offline">offline</string>
+    <string name="route_local">lokal</string>
+    <string name="route_lan">LAN</string>
+    <string name="route_external">externe Adresse</string>
+    <string name="route_external_forced">externe Adresse (erzwungen)</string>
+    <string name="route_lan_if_available">LAN, falls erreichbar</string>
+
+    <plurals name="plural_albums">
+        <item quantity="one">%1$d Album</item>
+        <item quantity="other">%1$d Alben</item>
+    </plurals>
+    <plurals name="plural_tracks">
+        <item quantity="one">%1$d Titel</item>
+        <item quantity="other">%1$d Titel</item>
+    </plurals>
+
+    <string name="err_server_too_old">Dieser Jellyfin-Server ist zu alt für K56.</string>
+    <string name="err_session_expired">Sitzung abgelaufen. Bitte neu anmelden.</string>
+    <string name="err_login_rejected">Anmeldung abgelehnt. Benutzername und Passwort prüfen.</string>
+    <string name="err_token_login_disabled">Der Server erlaubt keine Token-Anmeldung. Bitte Passwort-Login aktivieren.</string>
+    <string name="err_permission">Keine Berechtigung für diese Aktion.</string>
+    <string name="err_subsonic">Subsonic-Fehler (Code %1$d).</string>
+    <string name="err_quick_connect_disabled">Quick Connect ist auf diesem Server deaktiviert.</string>
+    <string name="err_quick_connect_unconfirmed">Quick Connect wurde nicht bestätigt. Bitte erneut versuchen.</string>
+    <string name="err_request_rejected">Der Server hat die Anfrage abgelehnt.</string>
+    <string name="err_not_found_at_address">Kein Jellyfin-Server unter dieser Adresse gefunden.</string>
+    <string name="err_http">Serverfehler (HTTP %1$d).</string>
+    <string name="err_unreachable">Server nicht erreichbar. Adresse, Netzwerk und Port prüfen.</string>
+    <string name="err_unknown">Unbekannter Fehler.</string>
+    <string name="err_server_address_missing">Serveradresse fehlt.</string>
+    <string name="err_username_missing">Benutzername fehlt.</string>
+    <string name="err_no_discovery">Kein Jellyfin-Server im Netzwerk gefunden. Adresse manuell eingeben.</string>
+    <string name="err_no_media_permission">Ohne Medienzugriff kann K56 keine lokale Musik lesen.</string>
+</resources>

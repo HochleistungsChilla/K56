@@ -1,5 +1,6 @@
 package app.k56.player.ui.screens
 
+import android.content.Context
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -31,10 +32,13 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import app.k56.player.R
 import app.k56.player.core.model.SearchResults
 import app.k56.player.core.model.Track
 import app.k56.player.data.MediaRepository
@@ -48,7 +52,10 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-class SearchViewModel(private val repository: MediaRepository) : ViewModel() {
+class SearchViewModel(
+    private val repository: MediaRepository,
+    private val appContext: Context,
+) : ViewModel() {
 
     var results by mutableStateOf(SearchResults())
         private set
@@ -74,7 +81,7 @@ class SearchViewModel(private val repository: MediaRepository) : ViewModel() {
             try {
                 results = repository.search(term)
             } catch (e: Exception) {
-                error = e.userMessage()
+                error = e.userMessage(appContext)
             } finally {
                 searching = false
             }
@@ -89,7 +96,8 @@ fun SearchScreen(
     onOpenArtist: (String) -> Unit,
     onPlay: (List<Track>, Int) -> Unit,
 ) {
-    val vm = appViewModel { SearchViewModel(repository) }
+    val context = LocalContext.current
+    val vm = appViewModel { SearchViewModel(repository, context.applicationContext) }
     var query by rememberSaveable { mutableStateOf("") }
 
     LaunchedEffect(query) {
@@ -101,7 +109,7 @@ fun SearchScreen(
         OutlinedTextField(
             value = query,
             onValueChange = { query = it },
-            placeholder = { Text("Titel, Alben, Interpreten") },
+            placeholder = { Text(stringResource(R.string.search_hint)) },
             leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },
             singleLine = true,
             modifier = Modifier
@@ -127,7 +135,7 @@ fun SearchScreen(
             contentPadding = PaddingValues(bottom = 24.dp),
         ) {
             if (results.albums.isNotEmpty()) {
-                item { SectionHeader("Alben") }
+                item { SectionHeader(stringResource(R.string.library_tab_albums)) }
                 items(results.albums, key = { it.id }) { album ->
                     Row(
                         modifier = Modifier
@@ -161,7 +169,7 @@ fun SearchScreen(
             }
 
             if (results.artists.isNotEmpty()) {
-                item { SectionHeader("Interpreten") }
+                item { SectionHeader(stringResource(R.string.library_tab_artists)) }
                 items(results.artists, key = { it.id }) { artist ->
                     Row(
                         modifier = Modifier
@@ -187,7 +195,7 @@ fun SearchScreen(
             }
 
             if (results.tracks.isNotEmpty()) {
-                item { SectionHeader("Titel") }
+                item { SectionHeader(stringResource(R.string.library_tab_tracks)) }
                 itemsIndexed(results.tracks, key = { _, track -> track.id }) { index, track ->
                     TrackRow(
                         track = track,
@@ -200,7 +208,7 @@ fun SearchScreen(
             if (empty && query.trim().length >= 2 && !vm.searching) {
                 item {
                     Text(
-                        text = "Keine Treffer für „${query.trim()}“.",
+                        text = stringResource(R.string.search_no_results, query.trim()),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(24.dp),

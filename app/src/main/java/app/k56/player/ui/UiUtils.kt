@@ -1,5 +1,7 @@
 package app.k56.player.ui
 
+import android.content.Context
+import app.k56.player.R
 import app.k56.player.data.NotAuthenticatedException
 import app.k56.player.data.subsonic.SubsonicException
 import app.k56.player.data.jellyfin.QuickConnectDisabledException
@@ -22,35 +24,40 @@ fun formatDuration(ms: Long): String {
     }
 }
 
-fun Throwable.userMessage(): String = when (this) {
+/**
+ * Maps a thrown exception to a localized, user-facing message. Pass the
+ * application context; the message catalog lives in `res/values/strings.xml`
+ * (English) and `res/values-de/strings.xml` (German).
+ */
+fun Throwable.userMessage(context: Context): String = when (this) {
     is UnsupportedServerException ->
-        message ?: "Dieser Jellyfin-Server ist zu alt für K56."
+        message ?: context.getString(R.string.err_server_too_old)
 
     is NotAuthenticatedException ->
-        "Sitzung abgelaufen. Bitte neu anmelden."
+        context.getString(R.string.err_session_expired)
 
     is SubsonicException -> when (code) {
-        40 -> "Anmeldung abgelehnt. Benutzername und Passwort prüfen."
-        41 -> "Der Server erlaubt keine Token-Anmeldung. Bitte Passwort-Login aktivieren."
-        50 -> "Keine Berechtigung für diese Aktion."
-        else -> message ?: "Subsonic-Fehler (Code $code)."
+        40 -> context.getString(R.string.err_login_rejected)
+        41 -> context.getString(R.string.err_token_login_disabled)
+        50 -> context.getString(R.string.err_permission)
+        else -> message ?: context.getString(R.string.err_subsonic, code)
     }
 
     is QuickConnectDisabledException ->
-        "Quick Connect ist auf diesem Server deaktiviert."
+        context.getString(R.string.err_quick_connect_disabled)
 
     is QuickConnectTimeoutException ->
-        "Quick Connect wurde nicht bestätigt. Bitte erneut versuchen."
+        context.getString(R.string.err_quick_connect_unconfirmed)
 
     is HttpException -> when (code()) {
-        400 -> "Der Server hat die Anfrage abgelehnt."
-        401, 403 -> "Anmeldung abgelehnt. Benutzername und Passwort prüfen."
-        404 -> "Kein Jellyfin-Server unter dieser Adresse gefunden."
-        else -> "Serverfehler (HTTP ${code()})."
+        400 -> context.getString(R.string.err_request_rejected)
+        401, 403 -> context.getString(R.string.err_login_rejected)
+        404 -> context.getString(R.string.err_not_found_at_address)
+        else -> context.getString(R.string.err_http, code())
     }
 
     is IOException ->
-        "Server nicht erreichbar. Adresse, Netzwerk und Port prüfen."
+        context.getString(R.string.err_unreachable)
 
-    else -> message?.takeIf { it.isNotBlank() } ?: "Unbekannter Fehler."
+    else -> message?.takeIf { it.isNotBlank() } ?: context.getString(R.string.err_unknown)
 }

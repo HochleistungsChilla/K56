@@ -36,10 +36,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import app.k56.player.R
 import androidx.media3.session.MediaController
 import app.k56.player.core.model.Album
 import app.k56.player.core.model.Artist
@@ -224,7 +226,10 @@ fun ScreenHeader(title: String, onBack: (() -> Unit)? = null) {
     ) {
         if (onBack != null) {
             IconButton(onClick = onBack) {
-                Icon(Icons.Rounded.ArrowBack, contentDescription = "Zurück")
+                Icon(
+                    Icons.Rounded.ArrowBack,
+                    contentDescription = stringResource(R.string.common_back),
+                )
             }
         }
         Text(
@@ -253,7 +258,7 @@ fun ErrorState(message: String, onRetry: () -> Unit, modifier: Modifier = Modifi
                 textAlign = TextAlign.Center,
             )
             Spacer(Modifier.height(16.dp))
-            Button(onClick = onRetry) { Text("Erneut versuchen") }
+            Button(onClick = onRetry) { Text(stringResource(R.string.common_retry)) }
         }
     }
 }
@@ -319,11 +324,16 @@ fun MiniPlayer(
                 }) {
                     Icon(
                         imageVector = if (state.isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
-                        contentDescription = if (state.isPlaying) "Pause" else "Abspielen",
+                        contentDescription = stringResource(
+                            if (state.isPlaying) R.string.common_pause else R.string.common_play,
+                        ),
                     )
                 }
                 IconButton(onClick = { controller?.seekToNextMediaItem() }) {
-                    Icon(Icons.Rounded.SkipNext, contentDescription = "Nächster Titel")
+                    Icon(
+                        Icons.Rounded.SkipNext,
+                        contentDescription = stringResource(R.string.player_next),
+                    )
                 }
             }
         }

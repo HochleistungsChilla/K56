@@ -23,8 +23,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import app.k56.player.R
 import app.k56.player.BuildConfig
 import app.k56.player.core.model.BackendKind
 import app.k56.player.core.net.NetworkTransport
@@ -43,7 +45,7 @@ fun SettingsScreen(repository: MediaRepository) {
             .verticalScroll(rememberScrollState())
             .padding(20.dp),
     ) {
-        Text("Einstellungen", style = MaterialTheme.typography.headlineMedium)
+        Text(stringResource(R.string.nav_settings), style = MaterialTheme.typography.headlineMedium)
         Spacer(Modifier.height(18.dp))
 
         Surface(
@@ -52,33 +54,34 @@ fun SettingsScreen(repository: MediaRepository) {
             modifier = Modifier.fillMaxWidth(),
         ) {
             Column(Modifier.padding(16.dp)) {
-                Text("Verbindung", style = MaterialTheme.typography.titleLarge)
+                Text(stringResource(R.string.settings_connection), style = MaterialTheme.typography.titleLarge)
                 Spacer(Modifier.height(8.dp))
-                InfoRow("Typ", session?.backend?.label ?: "—")
-                InfoRow("Server", session?.serverName ?: "—")
+                InfoRow(stringResource(R.string.settings_type), session?.backend?.label ?: "—")
+                InfoRow(stringResource(R.string.settings_server), session?.serverName ?: "—")
                 InfoRow("LAN", session?.internalUrl ?: "—")
                 InfoRow("Internet", session?.externalUrl ?: "—")
-                InfoRow("Benutzer", session?.userName ?: "—")
-                InfoRow("Version", session?.serverVersion ?: "—")
+                InfoRow(stringResource(R.string.login_username), session?.userName ?: "—")
+                InfoRow(stringResource(R.string.settings_version), session?.serverVersion ?: "—")
                 InfoRow(
-                    "Netz",
+                    stringResource(R.string.settings_network),
                     when (networkStatus.transport) {
-                        NetworkTransport.WIFI -> "WLAN"
-                        NetworkTransport.CELLULAR -> "Mobilfunk"
-                        NetworkTransport.ETHERNET -> "Ethernet"
-                        NetworkTransport.OTHER -> "anderes Netz"
-                        NetworkTransport.OFFLINE -> "offline"
+                        NetworkTransport.WIFI -> stringResource(R.string.net_wifi)
+                        NetworkTransport.CELLULAR -> stringResource(R.string.net_cellular)
+                        NetworkTransport.ETHERNET -> stringResource(R.string.net_ethernet)
+                        NetworkTransport.OTHER -> stringResource(R.string.net_other)
+                        NetworkTransport.OFFLINE -> stringResource(R.string.net_offline)
                     },
                 )
                 InfoRow(
-                    "Route",
+                    stringResource(R.string.settings_route),
                     when {
-                        session?.backend == BackendKind.LOCAL -> "lokal"
-                        preferExternal -> "externe Adresse (erzwungen)"
-                        networkStatus.transport == NetworkTransport.CELLULAR -> "externe Adresse"
-                        session?.externalUrl.isNullOrBlank() -> "LAN-Adresse"
-                        session?.internalUrl.isNullOrBlank() -> "externe Adresse"
-                        else -> "LAN, falls erreichbar"
+                        session?.backend == BackendKind.LOCAL -> stringResource(R.string.route_local)
+                        preferExternal -> stringResource(R.string.route_external_forced)
+                        networkStatus.transport == NetworkTransport.CELLULAR ->
+                            stringResource(R.string.route_external)
+                        session?.externalUrl.isNullOrBlank() -> stringResource(R.string.login_lan_label)
+                        session?.internalUrl.isNullOrBlank() -> stringResource(R.string.route_external)
+                        else -> stringResource(R.string.route_lan_if_available)
                     },
                 )
             }
@@ -98,10 +101,12 @@ fun SettingsScreen(repository: MediaRepository) {
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Column(Modifier.weight(1f)) {
-                    Text("Externe Adresse bevorzugen", style = MaterialTheme.typography.titleMedium)
                     Text(
-                        "Aus: Im WLAN wird die LAN-Adresse genutzt, wenn sie erreichbar ist; " +
-                            "im Mobilfunk immer die externe Adresse. Keine Standortberechtigung nötig.",
+                        stringResource(R.string.settings_prefer_external),
+                        style = MaterialTheme.typography.titleMedium,
+                    )
+                    Text(
+                        stringResource(R.string.settings_prefer_external_body),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -128,9 +133,12 @@ fun SettingsScreen(repository: MediaRepository) {
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Column(Modifier.weight(1f)) {
-                    Text("Transcoding erzwingen", style = MaterialTheme.typography.titleMedium)
                     Text(
-                        "AAC/HLS statt Direct Play. Nützlich, wenn ein Codec auf dem Gerät nicht läuft.",
+                        stringResource(R.string.settings_force_transcode),
+                        style = MaterialTheme.typography.titleMedium,
+                    )
+                    Text(
+                        stringResource(R.string.settings_force_transcode_body),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -153,23 +161,21 @@ fun SettingsScreen(repository: MediaRepository) {
         ) {
             Icon(Icons.Rounded.Logout, contentDescription = null)
             Spacer(Modifier.width(10.dp))
-            Text("Abmelden")
+            Text(stringResource(R.string.settings_sign_out))
         }
 
         Spacer(Modifier.height(26.dp))
 
-        Text("Über K56", style = MaterialTheme.typography.titleLarge)
+        Text(stringResource(R.string.settings_about_title), style = MaterialTheme.typography.titleLarge)
         Spacer(Modifier.height(4.dp))
         Text(
-            "Version ${BuildConfig.VERSION_NAME} · GPL-3.0-or-later",
+            stringResource(R.string.settings_about_version, BuildConfig.VERSION_NAME),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Spacer(Modifier.height(6.dp))
         Text(
-            "K56 ist eine unabhängige, quelloffene Cleanroom-Neuentwicklung eines " +
-                "Android-Musikplayers. Kein Code, keine Assets und keine Marke von Symfonium " +
-                "wurden übernommen. Jellyfin-Mindestversion: ${BuildConfig.JELLYFIN_MIN_VERSION}.",
+            stringResource(R.string.settings_about_body, BuildConfig.JELLYFIN_MIN_VERSION),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )

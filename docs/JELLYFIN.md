@@ -1,59 +1,65 @@
-# Jellyfin-Kompatibilität
+# Jellyfin compatibility
 
-**Harte Untergrenze: Jellyfin 10.10.7.**
+**Hard minimum: Jellyfin 10.10.7.**
 
-## Versionsprüfung
+## Version check
 
-Bei jedem Login (Passwort oder Quick Connect):
+On every sign-in (password or Quick Connect):
 
-1. `GET /System/Info/Public` (ohne Token)
-2. `Version` komponentenweise numerisch mit `10.10.7` vergleichen
-   (`10.10.10 > 10.10.7`, nicht lexikografisch)
-3. Bei älteren Servern: Abbruch mit klarer Meldung
+1. `GET /System/Info/Public` (no token)
+2. compare `Version` component-wise numerically against `10.10.7`
+   (`10.10.10 > 10.10.7`, not lexicographic)
+3. older servers: abort with a clear message
 
-Der Vergleich liegt in `JellyfinVersion` und ist unit-getestet.
+The comparison lives in `JellyfinVersion` and is unit-tested.
 
-Emby nutzt dieselbe API, unterliegt aber nicht der Jellyfin-Versionsprüfung.
+Emby exposes the same API but is not subject to the Jellyfin version check.
 
-## Authentifizierung
+## Authentication
 
-Header an allen API-Aufrufen:
+Header on every API call:
 
 ```
 Authorization: MediaBrowser Client="K56", Device="Android",
   DeviceId="<install-uuid>", Version="0.1.0"
-X-Emby-Authorization: <gleicher Wert>
+X-Emby-Authorization: <same value>
 X-Emby-Token: <access-token>
 ```
 
-- `POST /Users/AuthenticateByName` mit `{"Username": "...", "Pw": "..."}`
-- `POST /Users/AuthenticateWithQuickConnect` mit `{"Secret": "..."}`
+- `POST /Users/AuthenticateByName` with `{"Username": "...", "Pw": "..."}`
+- `POST /Users/AuthenticateWithQuickConnect` with `{"Secret": "..."}`
 - `GET /QuickConnect/Enabled`, `POST /QuickConnect/Initiate`,
-  `GET /QuickConnect/Connect?secret=...` (Polling 2 s, max. 3 min)
+  `GET /QuickConnect/Connect?secret=...` (polling every 2 s, max 3 min)
 
-## Bibliothek
+## Library
 
-| Zweck | Endpoint |
+| Purpose | Endpoint |
 |---|---|
-| Musikbibliotheken | `GET /Users/{userId}/Views` (Filter `CollectionType == "music"`) |
-| Alben | `GET /Items?IncludeItemTypes=MusicAlbum&Recursive=true` |
-| Interpreten | `GET /Artists?Recursive=true&SortBy=SortName` |
-| Album-Tracks | `GET /Items?ParentId={albumId}&IncludeItemTypes=Audio` |
-| Suche | `GET /Items?SearchTerm=…&IncludeItemTypes=MusicAlbum,MusicArtist,Audio` |
-| Favorit | `POST/DELETE /Users/{userId}/FavoriteItems/{itemId}` |
+| Music libraries | `GET /UserViews?userId={userId}` (filter `CollectionType == "music"`) |
+| Albums | `GET /Items?IncludeItemTypes=MusicAlbum&Recursive=true` |
+| Artists | `GET /Artists?Recursive=true&SortBy=SortName` |
+| Album tracks | `GET /Items?ParentId={albumId}&IncludeItemTypes=Audio` |
+| Search | `GET /Items?SearchTerm=…&IncludeItemTypes=MusicAlbum,MusicArtist,Audio` |
+| Favourite | `POST/DELETE /UserFavoriteItems/{itemId}?userId={userId}` |
 
-Bilder: `GET /Items/{id}/Images/Primary?maxHeight=700&maxWidth=700&tag=…&api_key=…`
+Images: `GET /Items/{id}/Images/Primary?maxHeight=700&maxWidth=700&tag=…&api_key=…`
 
-## Wiedergabe
+Why these two routes: `Users/{userId}/Views` and
+`Users/{userId}/FavoriteItems/{itemId}` still exist in 10.10.7 but are marked
+obsolete there and have since been removed. `/UserViews` and
+`/UserFavoriteItems/{itemId}` exist in 10.10.7 **and** in current releases, so
+one code path covers the whole supported range.
 
-**Direct Play** (Default für kompatible Container):
+## Playback
+
+**Direct play** (default for compatible containers):
 
 ```
 GET /Audio/{itemId}/stream?static=true&MediaSourceId={itemId}
     &DeviceId={deviceId}&api_key={token}
 ```
 
-**Transcoding** (Setting oder unbekannter Container):
+**Transcoding** (setting or unknown container):
 
 ```
 GET /Audio/{itemId}/universal?UserId=…&DeviceId=…
@@ -63,33 +69,40 @@ GET /Audio/{itemId}/universal?UserId=…&DeviceId=…
     &api_key=…&EnableRedirection=true
 ```
 
-Die HLS-URL wird ExoPlayer mit `application/x-mpegURL` übergeben.
+The HLS URL is handed to ExoPlayer with `application/x-mpegURL`.
 
-## Playback-Reporting
+## Playback reporting
 
-| Ereignis | Endpoint | Felder |
+| Event | Endpoint | Fields |
 |---|---|---|
 | Start | `POST /Sessions/Playing` | `ItemId`, `MediaSourceId`, `PlaySessionId`, `PositionTicks`, `PlayMethod=DirectPlay` |
-| Fortschritt | `POST /Sessions/Playing/Progress` | zusätzlich `IsPaused`, `RepeatMode` (alle 10 s) |
+| Progress | `POST /Sessions/Playing/Progress` | plus `IsPaused`, `RepeatMode` (every 10 s) |
 | Stop | `POST /Sessions/Playing/Stopped` | `PositionTicks` |
 
-`PositionTicks = Millisekunden × 10 000`.
+`PositionTicks = milliseconds × 10,000`.
 
 ## LAN/Internet
 
-Jellyfin unterstützt pro Session eine LAN- und eine Internet-Adresse.
-`EndpointResolver` wählt anhand des Transporttyps:
+Jellyfin allows one LAN and one Internet address per session.
+`EndpointResolver` picks one based on the transport type:
 
-- WLAN/Ethernet → LAN, wenn erreichbar, sonst Internet
-- Mobilfunk → Internet
-- „Externe Adresse bevorzugen“ → immer Internet
+- Wi-Fi/Ethernet → LAN if reachable, otherwise Internet
+- mobile data → Internet
+- “Prefer external address” → always Internet
 
-LAN-Discovery: UDP-Broadcast an Port 7359 mit `who is JellyfinServer?`.
-Antwort: JSON mit `Address`, `Id`, `Name`.
+LAN discovery: UDP broadcast to port 7359 with `who is JellyfinServer?`.
+The answer is JSON with `Address`, `Id`, `Name`.
 
-## Getestete Serverstände
+## Tested server versions
 
-- Ziel/Minimum: **10.10.7**
-- Neuere 10.10.x / 10.11.x werden akzeptiert
+- Target/minimum: **10.10.7**
+- Newer 10.10.x / 10.11.x are accepted
 
-Nicht unterstützt: Server, die vor 10.10 entfernte Endpoints benötigen.
+Not supported: servers that require endpoints removed before 10.10.
+
+## Verification notes
+
+The endpoint inventory above was checked against the Jellyfin API sources at
+tag `v10.10.7` (`Jellyfin.Api/Controllers/{UserViews,UserLibrary,Items,Audio}Controller.cs`)
+and against the current OpenAPI description. The client has not yet been run
+against a live server in this repository; see the roadmap.

@@ -12,7 +12,7 @@ enum class BackendKind(val label: String, val hint: String) {
     NAVIDROME("Navidrome", "Subsonic-API"),
     OPENSUBSONIC("OpenSubsonic", "Subsonic-API"),
     PLEX("Plex", "Media-Server"),
-    AUDIOBOOKSHELF("Audiobookshelf", "Hörbücher"),
+    AUDIOBOOKSHELF("Audiobookshelf", "Audiobooks"),
     KODI("Kodi", "Media-Center"),
     WEBDAV("WebDAV", "Dateien"),
     SMB("SMB", "Dateien"),

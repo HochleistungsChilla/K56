@@ -1,5 +1,6 @@
 package app.k56.player.ui.screens
 
+import android.content.Context
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -20,9 +21,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import app.k56.player.R
 import app.k56.player.core.model.Album
 import app.k56.player.core.model.Artist
 import app.k56.player.core.model.Track
@@ -38,7 +42,10 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
-class LibraryViewModel(private val repository: MediaRepository) : ViewModel() {
+class LibraryViewModel(
+    private val repository: MediaRepository,
+    private val appContext: Context,
+) : ViewModel() {
 
     var albums by mutableStateOf<List<Album>>(emptyList())
         private set
@@ -70,7 +77,7 @@ class LibraryViewModel(private val repository: MediaRepository) : ViewModel() {
                     songs = songsJob.await()
                 }
             } catch (e: Exception) {
-                error = e.userMessage()
+                error = e.userMessage(appContext)
             } finally {
                 loading = false
             }
@@ -85,12 +92,17 @@ fun LibraryScreen(
     onOpenArtist: (String) -> Unit,
     onPlay: (List<Track>, Int) -> Unit,
 ) {
-    val vm = appViewModel { LibraryViewModel(repository) }
+    val context = LocalContext.current
+    val vm = appViewModel { LibraryViewModel(repository, context.applicationContext) }
     var tab by rememberSaveable { mutableIntStateOf(0) }
 
     Column(Modifier.fillMaxSize()) {
         TabRow(selectedTabIndex = tab) {
-            listOf("Alben", "Interpreten", "Titel").forEachIndexed { index, label ->
+            listOf(
+                stringResource(R.string.library_tab_albums),
+                stringResource(R.string.library_tab_artists),
+                stringResource(R.string.library_tab_tracks),
+            ).forEachIndexed { index, label ->
                 Tab(
                     selected = tab == index,
                     onClick = { tab = index },

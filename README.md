@@ -1,143 +1,145 @@
 # K56
 
 [![Android](https://github.com/HochleistungsChilla/K56/actions/workflows/android.yml/badge.svg)](https://github.com/HochleistungsChilla/K56/actions/workflows/android.yml)
-[![Lizenz: GPL-3.0-or-later](https://img.shields.io/badge/Lizenz-GPL--3.0--orlater-blue.svg)](LICENSE)
+[![License: GPL-3.0-or-later](https://img.shields.io/badge/license-GPL--3.0--orlater-blue.svg)](LICENSE)
 
-Quelloffener Android-Musikplayer als **Cleanroom-Neuentwicklung** mit
-Multi-Backend-Architektur. Kein Code, keine Grafiken und keine Marke von
-Symfonium wurden übernommen.
+An open-source Android music player built as a **cleanroom implementation**
+with a multi-backend architecture. No code, artwork or trademarks from
+Symfonium were used.
 
-**Status:** 0.1.0 — lauffähiger Multi-Server-Client mit Bibliothek, Suche,
-Hintergrundwiedergabe und LAN/WAN-Routing.
+**Status:** 0.1.0 — a working multi-server client with library, search,
+background playback and LAN/WAN routing.
 
-**K56** · **Domain:** `k56.wtf` (geplant) · **Theme:** Monochrom · **Easter Egg:** ATDT  
-Claim: „56k für die Ohren.“
+**K56** · **Domain:** `k56.wtf` (planned) · **Theme:** Monochrom · **Easter egg:** ATDT  
+Tagline: “56k for your ears.”
 
-## Plattform
+## Platform
 
-| Anforderung | Wert |
+| Requirement | Value |
 |---|---|
-| Android | **9 (API 28) oder neuer** |
-| Jellyfin | **10.10.7 oder neuer** (harte Prüfung beim Login) |
-| Build | JDK 17+ (getestet mit JDK 21), Android SDK 35 |
+| Android | **9 (API 28) or newer** |
+| Jellyfin | **10.10.7 or newer** (checked at sign-in) |
+| Build | JDK 17+ (tested with 21), Android SDK 35 |
 
-## Unterstützte Quellen
+## Supported sources
 
-| Quelle | Status | Anmeldung |
+| Source | Status | Sign-in |
 |---|---|---|
-| **Jellyfin** | ✅ | LAN/Internet-Adresse, Benutzer/Passwort, Quick Connect, UDP-Discovery |
-| **Emby** | ✅ | LAN/Internet-Adresse, Benutzer/Passwort |
-| **Subsonic** | ✅ | Adresse, Benutzer/Passwort (Salt+MD5-Token) |
-| **Navidrome** | ✅ | wie Subsonic |
-| **OpenSubsonic** | ✅ | wie Subsonic |
-| **Plex** | ✅ | PIN auf `plex.tv/link`, Server-Discovery über plex.tv |
-| **Audiobookshelf** | ✅ | Adresse, Benutzer/Passwort; Bücher → Alben, Kapitel → Tracks |
-| **Kodi** | ✅ | JSON-RPC, optional HTTP-Basic-Auth |
-| **Lokale Dateien** | ✅ | MediaStore-Freigabe (Android 9/13+ Berechtigungen) |
-| **WebDAV** | ✅ | Adresse, optional Basic Auth; Ordner-Scan ohne Tag-/Cover-Lesen |
-| SMB (v2/v3) | ⬜ geplant | Datei-Backend |
-| Google Drive / OneDrive / Dropbox / Box / pCloud | ⬜ geplant | OAuth-Backend |
+| **Jellyfin** | ✅ | LAN/Internet address, username/password, Quick Connect, UDP discovery |
+| **Emby** | ✅ | LAN/Internet address, username/password |
+| **Subsonic** | ✅ | address, username/password (salt+MD5 token) |
+| **Navidrome** | ✅ | same as Subsonic |
+| **OpenSubsonic** | ✅ | same as Subsonic |
+| **Plex** | ✅ | PIN at `plex.tv/link`, server discovery via plex.tv |
+| **Audiobookshelf** | ✅ | address, username/password; books → albums, chapters → tracks |
+| **Kodi** | ✅ | JSON-RPC, optional HTTP basic auth |
+| **Local files** | ✅ | MediaStore permission (Android 9/13+ permissions) |
+| **WebDAV** | ✅ | address, optional basic auth; folder scan without tag/cover parsing |
+| SMB (v2/v3) | ⬜ planned | file backend |
+| Google Drive / OneDrive / Dropbox / Box / pCloud | ⬜ planned | OAuth backend |
 
-Die Adapter liegen hinter `MediaRepository`; weitere Quellen ändern nur die
-Datenschicht, nicht die UI.
+All adapters sit behind `MediaRepository`; a new source only touches the data
+layer, never the UI.
 
-## Funktionen (0.1.0)
+## Features (0.1.0)
 
-- Bibliothek: Alben, Interpreten, Titel (Grid/Liste)
-- Suche über Alben, Interpreten und Titel
-- Album-/Interpreten-Detailseiten
-- Wiedergabe über **Media3/ExoPlayer** mit MediaSession, Notification und
-  System-Mediensteuerung
-- Direct Play für gängige Container; optionales Transcoding
+- Library: albums, artists, tracks (grid/list)
+- Search across albums, artists and tracks
+- Album and artist detail screens
+- Playback via **Media3/ExoPlayer** with MediaSession, notification and system
+  media controls
+- Direct play for common containers; optional transcoding
   (Jellyfin: AAC/HLS, Subsonic: MP3)
-- Playback-Reporting: Jellyfin (Position/Resume), Plex (Timeline),
-  Audiobookshelf (Fortschritt), Subsonic (Scrobble)
-- **LAN/Internet-Routing ohne Standortberechtigung**
-- Material 3, Dark/Light, eigenes Icon
+- Playback reporting: Jellyfin (position/resume), Plex (timeline),
+  Audiobookshelf (progress), Subsonic (scrobble)
+- **LAN/Internet routing without any location permission**
+- Material 3, dark/light, custom icon
 
-## LAN/Internet-Routing
+## LAN/Internet routing
 
-Pro Server können zwei Adressen hinterlegt werden:
+Two addresses can be stored per server:
 
-- **LAN** z. B. `http://192.168.1.10:8096`
-- **Internet** z. B. `https://music.example.com`
+- **LAN** e.g. `http://192.168.1.10:8096`
+- **Internet** e.g. `https://music.example.com`
 
-Auswahl zur Laufzeit:
+Selection at runtime:
 
-| Netz | Verhalten |
+| Network | Behaviour |
 |---|---|
-| WLAN / Ethernet | LAN-Adresse, wenn ein kurzer Erreichbarkeits-Probe gelingt; sonst Internet |
-| Mobilfunk | immer Internet-Adresse |
-| offline | letzte bekannte Adresse (Fehler wird sauber gemeldet) |
+| Wi-Fi / Ethernet | LAN address if a short reachability probe succeeds, otherwise Internet |
+| Mobile data | always the Internet address |
+| offline | last known address (errors are reported cleanly) |
 
-Die Erkennung nutzt ausschließlich `ConnectivityManager`-Transporttypen
-(Wi-Fi/Cellular/Ethernet). **Keine SSID, keine Standortberechtigung.**
-Optional lässt sich „Externe Adresse bevorzugen“ aktivieren.
+Detection relies solely on `ConnectivityManager` transport types
+(Wi-Fi/cellular/Ethernet). **No SSID, no location permission.** “Prefer
+external address” can be enabled manually.
 
-Jellyfin-Server im LAN werden zusätzlich per UDP-Broadcast auf Port 7359
-gefunden (`who is JellyfinServer?`).
+Jellyfin servers on the LAN are additionally found via UDP broadcast on port
+7359 (`who is JellyfinServer?`).
 
-## Architektur
+## Architecture
 
 ```
 app/src/main/java/app/k56/player/
-├── core/model/          Domänenmodelle + BackendKind
-├── core/net/            NetworkMonitor, EndpointResolver, URL-Normalisierung
-├── data/                SessionStore, SettingsStore, MediaRepository, Router
-├── data/jellyfin/       Jellyfin/Emby: API, DTOs, Discovery
+├── core/model/          domain models + BackendKind
+├── core/net/            NetworkMonitor, EndpointResolver, URL normalisation
+├── data/                SessionStore, SettingsStore, MediaRepository, router
+├── data/jellyfin/       Jellyfin/Emby: API, DTOs, discovery
 ├── data/subsonic/       Subsonic/OpenSubsonic/Navidrome
-├── data/plex/           Plex.tv-PIN + PMS-API
+├── data/plex/           plex.tv PIN + PMS API
 ├── data/abs/            Audiobookshelf
 ├── data/kodi/           Kodi JSON-RPC
 ├── data/local/          MediaStore
 ├── playback/            MediaSessionService, ExoPlayer, MediaController
-├── di/                  Manueller AppContainer
-└── ui/                  Compose: Theme, Navigation, Screens, Components
+├── di/                  manual app container
+└── ui/                  Compose: theme, navigation, screens, components
 ```
 
-Bewusste Entscheidungen: kein Hilt/Koin, kein Room im MVP, Retrofit +
-kotlinx.serialization für Jellyfin, schlanke eigene Clients für die übrigen
-Protokolle.
+Deliberate choices: no Hilt/Koin, no Room in the MVP, Retrofit +
+kotlinx.serialization for Jellyfin, small hand-written clients for the
+remaining protocols.
 
 ## Build
 
 ```bash
 echo "sdk.dir=$HOME/Android/Sdk" > local.properties
 ./gradlew assembleDebug        # APK: app/build/outputs/apk/debug/app-debug.apk
-./gradlew testDebugUnitTest    # Versions-/Routing-Logik
+./gradlew testDebugUnitTest    # version/routing logic
 ```
 
-## Bekannte Grenzen
+The UI ships in English (`res/values/`) and German (`res/values-de/`). All
+user-facing strings live in string resources; there are no hard-coded UI
+strings in code.
 
-- Subsonic hat keinen „alle Titel“-Endpoint; die Titel-Liste nutzt
-  `getRandomSongs` und sortiert lokal. Ein lokaler Sync-Index ist geplant.
-- Kodi löst Wiedergabe-URLs pro Queue-Eintrag über `Files.PrepareDownload`
-  auf; sehr große Queues starten dadurch langsamer.
-- WebDAV liest Metadaten aus Ordner-/Dateinamen (kein TagLib, keine Cover);
-  der Scan ist auf 300 Ordner/5.000 Dateien begrenzt.
-- SMB und Cloud-Laufwerke sind noch nicht implementiert (siehe
+## Known limits
+
+- Subsonic has no “all tracks” endpoint; the track list uses `getRandomSongs`
+  and sorts locally. A local sync index is planned.
+- Kodi resolves playback URLs per queue entry via `Files.PrepareDownload`, so
+  very large queues start more slowly.
+- WebDAV reads metadata from folder/file names (no TagLib, no covers); the scan
+  is capped at 300 directories / 5,000 files.
+- SMB and cloud drives are not implemented yet (see
   [docs/ROADMAP.md](docs/ROADMAP.md)).
-- Tokens liegen in privaten SharedPreferences; Keystore-Verschlüsselung ist
-  als Härtung vorgesehen.
+- Tokens are stored in private SharedPreferences; Keystore encryption is
+  planned as hardening.
 
-## Rechtliches
+## Legal
 
-K56 ist eine unabhängige Reimplementierung öffentlich dokumentierter
-Schnittstellen. Der Prozess ist in [docs/CLEANROOM.md](docs/CLEANROOM.md)
-festgehalten. „Symfonium“ ist eine Marke des jeweiligen Inhabers; dieses
-Projekt steht in keiner Verbindung dazu.
+K56 is an independent reimplementation of publicly documented interfaces. The
+process is documented in [docs/CLEANROOM.md](docs/CLEANROOM.md). “Symfonium”
+is a trademark of its respective owner; this project is not affiliated with it.
 
-## Mitmachen
+## Contributing
 
-Pull Requests sind willkommen — Regeln und Build-Anleitung stehen in
+Pull requests are welcome — rules and build instructions are in
 [CONTRIBUTING.md](CONTRIBUTING.md).
 
-## Lizenz
+## License
 
-**GPL-3.0-or-later** — siehe [LICENSE](LICENSE).
+**GPL-3.0-or-later** — see [LICENSE](LICENSE).
 
-Forken ist ausdrücklich erwünscht: klonen, ändern, eigenen Namen geben,
-eigenes Theme bauen, forken, Pull Requests schicken. Einzige Bedingung der
-GPL ist, dass abgeleitete Werke beim Weiterverteilen ebenfalls unter der
-GPL stehen und die Quelle offen bleibt. Wer K56 forkt, muss es also nicht
-„K56“ nennen — nur offen bleiben.
+Forking is explicitly encouraged: clone it, change it, give it your own name,
+build your own theme, fork it, send pull requests. The only GPL condition is
+that distributed derivative works stay under the GPL and keep their source
+open. Forking K56 does not require calling it “K56” — only staying open.

@@ -35,9 +35,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import app.k56.player.R
 import androidx.media3.common.Player
 import androidx.media3.session.MediaController
 import app.k56.player.ui.components.Artwork
@@ -52,10 +54,10 @@ fun PlayerScreen(controller: MediaController?, onBack: () -> Unit) {
 
     if (!state.hasItem) {
         Column(Modifier.fillMaxSize()) {
-            ScreenHeader(title = "Jetzt läuft", onBack = onBack)
+            ScreenHeader(title = stringResource(R.string.player_now_playing), onBack = onBack)
             EmptyState(
-                title = "Nichts läuft",
-                subtitle = "Starte einen Titel aus deiner Bibliothek.",
+                title = stringResource(R.string.player_nothing_title),
+                subtitle = stringResource(R.string.player_nothing_body),
                 modifier = Modifier.weight(1f),
             )
         }
@@ -85,10 +87,13 @@ fun PlayerScreen(controller: MediaController?, onBack: () -> Unit) {
             verticalAlignment = Alignment.CenterVertically,
         ) {
             IconButton(onClick = onBack) {
-                Icon(Icons.Rounded.KeyboardArrowDown, contentDescription = "Player schließen")
+                Icon(
+                    Icons.Rounded.KeyboardArrowDown,
+                    contentDescription = stringResource(R.string.player_close),
+                )
             }
             Text(
-                text = "Jetzt läuft",
+                text = stringResource(R.string.player_now_playing),
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.weight(1f),
                 textAlign = TextAlign.Center,
@@ -167,7 +172,7 @@ fun PlayerScreen(controller: MediaController?, onBack: () -> Unit) {
             IconButton(onClick = { controller?.shuffleModeEnabled = !state.shuffle }) {
                 Icon(
                     Icons.Rounded.Shuffle,
-                    contentDescription = "Zufallswiedergabe",
+                    contentDescription = stringResource(R.string.player_shuffle),
                     tint = if (state.shuffle) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
@@ -175,7 +180,7 @@ fun PlayerScreen(controller: MediaController?, onBack: () -> Unit) {
             IconButton(onClick = { controller?.seekToPreviousMediaItem() }) {
                 Icon(
                     Icons.Rounded.SkipPrevious,
-                    contentDescription = "Vorheriger Titel",
+                    contentDescription = stringResource(R.string.player_previous),
                     modifier = Modifier.size(36.dp),
                 )
             }
@@ -188,7 +193,9 @@ fun PlayerScreen(controller: MediaController?, onBack: () -> Unit) {
             ) {
                 Icon(
                     imageVector = if (state.isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
-                    contentDescription = if (state.isPlaying) "Pause" else "Abspielen",
+                    contentDescription = stringResource(
+                        if (state.isPlaying) R.string.common_pause else R.string.common_play,
+                    ),
                     modifier = Modifier.size(38.dp),
                 )
             }
@@ -196,7 +203,7 @@ fun PlayerScreen(controller: MediaController?, onBack: () -> Unit) {
             IconButton(onClick = { controller?.seekToNextMediaItem() }) {
                 Icon(
                     Icons.Rounded.SkipNext,
-                    contentDescription = "Nächster Titel",
+                    contentDescription = stringResource(R.string.player_next),
                     modifier = Modifier.size(36.dp),
                 )
             }
@@ -214,7 +221,7 @@ fun PlayerScreen(controller: MediaController?, onBack: () -> Unit) {
                     } else {
                         Icons.Rounded.Repeat
                     },
-                    contentDescription = "Wiederholen",
+                    contentDescription = stringResource(R.string.player_repeat),
                     tint = if (state.repeatMode == Player.REPEAT_MODE_OFF) {
                         MaterialTheme.colorScheme.onSurfaceVariant
                     } else {

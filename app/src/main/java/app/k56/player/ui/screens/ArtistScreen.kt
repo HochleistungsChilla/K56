@@ -1,5 +1,6 @@
 package app.k56.player.ui.screens
 
+import android.content.Context
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -22,11 +23,15 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import app.k56.player.R
 import app.k56.player.core.model.ArtistDetails
 import app.k56.player.data.MediaRepository
 import app.k56.player.ui.appViewModel
@@ -41,6 +46,7 @@ import kotlinx.coroutines.launch
 class ArtistViewModel(
     private val repository: MediaRepository,
     private val artistId: String,
+    private val appContext: Context,
 ) : ViewModel() {
 
     var details by mutableStateOf<ArtistDetails?>(null)
@@ -61,7 +67,7 @@ class ArtistViewModel(
             try {
                 details = repository.artistDetails(artistId)
             } catch (e: Exception) {
-                error = e.userMessage()
+                error = e.userMessage(appContext)
             } finally {
                 loading = false
             }
@@ -76,10 +82,11 @@ fun ArtistScreen(
     onBack: () -> Unit,
     onOpenAlbum: (String) -> Unit,
 ) {
-    val vm = appViewModel { ArtistViewModel(repository, artistId) }
+    val context = LocalContext.current
+    val vm = appViewModel { ArtistViewModel(repository, artistId, context.applicationContext) }
 
     Column(Modifier.fillMaxSize()) {
-        ScreenHeader(title = "Interpret", onBack = onBack)
+        ScreenHeader(title = stringResource(R.string.artist_title), onBack = onBack)
 
         val details = vm.details
         val error = vm.error
@@ -130,7 +137,11 @@ private fun ArtistHeader(details: ArtistDetails) {
             overflow = TextOverflow.Ellipsis,
         )
         Text(
-            text = "${details.albums.size} Alben",
+            text = pluralStringResource(
+                R.plurals.plural_albums,
+                details.albums.size,
+                details.albums.size,
+            ),
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )

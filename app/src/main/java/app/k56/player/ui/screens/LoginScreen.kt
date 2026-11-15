@@ -1,5 +1,6 @@
 package app.k56.player.ui.screens
 
+import android.content.Context
 import android.Manifest
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -51,10 +52,13 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.k56.player.BuildConfig
+import app.k56.player.R
 import app.k56.player.core.model.BackendKind
 import app.k56.player.core.model.DiscoveredServer
 import app.k56.player.core.model.isImplemented
@@ -65,7 +69,10 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
-class LoginViewModel(private val repository: MediaRepository) : ViewModel() {
+class LoginViewModel(
+    private val repository: MediaRepository,
+    private val appContext: Context,
+) : ViewModel() {
 
     var backend by mutableStateOf(BackendKind.JELLYFIN)
     var internalUrl by mutableStateOf("")
@@ -101,13 +108,13 @@ class LoginViewModel(private val repository: MediaRepository) : ViewModel() {
         }
         val primary = internalUrl.trim()
         if (primary.isEmpty()) {
-            error = "Serveradresse fehlt."
+            error = appContext.getString(R.string.err_server_address_missing)
             return
         }
         if (backend != BackendKind.KODI && backend != BackendKind.LOCAL &&
             backend != BackendKind.WEBDAV && username.isBlank()
         ) {
-            error = "Benutzername fehlt."
+            error = appContext.getString(R.string.err_username_missing)
             return
         }
         busy = true
@@ -122,7 +129,7 @@ class LoginViewModel(private val repository: MediaRepository) : ViewModel() {
                     password = password,
                 )
             } catch (e: Exception) {
-                error = e.userMessage()
+                error = e.userMessage(appContext)
             } finally {
                 busy = false
             }
@@ -146,10 +153,10 @@ class LoginViewModel(private val repository: MediaRepository) : ViewModel() {
             try {
                 discoveredServers = repository.discoverLocalServers()
                 if (discoveredServers.isEmpty()) {
-                    error = "Kein Jellyfin-Server im Netzwerk gefunden. Adresse manuell eingeben."
+                    error = appContext.getString(R.string.err_no_discovery)
                 }
             } catch (e: Exception) {
-                error = e.userMessage()
+                error = e.userMessage(appContext)
             } finally {
                 discovering = false
             }
@@ -164,7 +171,7 @@ class LoginViewModel(private val repository: MediaRepository) : ViewModel() {
             try {
                 repository.login(BackendKind.LOCAL, "", null, "", "")
             } catch (e: Exception) {
-                error = e.userMessage()
+                error = e.userMessage(appContext)
             } finally {
                 busy = false
             }
@@ -175,7 +182,7 @@ class LoginViewModel(private val repository: MediaRepository) : ViewModel() {
         if (quickConnectBusy) return
         val primary = internalUrl.trim()
         if (primary.isEmpty()) {
-            quickConnectError = "Serveradresse fehlt."
+            quickConnectError = appContext.getString(R.string.err_server_address_missing)
             return
         }
         quickConnectBusy = true
@@ -191,7 +198,7 @@ class LoginViewModel(private val repository: MediaRepository) : ViewModel() {
             } catch (e: CancellationException) {
                 // dialog closed
             } catch (e: Exception) {
-                quickConnectError = e.userMessage()
+                quickConnectError = e.userMessage(appContext)
             } finally {
                 quickConnectBusy = false
             }
@@ -226,7 +233,7 @@ class LoginViewModel(private val repository: MediaRepository) : ViewModel() {
             } catch (e: CancellationException) {
                 // dialog closed
             } catch (e: Exception) {
-                plexError = e.userMessage()
+                plexError = e.userMessage(appContext)
             } finally {
                 plexBusy = false
             }
@@ -249,14 +256,15 @@ class LoginViewModel(private val repository: MediaRepository) : ViewModel() {
 
 @Composable
 fun LoginScreen(repository: MediaRepository) {
-    val vm = appViewModel { LoginViewModel(repository) }
+    val context = LocalContext.current
+    val vm = appViewModel { LoginViewModel(repository, context.applicationContext) }
     val localPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions(),
     ) { result ->
         if (result.values.all { it }) {
             vm.loginLocal()
         } else {
-            vm.showError("Ohne Medienzugriff kann K56 keine lokale Musik lesen.")
+            vm.showError(context.getString(R.string.err_no_media_permission))
         }
     }
     var showQuickConnect by remember { mutableStateOf(false) }
@@ -291,9 +299,9 @@ fun LoginScreen(repository: MediaRepository) {
             )
         }
         Spacer(Modifier.height(18.dp))
-        Text("K56", style = MaterialTheme.typography.headlineMedium)
+        Text(stringResource(R.string.app_name), style = MaterialTheme.typography.headlineMedium)
         Text(
-            text = "Deine Musik. Dein Server. Dein Player.",
+            text = stringResource(R.string.app_tagline),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
@@ -307,7 +315,7 @@ fun LoginScreen(repository: MediaRepository) {
             modifier = Modifier.fillMaxWidth(),
         ) {
             Column(Modifier.padding(18.dp)) {
-                Text("Server", style = MaterialTheme.typography.titleLarge)
+                Text(stringResource(R.string.login_server_section), style = MaterialTheme.typography.titleLarge)
                 Spacer(Modifier.height(10.dp))
 
                 Box {
@@ -334,7 +342,7 @@ fun LoginScreen(repository: MediaRepository) {
                                 text = {
                                     Column {
                                         Text(
-                                            if (kind.isImplemented) kind.label else "${kind.label} · bald",
+                                            if (kind.isImplemented) kind.label else stringResource(R.string.common_soon, kind.label),
                                         )
                                         Text(
                                             kind.hint,
@@ -356,8 +364,7 @@ fun LoginScreen(repository: MediaRepository) {
                 if (vm.backend == BackendKind.LOCAL) {
                     Spacer(Modifier.height(12.dp))
                     Text(
-                        "K56 liest die Audiodateien auf diesem Gerät über MediaStore. " +
-                            "Es werden keine Daten hochgeladen und keine Netzwerkverbindung benötigt.",
+                        stringResource(R.string.login_local_hint),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -383,7 +390,7 @@ fun LoginScreen(repository: MediaRepository) {
                                 color = MaterialTheme.colorScheme.onPrimary,
                             )
                         } else {
-                            Text("Lokale Musik freigeben")
+                            Text(stringResource(R.string.login_local_grant))
                         }
                     }
                     val localError = vm.error
@@ -398,8 +405,7 @@ fun LoginScreen(repository: MediaRepository) {
                 } else if (vm.backend == BackendKind.PLEX) {
                     Spacer(Modifier.height(12.dp))
                     Text(
-                        "K56 meldet sich über plex.tv an und findet deinen Server automatisch. " +
-                            "Du bekommst einen Code, den du auf plex.tv/link eingibst.",
+                        stringResource(R.string.login_plex_hint),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -421,7 +427,7 @@ fun LoginScreen(repository: MediaRepository) {
                                 color = MaterialTheme.colorScheme.onPrimary,
                             )
                         } else {
-                            Text("Mit Plex anmelden")
+                            Text(stringResource(R.string.login_plex_sign_in))
                         }
                     }
                     val plexError = vm.plexError
@@ -438,7 +444,7 @@ fun LoginScreen(repository: MediaRepository) {
                 OutlinedTextField(
                     value = vm.internalUrl,
                     onValueChange = { vm.internalUrl = it },
-                    label = { Text("LAN-Adresse") },
+                    label = { Text(stringResource(R.string.login_lan_label)) },
                     placeholder = { Text("http://192.168.1.10:8096") },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
@@ -455,7 +461,7 @@ fun LoginScreen(repository: MediaRepository) {
                             Icon(Icons.Rounded.Search, contentDescription = null)
                         }
                         Spacer(Modifier.width(6.dp))
-                        Text("Server im Netzwerk suchen")
+                        Text(stringResource(R.string.login_detect))
                     }
                     vm.discoveredServers.forEach { server ->
                         Surface(
@@ -481,7 +487,7 @@ fun LoginScreen(repository: MediaRepository) {
                 OutlinedTextField(
                     value = vm.externalUrl,
                     onValueChange = { vm.externalUrl = it },
-                    label = { Text("Externe Adresse (optional)") },
+                    label = { Text(stringResource(R.string.login_external_label)) },
                     placeholder = { Text("https://music.example.com") },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
@@ -489,8 +495,7 @@ fun LoginScreen(repository: MediaRepository) {
                 )
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    "Im WLAN wird die LAN-Adresse bevorzugt, im Mobilfunk die externe. " +
-                        "Dafür ist keine Standortberechtigung nötig.",
+                    stringResource(R.string.login_routing_hint),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -499,7 +504,7 @@ fun LoginScreen(repository: MediaRepository) {
                 OutlinedTextField(
                     value = vm.username,
                     onValueChange = { vm.username = it },
-                    label = { Text("Benutzer") },
+                    label = { Text(stringResource(R.string.login_username)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -507,12 +512,16 @@ fun LoginScreen(repository: MediaRepository) {
                 OutlinedTextField(
                     value = vm.password,
                     onValueChange = { vm.password = it },
-                    label = { Text("Passwort") },
+                    label = { Text(stringResource(R.string.login_password)) },
                     singleLine = true,
                     visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
                     trailingIcon = {
                         TextButton(onClick = { showPassword = !showPassword }) {
-                            Text(if (showPassword) "Verbergen" else "Zeigen")
+                            Text(
+                                stringResource(
+                                    if (showPassword) R.string.common_hide else R.string.common_show,
+                                ),
+                            )
                         }
                     },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
@@ -544,7 +553,7 @@ fun LoginScreen(repository: MediaRepository) {
                             color = MaterialTheme.colorScheme.onPrimary,
                         )
                     } else {
-                        Text("Anmelden")
+                        Text(stringResource(R.string.login_sign_in))
                     }
                 }
                 }
@@ -559,7 +568,7 @@ fun LoginScreen(repository: MediaRepository) {
             ) {
                 HorizontalDivider(Modifier.weight(1f))
                 Text(
-                    "oder",
+                    stringResource(R.string.common_or),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(horizontal = 12.dp),
@@ -578,13 +587,13 @@ fun LoginScreen(repository: MediaRepository) {
             ) {
                 Icon(Icons.Rounded.QrCodeScanner, contentDescription = null)
                 Spacer(Modifier.width(10.dp))
-                Text("Quick Connect")
+                Text(stringResource(R.string.login_quick_connect))
             }
         }
 
         Spacer(Modifier.height(22.dp))
         Text(
-            "Android 9+ · Jellyfin ab ${BuildConfig.JELLYFIN_MIN_VERSION} · GPL-3.0",
+            stringResource(R.string.login_footer_compat, BuildConfig.JELLYFIN_MIN_VERSION),
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
@@ -597,7 +606,7 @@ fun LoginScreen(repository: MediaRepository) {
                 showQuickConnect = false
                 vm.cancelQuickConnect()
             },
-            title = { Text("Quick Connect") },
+            title = { Text(stringResource(R.string.login_quick_connect)) },
             text = {
                 Column {
                     val code = vm.quickConnectCode
@@ -605,7 +614,7 @@ fun LoginScreen(repository: MediaRepository) {
                     when {
                         quickError != null -> Text(quickError)
                         code != null -> {
-                            Text("Diesen Code in Jellyfin freigeben:")
+                            Text(stringResource(R.string.login_quick_connect_grant))
                             Spacer(Modifier.height(12.dp))
                             Text(
                                 text = code,
@@ -616,7 +625,7 @@ fun LoginScreen(repository: MediaRepository) {
                             )
                             Spacer(Modifier.height(12.dp))
                             Text(
-                                "Jellyfin → Einstellungen → Quick Connect",
+                                stringResource(R.string.login_quick_connect_path),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -625,7 +634,7 @@ fun LoginScreen(repository: MediaRepository) {
                         else -> Row(verticalAlignment = Alignment.CenterVertically) {
                             CircularProgressIndicator(Modifier.size(22.dp), strokeWidth = 2.dp)
                             Spacer(Modifier.width(12.dp))
-                            Text("Warte auf Server …")
+                            Text(stringResource(R.string.login_waiting_server))
                         }
                     }
                 }
@@ -634,7 +643,7 @@ fun LoginScreen(repository: MediaRepository) {
                 TextButton(onClick = {
                     showQuickConnect = false
                     vm.cancelQuickConnect()
-                }) { Text("Abbrechen") }
+                }) { Text(stringResource(R.string.common_cancel)) }
             },
         )
     }
@@ -645,7 +654,7 @@ fun LoginScreen(repository: MediaRepository) {
                 showPlex = false
                 vm.cancelPlex()
             },
-            title = { Text("Plex-Login") },
+            title = { Text(stringResource(R.string.login_plex_title)) },
             text = {
                 Column {
                     val code = vm.plexCode
@@ -654,7 +663,7 @@ fun LoginScreen(repository: MediaRepository) {
                         plexError != null -> Text(plexError)
 
                         code != null -> {
-                            Text("Code auf plex.tv/link eingeben:")
+                            Text(stringResource(R.string.login_plex_code_instruction))
                             Spacer(Modifier.height(12.dp))
                             Text(
                                 text = code,
@@ -674,7 +683,7 @@ fun LoginScreen(repository: MediaRepository) {
                         else -> Row(verticalAlignment = Alignment.CenterVertically) {
                             CircularProgressIndicator(Modifier.size(22.dp), strokeWidth = 2.dp)
                             Spacer(Modifier.width(12.dp))
-                            Text("Warte auf Plex …")
+                            Text(stringResource(R.string.login_waiting_plex))
                         }
                     }
                 }
@@ -683,7 +692,7 @@ fun LoginScreen(repository: MediaRepository) {
                 TextButton(onClick = {
                     showPlex = false
                     vm.cancelPlex()
-                }) { Text("Abbrechen") }
+                }) { Text(stringResource(R.string.common_cancel)) }
             },
         )
     }

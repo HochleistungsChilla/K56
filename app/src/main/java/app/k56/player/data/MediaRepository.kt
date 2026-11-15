@@ -52,7 +52,7 @@ interface MediaRepository {
 
     /** Plex uses a PIN/link flow instead of URL+password. */
     suspend fun plexSignIn(onCode: (String) -> Unit): Session =
-        throw IllegalStateException("Plex-Login wird von diesem Backend nicht unterstützt.")
+        throw IllegalStateException("Plex sign-in is not supported by this backend.")
 
     suspend fun libraries(): List<LibraryView>
     suspend fun defaultLibraryId(): String?

@@ -1,11 +1,11 @@
-# Mitmachen
+# Contributing
 
-K56 ist ein Cleanroom-Projekt. Das heißt: Ideen, Protokolle und öffentliche
-API-Dokumentation dürfen als Grundlage dienen, **fremder Code, fremde Assets
-und fremde Marken nicht**. Wer etwas beiträgt, bestätigt, dass der Beitrag
-eigene Arbeit ist oder aus einer Quelle stammt, die das erlaubt.
+K56 is a cleanroom project. Ideas, protocols and public API documentation are
+fair game; **other people's code, assets and trademarks are not**. By
+contributing you confirm that your work is your own or comes from a source that
+permits it.
 
-## Bauen
+## Building
 
 ```bash
 git clone https://github.com/HochleistungsChilla/K56.git
@@ -15,25 +15,34 @@ echo "sdk.dir=$HOME/Android/Sdk" > local.properties
 ./gradlew testDebugUnitTest
 ```
 
-Voraussetzungen: JDK 17+ (getestet mit 21), Android SDK 35. Der Gradle
-Wrapper lädt Gradle 8.11.1 selbst nach.
+Requirements: JDK 17+ (tested with 21), Android SDK 35. The Gradle wrapper
+fetches Gradle 8.11.1 by itself.
 
-## Pull Requests
+## Pull requests
 
-- Klein und thematisch geschlossen. Ein PR = ein Grund.
-- Build und Unit-Tests müssen grün sein (CI läuft automatisch).
-- Neue Backends gehören hinter `MediaRepository` — die UI bleibt unverändert.
-- Öffentliche Verhaltensänderungen bitte in `docs/` oder im README nachziehen.
-- Deutsch oder Englisch, beides ist willkommen.
+- Small and self-contained. One PR = one reason.
+- Build and unit tests must be green (CI runs automatically).
+- New backends belong behind `MediaRepository` — the UI stays untouched.
+- User-visible behaviour changes get a note in `docs/` or the README.
+- German or English, both are welcome.
 
-## Was nicht angenommen wird
+## UI strings
 
-- Code oder Assets aus proprietären Playern (auch nicht „nur ein bisschen“).
-- Dekompilierter Quelltext als Vorlage für Implementierungen.
-- Telemetrie, Werbe-SDKs, Analytics ohne ausdrückliche Diskussion.
+All user-facing text lives in string resources:
 
-## Lizenz
+- `app/src/main/res/values/strings.xml` — English (default)
+- `app/src/main/res/values-de/strings.xml` — German
 
-Beiträge stehen unter **GPL-3.0-or-later** (siehe [LICENSE](../LICENSE)).
-Mit dem Absenden eines Pull Requests stimmst du dieser Lizenz für deinen
-Beitrag zu.
+Add new text to both files. Never hard-code UI strings in Kotlin; the only
+exception is log/debug output and exception messages that are not shown to users.
+
+## What is not accepted
+
+- Code or assets from proprietary players (not even “just a little”).
+- Decompiled source used as a template for implementations.
+- Telemetry, advertising SDKs or analytics without prior discussion.
+
+## License
+
+Contributions are licensed under **GPL-3.0-or-later** (see [LICENSE](../LICENSE)).
+Sending a pull request agrees to that license for your contribution.

@@ -1,20 +1,19 @@
-# Feature-Parität & Roadmap
+# Feature parity & roadmap
 
-Referenz: öffentlich dokumentierte Funktionen von Symfonium
-(symfonium.app, Stand 15.11.2026). „Parität“ heißt funktional vergleichbar,
-nicht gestalterisch identisch.
+Reference: publicly documented features of Symfonium (symfonium.app, as of
+2026-11-15). “Parity” means functionally comparable, not visually identical.
 
-## Quellen
+## Sources
 
-| Quelle | Status |
+| Source | Status |
 |---|---|
 | Jellyfin / Emby | ✅ |
 | Subsonic / OpenSubsonic / Navidrome | ✅ |
 | Plex | ✅ |
 | Audiobookshelf | ✅ |
 | Kodi | ✅ |
-| Lokale Dateien (MediaStore) | ✅ |
-| WebDAV | ✅ (Ordner-Scan, ohne Tags/Cover) |
+| Local files (MediaStore) | ✅ |
+| WebDAV | ✅ (folder scan, no tags/covers) |
 | SMB (v2/v3) | ⬜ |
 | Google Drive | ⬜ |
 | OneDrive | ⬜ |
@@ -22,46 +21,46 @@ nicht gestalterisch identisch.
 | Box | ⬜ |
 | pCloud | ⬜ |
 
-Datei- und Cloud-Quellen brauchen eigene Datenquellen (SMB-Streaming,
-WebDAV-PROPFIND, OAuth-Apps). Die Backend-Schnittstelle ist darauf
-vorbereitet; die Adapter folgen.
+File and cloud sources need their own data sources (SMB streaming, WebDAV
+PROPFIND, OAuth apps). The backend interface is prepared for them; the adapters
+follow.
 
-## Funktionen
+## Features
 
-| Bereich | K56 0.1.0 | Nächster Schritt |
+| Area | K56 0.1.0 | Next step |
 |---|---|---|
-| Bibliothek (Alben/Interpreten/Titel) | ✅ | Genres, Jahre, Sortierungen |
-| Suche | ✅ | Server- und lokale Volltextsuche |
-| Wiedergabe | ✅ Media3/ExoPlayer | Gapless, Crossfade |
-| Hintergrund + Notification | ✅ | Android Auto |
-| Playback-Reporting | ✅ Jellyfin/Plex/ABS/Subsonic | Scrobble-Fehleranzeige |
-| LAN/Internet-Routing | ✅ ohne Standort | Manuelle Server-Priorität |
-| Offline-Cache / Downloads | ⬜ | Room + Cache-Verzeichnis |
+| Library (albums/artists/tracks) | ✅ | genres, years, sorting |
+| Search | ✅ | server and local full-text search |
+| Playback | ✅ Media3/ExoPlayer | gapless, crossfade |
+| Background + notification | ✅ | Android Auto |
+| Playback reporting | ✅ Jellyfin/Plex/ABS/Subsonic | scrobble error reporting |
+| LAN/Internet routing | ✅ without location | manual server priority |
+| Offline cache / downloads | ⬜ | Room + cache directory |
 | Playlists | ⬜ | Jellyfin/Subsonic/ABS |
-| Smart Playlists | ⬜ | Regel-Engine auf lokaler DB |
-| Lyrics (synchronisiert) | ⬜ | LRC + Server-Lyrics |
-| Equalizer / AutoEQ / PEQ | ⬜ | Media3-AudioProcessor |
-| ReplayGain / Crossfeed | ⬜ | DSP-Kette |
-| Hi-Res / DSD / USB-DAC | ⬜ | AudioTrack/USB-Pfad |
-| Chromecast / UPnP / Sonos | ⬜ | Cast-SDK / SSDP |
-| Android TV | ⬜ | DPAD-Navigation |
-| Wear OS | ⬜ | Modul + Offline-Sync |
+| Smart playlists | ⬜ | rule engine on local DB |
+| Lyrics (synchronised) | ⬜ | LRC + server lyrics |
+| Equalizer / AutoEQ / PEQ | ⬜ | Media3 AudioProcessor |
+| ReplayGain / crossfeed | ⬜ | DSP chain |
+| Hi-res / DSD / USB DAC | ⬜ | AudioTrack/USB path |
+| Chromecast / UPnP / Sonos | ⬜ | Cast SDK / SSDP |
+| Android TV | ⬜ | DPAD navigation |
+| Wear OS | ⬜ | module + offline sync |
 | Widgets | ⬜ | Glance |
-| Themes / Now-Playing-Layouts | ⬜ | Theme-Engine |
+| Themes / now-playing layouts | ⬜ | theme engine |
 
-## Architektur für die nächsten Schritte
+## Architecture for the next steps
 
-1. **`MediaRepository`** ist die Naht: jeder neue Anbieter implementiert sie,
-   der `RepositoryRouter` wählt anhand der Session.
-2. **Lokale DB (Room)** für Offline-Metadaten, Cache-Index, Favoriten,
-   Playlists und Smart-Playlist-Regeln.
-3. **Audio-Pipeline** kapseln: Direct Play → Transcode-Fallback → DSP.
-4. **Datei-Backends** (SMB/WebDAV) über eigene `DataSource`-Implementierungen
-   für Media3, damit Header/Streams sauber funktionieren.
-5. **Cloud** mit OAuth-Client-IDs, die Nutzer selbst registrieren können.
+1. **`MediaRepository`** is the seam: every new provider implements it and the
+   `RepositoryRouter` selects one based on the session.
+2. **Local DB (Room)** for offline metadata, cache index, favourites, playlists
+   and smart-playlist rules.
+3. **Encapsulate the audio pipeline**: direct play → transcode fallback → DSP.
+4. **File backends** (SMB/WebDAV) through custom `DataSource` implementations
+   for Media3, so headers and streams behave correctly.
+5. **Cloud** with OAuth client IDs that users register themselves.
 
-## Nicht-Ziele
+## Non-goals
 
-- Kein Kopieren von Symfonium-Designs, Assets oder Marke
-- Keine Umgehung von Bezahl-/Lizenzlogik
-- Keine Telemetrie oder Cloud-Zwischenstation
+- No copying of Symfonium designs, assets or mark
+- No circumvention of payment/licence logic
+- No telemetry and no cloud middleman

@@ -20,8 +20,10 @@ interface JellyfinApi {
     @GET("System/Info/Public")
     suspend fun publicSystemInfo(): PublicSystemInfoDto
 
-    @GET("Users/{userId}/Views")
-    suspend fun userViews(@Path("userId") userId: String): QueryResultDto
+    // Present in Jellyfin 10.10 and still in current releases; the
+    // per-user route `Users/{userId}/Views` was dropped later on.
+    @GET("UserViews")
+    suspend fun userViews(@Query("userId") userId: String): QueryResultDto
 
     @GET("Items")
     suspend fun items(@QueryMap query: Map<String, String>): QueryResultDto
@@ -44,15 +46,15 @@ interface JellyfinApi {
     @POST("Sessions/Playing/Stopped")
     suspend fun reportPlaybackStopped(@Body body: PlaybackReportDto)
 
-    @POST("Users/{userId}/FavoriteItems/{itemId}")
+    @POST("UserFavoriteItems/{itemId}")
     suspend fun addFavorite(
-        @Path("userId") userId: String,
+        @Query("userId") userId: String,
         @Path("itemId") itemId: String,
     ): UserItemDataDto
 
-    @DELETE("Users/{userId}/FavoriteItems/{itemId}")
+    @DELETE("UserFavoriteItems/{itemId}")
     suspend fun removeFavorite(
-        @Path("userId") userId: String,
+        @Query("userId") userId: String,
         @Path("itemId") itemId: String,
     ): UserItemDataDto
 
