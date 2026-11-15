@@ -54,13 +54,10 @@
     <string name="library_tab_albums">Albums</string>
     <string name="library_tab_artists">Artists</string>
     <string name="library_tab_tracks">Tracks</string>
-    <string name="library_empty_title">Library is empty</string>
-    <string name="library_empty_body">This server returned no items.</string>
 
     <!-- album / artist -->
     <string name="album_title">Album</string>
     <string name="artist_title">Artist</string>
-    <string name="artist_albums">Albums</string>
 
     <!-- search -->
     <string name="search_hint">Tracks, albums, artists</string>

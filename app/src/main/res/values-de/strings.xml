@@ -48,12 +48,9 @@
     <string name="library_tab_albums">Alben</string>
     <string name="library_tab_artists">Interpreten</string>
     <string name="library_tab_tracks">Titel</string>
-    <string name="library_empty_title">Bibliothek ist leer</string>
-    <string name="library_empty_body">Dieser Server hat keine Einträge geliefert.</string>
 
     <string name="album_title">Album</string>
     <string name="artist_title">Interpret</string>
-    <string name="artist_albums">Alben</string>
 
     <string name="search_hint">Titel, Alben, Interpreten</string>
     <string name="search_no_results">Keine Treffer für „%1$s“.</string>

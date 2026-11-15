@@ -18,6 +18,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -28,6 +29,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import app.k56.player.core.model.Track
+import app.k56.player.R
 import app.k56.player.data.MediaRepository
 import app.k56.player.di.AppContainer
 import app.k56.player.playback.PlaybackConnection
@@ -100,10 +102,18 @@ private fun MainShell(container: AppContainer) {
                     MiniPlayer(controller) { navController.navigate("player") }
                     NavigationBar {
                         val destinations = listOf(
-                            BottomDestination("home", "Start", Icons.Rounded.Home),
-                            BottomDestination("library", "Bibliothek", Icons.Rounded.LibraryMusic),
-                            BottomDestination("search", "Suche", Icons.Rounded.Search),
-                            BottomDestination("settings", "Setup", Icons.Rounded.Settings),
+                            BottomDestination("home", stringResource(R.string.nav_home), Icons.Rounded.Home),
+                            BottomDestination(
+                                "library",
+                                stringResource(R.string.nav_library),
+                                Icons.Rounded.LibraryMusic,
+                            ),
+                            BottomDestination("search", stringResource(R.string.nav_search), Icons.Rounded.Search),
+                            BottomDestination(
+                                "settings",
+                                stringResource(R.string.nav_settings),
+                                Icons.Rounded.Settings,
+                            ),
                         )
                         destinations.forEach { destination ->
                             NavigationBarItem(
