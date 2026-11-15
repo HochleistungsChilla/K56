@@ -124,4 +124,12 @@ Schnittstellen. Der Prozess ist in [docs/CLEANROOM.md](docs/CLEANROOM.md)
 festgehalten. „Symfonium“ ist eine Marke des jeweiligen Inhabers; dieses
 Projekt steht in keiner Verbindung dazu.
 
-Lizenz: **GPL-3.0-or-later**.
+## Lizenz
+
+**GPL-3.0-or-later** — siehe [LICENSE](LICENSE).
+
+Forken ist ausdrücklich erwünscht: klonen, ändern, eigenen Namen geben,
+eigenes Theme bauen, forken, Pull Requests schicken. Einzige Bedingung der
+GPL ist, dass abgeleitete Werke beim Weiterverteilen ebenfalls unter der
+GPL stehen und die Quelle offen bleibt. Wer K56 forkt, muss es also nicht
+„K56“ nennen — nur offen bleiben.
