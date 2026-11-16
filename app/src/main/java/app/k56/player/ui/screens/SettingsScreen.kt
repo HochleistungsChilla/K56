@@ -76,6 +76,7 @@ fun SettingsScreen(
     val showTrackNumbers by settingsStore.showTrackNumbers.collectAsStateWithLifecycle()
     val libraryColumns by settingsStore.libraryColumns.collectAsStateWithLifecycle()
     val wifiOnlyDownloads by settingsStore.wifiOnlyDownloads.collectAsStateWithLifecycle()
+    val autoCacheFavorites by settingsStore.autoCacheFavorites.collectAsStateWithLifecycle()
     val ignoreArticles by settingsStore.ignoreArticles.collectAsStateWithLifecycle()
     val downloadQuality by settingsStore.downloadQuality.collectAsStateWithLifecycle()
     val downloadFormat by settingsStore.downloadFormat.collectAsStateWithLifecycle()
@@ -300,6 +301,20 @@ fun SettingsScreen(
                     Switch(
                         checked = wifiOnlyDownloads,
                         onCheckedChange = { settingsStore.setWifiOnlyDownloads(it) },
+                    )
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text(stringResource(R.string.auto_cache_favorites_title), style = MaterialTheme.typography.titleMedium)
+                        Text(
+                            stringResource(R.string.auto_cache_favorites_body),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    Switch(
+                        checked = autoCacheFavorites,
+                        onCheckedChange = { settingsStore.setAutoCacheFavorites(it) },
                     )
                 }
                 Spacer(Modifier.height(10.dp))

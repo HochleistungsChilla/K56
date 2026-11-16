@@ -278,6 +278,8 @@
 
     <string name="wifi_only_title">Downloads only on Wi-Fi</string>
     <string name="wifi_only_body">Protects mobile data; downloads wait for a WLAN.</string>
+    <string name="auto_cache_favorites_title">Auto-cache favorites</string>
+    <string name="auto_cache_favorites_body">Download favorites automatically so they are available offline. Respects the Wi-Fi rule.</string>
     <string name="articles_title">Ignore articles when sorting</string>
     <string name="articles_body">The/Die are sorted under the first real word.</string>
 

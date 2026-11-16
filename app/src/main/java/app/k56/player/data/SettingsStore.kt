@@ -60,6 +60,10 @@ class SettingsStore(context: Context) {
     private val _wifiOnlyDownloads = MutableStateFlow(prefs.getBoolean(KEY_WIFI_ONLY, true))
     val wifiOnlyDownloads: StateFlow<Boolean> = _wifiOnlyDownloads.asStateFlow()
 
+    /** Download every favorited track automatically so it is available offline. */
+    private val _autoCacheFavorites = MutableStateFlow(prefs.getBoolean(KEY_AUTO_CACHE_FAVORITES, false))
+    val autoCacheFavorites: StateFlow<Boolean> = _autoCacheFavorites.asStateFlow()
+
     private val _ignoreArticles = MutableStateFlow(prefs.getBoolean(KEY_IGNORE_ARTICLES, true))
     val ignoreArticles: StateFlow<Boolean> = _ignoreArticles.asStateFlow()
 
@@ -136,6 +140,11 @@ class SettingsStore(context: Context) {
         _wifiOnlyDownloads.value = value
     }
 
+    fun setAutoCacheFavorites(value: Boolean) {
+        prefs.edit().putBoolean(KEY_AUTO_CACHE_FAVORITES, value).apply()
+        _autoCacheFavorites.value = value
+    }
+
     fun setIgnoreArticles(value: Boolean) {
         prefs.edit().putBoolean(KEY_IGNORE_ARTICLES, value).apply()
         _ignoreArticles.value = value
@@ -192,6 +201,7 @@ class SettingsStore(context: Context) {
         private const val KEY_COLUMNS = "library_columns"
         private const val KEY_HOME_SECTIONS = "home_sections"
         private const val KEY_WIFI_ONLY = "wifi_only_downloads"
+        private const val KEY_AUTO_CACHE_FAVORITES = "auto_cache_favorites"
         private const val KEY_IGNORE_ARTICLES = "ignore_articles"
         private const val KEY_DOWNLOAD_QUALITY = "download_quality"
         private const val KEY_DOWNLOAD_FORMAT = "download_format"

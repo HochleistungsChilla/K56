@@ -14,6 +14,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -83,7 +84,13 @@ private fun MainShell(container: AppContainer) {
     val showNowPlayingFavorite by container.settingsStore.showNowPlayingFavorite.collectAsStateWithLifecycle()
     val fitCover by container.settingsStore.fitCover.collectAsStateWithLifecycle()
     val compactControls by container.settingsStore.compactControls.collectAsStateWithLifecycle()
+    val autoCacheFavorites by container.settingsStore.autoCacheFavorites.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
+
+    // Keep favorited tracks on disk whenever the option is enabled.
+    LaunchedEffect(autoCacheFavorites) {
+        if (autoCacheFavorites) container.favoriteCache.sync()
+    }
 
     val playTracks: (List<Track>, Int) -> Unit = { tracks, index ->
         val active = controller
@@ -221,6 +228,7 @@ private fun MainShell(container: AppContainer) {
                 LibraryScreen(
                     repository = repository,
                     offlineStore = container.offlineStore,
+                    settingsStore = container.settingsStore,
                     onOpenAlbum = { navController.navigate("album/$it") },
                     onOpenArtist = { navController.navigate("artist/$it") },
                     onPlay = playTracks,

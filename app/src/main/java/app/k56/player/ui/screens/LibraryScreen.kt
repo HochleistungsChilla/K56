@@ -57,7 +57,9 @@ import app.k56.player.R
 import app.k56.player.core.model.Album
 import app.k56.player.core.model.Artist
 import app.k56.player.core.model.Track
+import app.k56.player.core.net.NetworkTransport
 import app.k56.player.data.MediaRepository
+import app.k56.player.data.SettingsStore
 import app.k56.player.data.offline.OfflineStore
 import app.k56.player.ui.appViewModel
 import app.k56.player.ui.components.AlbumCard
@@ -74,6 +76,8 @@ import kotlinx.coroutines.launch
 class LibraryViewModel(
     private val repository: MediaRepository,
     private val appContext: Context,
+    private val offlineStore: OfflineStore,
+    private val settingsStore: SettingsStore,
 ) : ViewModel() {
 
     var albums by mutableStateOf<List<Album>>(emptyList())
@@ -109,10 +113,27 @@ class LibraryViewModel(
             try {
                 val actual = repository.setFavorite(track.id, wanted)
                 if (actual != wanted) applyFavorite(track, actual)
+                if (actual) cacheFavorite(track)
             } catch (e: Exception) {
                 applyFavorite(track, !wanted)
                 error = e.userMessage(appContext)
             }
+        }
+    }
+
+    private fun onWifi(): Boolean {
+        val transport = repository.networkStatus.value.transport
+        return transport == NetworkTransport.WIFI || transport == NetworkTransport.ETHERNET
+    }
+
+    /** Auto-cache a newly favorited track, honoring the Wi-Fi-only rule. */
+    private suspend fun cacheFavorite(track: Track) {
+        if (!settingsStore.autoCacheFavorites.value) return
+        if (settingsStore.wifiOnlyDownloads.value && !onWifi()) return
+        if (offlineStore.isDownloaded(track.id)) return
+        runCatching {
+            val source = repository.downloadSource(track)
+            offlineStore.download(track, source.url, repository.playbackHeaders())
         }
     }
 
@@ -171,6 +192,7 @@ class LibraryViewModel(
 fun LibraryScreen(
     repository: MediaRepository,
     offlineStore: OfflineStore,
+    settingsStore: SettingsStore,
     onOpenAlbum: (String) -> Unit,
     onOpenArtist: (String) -> Unit,
     onPlay: (List<Track>, Int) -> Unit,
@@ -182,7 +204,7 @@ fun LibraryScreen(
     ignoreArticles: Boolean = true,
 ) {
     val context = LocalContext.current
-    val vm = appViewModel { LibraryViewModel(repository, context.applicationContext) }
+    val vm = appViewModel { LibraryViewModel(repository, context.applicationContext, offlineStore, settingsStore) }
     var tab by rememberSaveable { mutableIntStateOf(0) }
     var sortMode by rememberSaveable { mutableIntStateOf(0) }
     var onlyOffline by rememberSaveable { mutableStateOf(false) }
