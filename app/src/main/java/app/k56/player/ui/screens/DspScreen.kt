@@ -59,6 +59,20 @@ fun DspScreen(
     var limiter by remember { mutableStateOf(dsp.limiterEnabled) }
     var irName by remember { mutableStateOf(dsp.irName) }
     var kernels by remember { mutableStateOf(irLibrary.imported()) }
+    var clarity by remember { mutableStateOf(dsp.clarity) }
+    var bassGain by remember { mutableStateOf(dsp.bassGainDb) }
+    var bassFreq by remember { mutableStateOf(dsp.bassFreq) }
+    var spectrum by remember { mutableStateOf(dsp.spectrumExtension) }
+    var width by remember { mutableStateOf(dsp.stereoWidth) }
+    var haas by remember { mutableStateOf(dsp.haasMs) }
+    var reverbWet by remember { mutableStateOf(dsp.reverbWet) }
+    var reverbRoom by remember { mutableStateOf(dsp.reverbRoom) }
+    var compOn by remember { mutableStateOf(dsp.compressorEnabled) }
+    var compThreshold by remember { mutableStateOf(dsp.compressorThresholdDb) }
+    var compRatio by remember { mutableStateOf(dsp.compressorRatio) }
+    var agcOn by remember { mutableStateOf(dsp.agcEnabled) }
+    var tubeDrive by remember { mutableStateOf(dsp.tubeDrive) }
+    var tubeMix by remember { mutableStateOf(dsp.tubeMix) }
     var message by remember { mutableStateOf<String?>(null) }
     var scanToken by remember { mutableIntStateOf(0) }
 
@@ -200,6 +214,140 @@ fun DspScreen(
                 .padding(horizontal = 16.dp),
         ) {
             Column(Modifier.padding(16.dp)) {
+                Text(stringResource(R.string.dsp_viper_title), style = MaterialTheme.typography.titleLarge)
+                Text(
+                    stringResource(R.string.dsp_viper_body),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+
+                FxSlider(
+                    label = stringResource(R.string.dsp_clarity),
+                    value = clarity,
+                    range = 0f..14f,
+                    onChange = { clarity = it; dsp.applyClarity(it) },
+                )
+                FxSlider(
+                    label = stringResource(R.string.dsp_dynamic_bass, bassGain.toInt()),
+                    value = bassGain,
+                    range = 0f..12f,
+                    onChange = { bassGain = it; dsp.setBass(it, bassFreq) },
+                )
+                FxSlider(
+                    label = stringResource(R.string.dsp_bass_freq, bassFreq.toInt()),
+                    value = bassFreq,
+                    range = 30f..150f,
+                    onChange = { bassFreq = it; dsp.setBass(bassGain, it) },
+                )
+                FxSlider(
+                    label = stringResource(R.string.dsp_spectrum),
+                    value = spectrum,
+                    range = 0f..12f,
+                    onChange = { spectrum = it; dsp.applySpectrumExtension(it) },
+                )
+
+                Spacer(Modifier.height(8.dp))
+                Text(stringResource(R.string.dsp_stereo), style = MaterialTheme.typography.titleMedium)
+                FxSlider(
+                    label = stringResource(R.string.dsp_width, width.toInt()),
+                    value = width,
+                    range = 40f..200f,
+                    onChange = { width = it; dsp.applyStereoWidth(it) },
+                )
+                FxSlider(
+                    label = stringResource(R.string.dsp_haas, haas.toInt()),
+                    value = haas,
+                    range = 0f..10f,
+                    onChange = { haas = it; dsp.setHaas(it) },
+                )
+
+                Spacer(Modifier.height(8.dp))
+                Text(stringResource(R.string.dsp_reverb), style = MaterialTheme.typography.titleMedium)
+                FxSlider(
+                    label = stringResource(R.string.dsp_reverb_wet, reverbWet.toInt()),
+                    value = reverbWet,
+                    range = 0f..100f,
+                    onChange = { reverbWet = it; dsp.setReverb(it, reverbRoom) },
+                )
+                FxSlider(
+                    label = stringResource(R.string.dsp_reverb_room, reverbRoom.toInt()),
+                    value = reverbRoom,
+                    range = 0f..100f,
+                    onChange = { reverbRoom = it; dsp.setReverb(reverbWet, it) },
+                )
+
+                Spacer(Modifier.height(8.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text(stringResource(R.string.dsp_compressor), style = MaterialTheme.typography.titleMedium)
+                        Text(
+                            stringResource(R.string.dsp_compressor_body),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    Switch(
+                        checked = compOn,
+                        onCheckedChange = { compOn = it; dsp.setCompressor(it, compThreshold, compRatio) },
+                    )
+                }
+                if (compOn) {
+                    FxSlider(
+                        label = stringResource(R.string.dsp_threshold, compThreshold.toInt()),
+                        value = compThreshold,
+                        range = -40f..0f,
+                        onChange = { compThreshold = it; dsp.setCompressor(true, it, compRatio) },
+                    )
+                    FxSlider(
+                        label = stringResource(R.string.dsp_ratio, compRatio),
+                        value = compRatio,
+                        range = 1f..10f,
+                        onChange = { compRatio = it; dsp.setCompressor(true, compThreshold, it) },
+                    )
+                }
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text(stringResource(R.string.dsp_agc), style = MaterialTheme.typography.titleMedium)
+                        Text(
+                            stringResource(R.string.dsp_agc_body),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    Switch(
+                        checked = agcOn,
+                        onCheckedChange = { agcOn = it; dsp.setAgc(it) },
+                    )
+                }
+
+                Spacer(Modifier.height(8.dp))
+                Text(stringResource(R.string.dsp_tube), style = MaterialTheme.typography.titleMedium)
+                FxSlider(
+                    label = stringResource(R.string.dsp_tube_drive, tubeDrive.toInt()),
+                    value = tubeDrive,
+                    range = 0f..12f,
+                    onChange = { tubeDrive = it; dsp.setTube(it, tubeMix) },
+                )
+                FxSlider(
+                    label = stringResource(R.string.dsp_tube_mix, tubeMix.toInt()),
+                    value = tubeMix,
+                    range = 0f..100f,
+                    onChange = { tubeMix = it; dsp.setTube(tubeDrive, it) },
+                )
+            }
+        }
+
+        Spacer(Modifier.height(14.dp))
+
+        Surface(
+            color = MaterialTheme.colorScheme.surfaceContainer,
+            shape = MaterialTheme.shapes.large,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+        ) {
+            Column(Modifier.padding(16.dp)) {
                 Text(stringResource(R.string.dsp_convolution), style = MaterialTheme.typography.titleLarge)
                 Text(
                     stringResource(R.string.dsp_convolution_body),
@@ -275,4 +423,19 @@ fun DspScreen(
             }
         }
     }
+}
+
+@Composable
+private fun FxSlider(
+    label: String,
+    value: Float,
+    range: ClosedFloatingPointRange<Float>,
+    onChange: (Float) -> Unit,
+) {
+    Text(label, style = MaterialTheme.typography.bodyMedium)
+    Slider(
+        value = value,
+        onValueChange = onChange,
+        valueRange = range,
+    )
 }

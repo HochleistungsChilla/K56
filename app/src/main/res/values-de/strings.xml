@@ -188,4 +188,26 @@
     <string name="cache_delete_one">Download löschen</string>
 
     <string name="offline_reload">Neu laden</string>
+
+    <string name="dsp_viper_title">ViPER-Effekte</string>
+    <string name="dsp_viper_body">Clarity, Dynamic Bass, Spectrum Extension, Stereo, Hall, Kompressor und Röhre.</string>
+    <string name="dsp_clarity">Clarity</string>
+    <string name="dsp_dynamic_bass">Dynamic Bass (%1$d dB)</string>
+    <string name="dsp_bass_freq">Bass-Frequenz (%1$d Hz)</string>
+    <string name="dsp_spectrum">Spectrum Extension</string>
+    <string name="dsp_stereo">Stereo</string>
+    <string name="dsp_width">Breite (%1$d %%)</string>
+    <string name="dsp_haas">Differential Surround (%1$d ms)</string>
+    <string name="dsp_reverb">Hall</string>
+    <string name="dsp_reverb_wet">Nass (%1$d %%)</string>
+    <string name="dsp_reverb_room">Raumgröße (%1$d %%)</string>
+    <string name="dsp_compressor">FET-Kompressor</string>
+    <string name="dsp_compressor_body">Zähmt Spitzen und gleicht die Lautheit aus.</string>
+    <string name="dsp_threshold">Schwelle (%1$d dB)</string>
+    <string name="dsp_ratio">Verhältnis (%1$.1f:1)</string>
+    <string name="dsp_agc">AGC</string>
+    <string name="dsp_agc_body">Hebt leise Passagen langsam an, ohne Pumpen.</string>
+    <string name="dsp_tube">Röhre / Analog-X</string>
+    <string name="dsp_tube_drive">Drive (%1$d dB)</string>
+    <string name="dsp_tube_mix">Mix (%1$d %%)</string>
 </resources>

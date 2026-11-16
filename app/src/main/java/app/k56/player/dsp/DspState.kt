@@ -28,7 +28,43 @@ class DspState(context: Context) {
 
     @Volatile var limiterEnabled: Boolean = prefs.getBoolean(KEY_LIMITER, true)
 
-    /** Bumped by the UI whenever bands/preamp change so the engine rebuilds. */
+    // --- Viper-style block -------------------------------------------------
+
+    /** Viper-Clarity, 0..14 like the original slider. */
+    @Volatile var clarity: Float = prefs.getFloat(KEY_CLARITY, 0f)
+
+    /** Dynamic bass amount, dB. */
+    @Volatile var bassGainDb: Float = prefs.getFloat(KEY_BASS_GAIN, 0f)
+
+    /** Dynamic bass corner frequency, Hz. */
+    @Volatile var bassFreq: Float = prefs.getFloat(KEY_BASS_FREQ, 60f)
+
+    /** Spectrum Extension, 0..12 (restores air after transcoding). */
+    @Volatile var spectrumExtension: Float = prefs.getFloat(KEY_SPECTRUM, 0f)
+
+    /** Field surround width, percent (100 = untouched). */
+    @Volatile var stereoWidth: Float = prefs.getFloat(KEY_WIDTH, 100f)
+
+    /** Differential surround (Haas), milliseconds. */
+    @Volatile var haasMs: Float = prefs.getFloat(KEY_HAAS, 0f)
+
+    /** Reverberation wet mix, 0..100. */
+    @Volatile var reverbWet: Float = prefs.getFloat(KEY_REVERB_WET, 0f)
+
+    /** Reverberation room size, 0..100. */
+    @Volatile var reverbRoom: Float = prefs.getFloat(KEY_REVERB_ROOM, 50f)
+
+    @Volatile var compressorEnabled: Boolean = prefs.getBoolean(KEY_COMP_ENABLED, false)
+    @Volatile var compressorThresholdDb: Float = prefs.getFloat(KEY_COMP_THRESHOLD, -18f)
+    @Volatile var compressorRatio: Float = prefs.getFloat(KEY_COMP_RATIO, 2.5f)
+
+    @Volatile var agcEnabled: Boolean = prefs.getBoolean(KEY_AGC, false)
+
+    /** Tube / Analog-X drive in dB. */
+    @Volatile var tubeDrive: Float = prefs.getFloat(KEY_TUBE_DRIVE, 0f)
+    @Volatile var tubeMix: Float = prefs.getFloat(KEY_TUBE_MIX, 0f)
+
+    /** Bumped whenever a filter-affecting parameter changes. */
     @Volatile var eqVersion: Int = 0
 
     private var currentIr: ImpulseResponse? = null
@@ -62,6 +98,69 @@ class DspState(context: Context) {
         prefs.edit().putBoolean(KEY_LIMITER, value).apply()
     }
 
+    fun applyClarity(value: Float) {
+        clarity = value
+        prefs.edit().putFloat(KEY_CLARITY, value).apply()
+        eqVersion++
+    }
+
+    fun setBass(gainDb: Float, freq: Float = bassFreq) {
+        bassGainDb = gainDb
+        bassFreq = freq
+        prefs.edit().putFloat(KEY_BASS_GAIN, gainDb).putFloat(KEY_BASS_FREQ, freq).apply()
+        eqVersion++
+    }
+
+    fun applySpectrumExtension(value: Float) {
+        spectrumExtension = value
+        prefs.edit().putFloat(KEY_SPECTRUM, value).apply()
+        eqVersion++
+    }
+
+    fun applyStereoWidth(value: Float) {
+        stereoWidth = value
+        prefs.edit().putFloat(KEY_WIDTH, value).apply()
+        eqVersion++
+    }
+
+    fun setHaas(value: Float) {
+        haasMs = value
+        prefs.edit().putFloat(KEY_HAAS, value).apply()
+        eqVersion++
+    }
+
+    fun setReverb(wet: Float, room: Float = reverbRoom) {
+        reverbWet = wet
+        reverbRoom = room
+        prefs.edit().putFloat(KEY_REVERB_WET, wet).putFloat(KEY_REVERB_ROOM, room).apply()
+        eqVersion++
+    }
+
+    fun setCompressor(enabled: Boolean, thresholdDb: Float = compressorThresholdDb, ratio: Float = compressorRatio) {
+        compressorEnabled = enabled
+        compressorThresholdDb = thresholdDb
+        compressorRatio = ratio
+        prefs.edit()
+            .putBoolean(KEY_COMP_ENABLED, enabled)
+            .putFloat(KEY_COMP_THRESHOLD, thresholdDb)
+            .putFloat(KEY_COMP_RATIO, ratio)
+            .apply()
+        eqVersion++
+    }
+
+    fun setAgc(enabled: Boolean) {
+        agcEnabled = enabled
+        prefs.edit().putBoolean(KEY_AGC, enabled).apply()
+        eqVersion++
+    }
+
+    fun setTube(drive: Float, mix: Float = tubeMix) {
+        tubeDrive = drive
+        tubeMix = mix
+        prefs.edit().putFloat(KEY_TUBE_DRIVE, drive).putFloat(KEY_TUBE_MIX, mix).apply()
+        eqVersion++
+    }
+
     /** Loads an impulse response from an imported file, or clears it. */
     fun setIr(file: File?) {
         currentIr = if (file == null) null else runCatching {
@@ -92,6 +191,20 @@ class DspState(context: Context) {
         private const val KEY_BANDS = "bands"
         private const val KEY_LIMITER = "limiter"
         private const val KEY_IR = "ir"
+        private const val KEY_CLARITY = "clarity"
+        private const val KEY_BASS_GAIN = "bass_gain"
+        private const val KEY_BASS_FREQ = "bass_freq"
+        private const val KEY_SPECTRUM = "spectrum_extension"
+        private const val KEY_WIDTH = "stereo_width"
+        private const val KEY_HAAS = "haas_ms"
+        private const val KEY_REVERB_WET = "reverb_wet"
+        private const val KEY_REVERB_ROOM = "reverb_room"
+        private const val KEY_COMP_ENABLED = "comp_enabled"
+        private const val KEY_COMP_THRESHOLD = "comp_threshold"
+        private const val KEY_COMP_RATIO = "comp_ratio"
+        private const val KEY_AGC = "agc"
+        private const val KEY_TUBE_DRIVE = "tube_drive"
+        private const val KEY_TUBE_MIX = "tube_mix"
 
         /** Center frequencies, Hz. */
         val BANDS = intArrayOf(31, 62, 125, 250, 500, 1000, 2000, 4000, 8000, 16000)

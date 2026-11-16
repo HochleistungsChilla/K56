@@ -198,4 +198,26 @@
     <string name="cache_delete_one">Delete download</string>
 
     <string name="offline_reload">Reload</string>
+
+    <string name="dsp_viper_title">ViPER effects</string>
+    <string name="dsp_viper_body">Clarity, dynamic bass, spectrum extension, stereo, reverb, compressor and tube stage.</string>
+    <string name="dsp_clarity">Clarity</string>
+    <string name="dsp_dynamic_bass">Dynamic bass (%1$d dB)</string>
+    <string name="dsp_bass_freq">Bass frequency (%1$d Hz)</string>
+    <string name="dsp_spectrum">Spectrum extension</string>
+    <string name="dsp_stereo">Stereo</string>
+    <string name="dsp_width">Width (%1$d %%)</string>
+    <string name="dsp_haas">Differential surround (%1$d ms)</string>
+    <string name="dsp_reverb">Reverberation</string>
+    <string name="dsp_reverb_wet">Wet (%1$d %%)</string>
+    <string name="dsp_reverb_room">Room size (%1$d %%)</string>
+    <string name="dsp_compressor">FET compressor</string>
+    <string name="dsp_compressor_body">Tames peaks and evens out loudness.</string>
+    <string name="dsp_threshold">Threshold (%1$d dB)</string>
+    <string name="dsp_ratio">Ratio (%1$.1f:1)</string>
+    <string name="dsp_agc">AGC</string>
+    <string name="dsp_agc_body">Raises quiet passages slowly, without pumping.</string>
+    <string name="dsp_tube">Tube / Analog-X</string>
+    <string name="dsp_tube_drive">Drive (%1$d dB)</string>
+    <string name="dsp_tube_mix">Mix (%1$d %%)</string>
 </resources>
