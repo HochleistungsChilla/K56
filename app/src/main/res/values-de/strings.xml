@@ -60,6 +60,8 @@
 
     <string name="search_hint">Titel, Alben, Interpreten</string>
     <string name="search_no_results">Keine Treffer für „%1$s“.</string>
+    <string name="search_history">Letzte Suchen</string>
+    <string name="search_clear_history">Löschen</string>
 
     <string name="player_now_playing">Jetzt läuft</string>
     <string name="player_nothing_title">Nichts läuft</string>

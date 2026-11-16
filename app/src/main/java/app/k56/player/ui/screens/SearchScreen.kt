@@ -2,6 +2,7 @@ package app.k56.player.ui.screens
 
 import android.content.Context
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -13,13 +14,19 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.Search
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -33,7 +40,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
@@ -51,6 +60,7 @@ import app.k56.player.ui.userMessage
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import org.json.JSONArray
 
 class SearchViewModel(
     private val repository: MediaRepository,
@@ -63,8 +73,11 @@ class SearchViewModel(
         private set
     var error by mutableStateOf<String?>(null)
         private set
+    var history by mutableStateOf(loadHistory())
+        private set
 
     private var job: Job? = null
+    private val prefs = appContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 
     fun search(query: String) {
         job?.cancel()
@@ -80,12 +93,43 @@ class SearchViewModel(
             error = null
             try {
                 results = repository.search(term)
+                remember(term)
             } catch (e: Exception) {
                 error = e.userMessage(appContext)
             } finally {
                 searching = false
             }
         }
+    }
+
+    fun remember(term: String) {
+        val clean = term.trim()
+        if (clean.length < 2) return
+        val updated = (listOf(clean) + history.filter { !it.equals(clean, ignoreCase = true) })
+            .take(MAX_HISTORY)
+        history = updated
+        prefs.edit().putString(KEY_HISTORY, JSONArray(updated).toString()).apply()
+    }
+
+    fun clearHistory() {
+        history = emptyList()
+        prefs.edit().remove(KEY_HISTORY).apply()
+    }
+
+    private fun loadHistory(): List<String> {
+        val raw = prefs.getString(KEY_HISTORY, null) ?: return emptyList()
+        return runCatching {
+            val array = JSONArray(raw)
+            (0 until array.length())
+                .map { array.optString(it) }
+                .filter { it.isNotBlank() }
+        }.getOrDefault(emptyList())
+    }
+
+    private companion object {
+        const val PREFS = "k56_search_history"
+        const val KEY_HISTORY = "history"
+        const val MAX_HISTORY = 10
     }
 }
 
@@ -99,9 +143,13 @@ fun SearchScreen(
     val context = LocalContext.current
     val vm = appViewModel { SearchViewModel(repository, context.applicationContext) }
     var query by rememberSaveable { mutableStateOf("") }
+    var filterAlbums by rememberSaveable { mutableStateOf(true) }
+    var filterArtists by rememberSaveable { mutableStateOf(true) }
+    var filterTracks by rememberSaveable { mutableStateOf(true) }
+    val focusManager = LocalFocusManager.current
 
     LaunchedEffect(query) {
-        delay(350)
+        delay(200)
         vm.search(query)
     }
 
@@ -112,10 +160,50 @@ fun SearchScreen(
             placeholder = { Text(stringResource(R.string.search_hint)) },
             leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },
             singleLine = true,
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+            keyboardActions = KeyboardActions(
+                onSearch = {
+                    focusManager.clearFocus()
+                    vm.search(query)
+                },
+            ),
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 12.dp),
         )
+
+        if (query.isBlank()) {
+            HistorySection(
+                history = vm.history,
+                onPick = { query = it },
+                onClear = vm::clearHistory,
+                modifier = Modifier.weight(1f),
+            )
+            return@Column
+        }
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            FilterChip(
+                selected = filterAlbums,
+                onClick = { filterAlbums = !filterAlbums },
+                label = { Text(stringResource(R.string.library_tab_albums)) },
+            )
+            FilterChip(
+                selected = filterArtists,
+                onClick = { filterArtists = !filterArtists },
+                label = { Text(stringResource(R.string.library_tab_artists)) },
+            )
+            FilterChip(
+                selected = filterTracks,
+                onClick = { filterTracks = !filterTracks },
+                label = { Text(stringResource(R.string.library_tab_tracks)) },
+            )
+        }
 
         if (vm.searching) {
             LinearProgressIndicator(Modifier.fillMaxWidth())
@@ -128,13 +216,16 @@ fun SearchScreen(
         }
 
         val results = vm.results
-        val empty = results.albums.isEmpty() && results.artists.isEmpty() && results.tracks.isEmpty()
+        val showAlbums = filterAlbums && results.albums.isNotEmpty()
+        val showArtists = filterArtists && results.artists.isNotEmpty()
+        val showTracks = filterTracks && results.tracks.isNotEmpty()
+        val empty = !showAlbums && !showArtists && !showTracks
 
         LazyColumn(
             modifier = Modifier.weight(1f),
             contentPadding = PaddingValues(bottom = 24.dp),
         ) {
-            if (results.albums.isNotEmpty()) {
+            if (showAlbums) {
                 item { SectionHeader(stringResource(R.string.library_tab_albums)) }
                 items(results.albums, key = { it.id }) { album ->
                     Row(
@@ -168,7 +259,7 @@ fun SearchScreen(
                 }
             }
 
-            if (results.artists.isNotEmpty()) {
+            if (showArtists) {
                 item { SectionHeader(stringResource(R.string.library_tab_artists)) }
                 items(results.artists, key = { it.id }) { artist ->
                     Row(
@@ -194,7 +285,7 @@ fun SearchScreen(
                 }
             }
 
-            if (results.tracks.isNotEmpty()) {
+            if (showTracks) {
                 item { SectionHeader(stringResource(R.string.library_tab_tracks)) }
                 itemsIndexed(results.tracks, key = { _, track -> track.id }) { index, track ->
                     TrackRow(
@@ -212,6 +303,74 @@ fun SearchScreen(
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(24.dp),
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun HistorySection(
+    history: List<String>,
+    onPick: (String) -> Unit,
+    onClear: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    if (history.isEmpty()) {
+        Column(
+            modifier = modifier.fillMaxWidth().padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text(
+                text = stringResource(R.string.search_hint),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        return
+    }
+    Column(modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 16.dp, end = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = stringResource(R.string.search_history),
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.weight(1f),
+            )
+            IconButton(onClick = onClear) {
+                Text(
+                    text = stringResource(R.string.search_clear_history),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+            }
+        }
+        LazyColumn(contentPadding = PaddingValues(bottom = 24.dp)) {
+            items(history, key = { it }) { term ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onPick(term) }
+                        .padding(horizontal = 16.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(
+                        Icons.Rounded.History,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(20.dp),
+                    )
+                    Spacer(Modifier.width(12.dp))
+                    Text(
+                        text = term,
+                        style = MaterialTheme.typography.bodyLarge,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
             }

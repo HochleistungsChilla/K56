@@ -68,6 +68,8 @@
     <!-- search -->
     <string name="search_hint">Tracks, albums, artists</string>
     <string name="search_no_results">No results for “%1$s”.</string>
+    <string name="search_history">Recent searches</string>
+    <string name="search_clear_history">Clear</string>
 
     <!-- player -->
     <string name="player_now_playing">Now playing</string>
