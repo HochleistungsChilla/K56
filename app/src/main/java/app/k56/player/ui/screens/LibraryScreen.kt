@@ -501,6 +501,7 @@ fun LibraryScreen(
             Text(
                 text = stringResource(
                     R.string.library_syncing,
+                    syncPhaseLabel(syncState.phase),
                     syncState.loaded,
                     syncState.total,
                 ),
@@ -1077,6 +1078,18 @@ private fun SelectionAction(
 }
 
 private val ARTICLE_PREFIX = Regex("""^(the|a|an|die|der|das|le|la|les|el|los|il)\s+""")
+
+@Composable
+private fun syncPhaseLabel(phase: String): String = when (phase) {
+    "albums" -> stringResource(R.string.sync_phase_albums)
+    "tracks" -> stringResource(R.string.sync_phase_tracks)
+    "artists" -> stringResource(R.string.sync_phase_artists)
+    "genres" -> stringResource(R.string.sync_phase_genres)
+    "writing" -> stringResource(R.string.sync_phase_writing)
+    "incremental" -> stringResource(R.string.sync_phase_incremental)
+    "start" -> stringResource(R.string.sync_phase_start)
+    else -> phase
+}
 
 @Composable
 private fun GenreContent(

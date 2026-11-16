@@ -114,6 +114,7 @@ fun SettingsScreen(
     val hasSdCard = remember { SettingsStore.externalRoot(context) != null }
     val forceTranscode by repository.forceTranscode.collectAsStateWithLifecycle()
     val frugalMode by settingsStore.frugalMode.collectAsStateWithLifecycle()
+    val autoSync by settingsStore.autoSync.collectAsStateWithLifecycle()
     val preferExternal by repository.preferExternal.collectAsStateWithLifecycle()
     val networkStatus by repository.networkStatus.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
@@ -260,13 +261,25 @@ fun SettingsScreen(
                 val serverCounts = libraryDb.serverCounts()
                 Text(
                     text = stringResource(
-                        R.string.sync_status,
+                        R.string.sync_counts,
                         counts.songs,
-                        serverCounts.songs.takeIf { it > 0 } ?: counts.songs,
+                        counts.albums,
+                        counts.artists,
                     ),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+                if (serverCounts.songs > 0 && serverCounts.songs != counts.songs) {
+                    Text(
+                        text = stringResource(
+                            R.string.sync_status,
+                            counts.songs,
+                            serverCounts.songs,
+                        ),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
                 val lastSync = libraryDb.lastSync()
                 if (lastSync > 0) {
                     Text(
@@ -283,7 +296,7 @@ fun SettingsScreen(
                     Spacer(Modifier.height(6.dp))
                     LinearProgressIndicator(Modifier.fillMaxWidth())
                     Text(
-                        text = "${syncState.phase}: ${syncState.loaded}/${syncState.total}",
+                        text = "${syncPhaseLabel(syncState.phase)}: ${syncState.loaded}/${syncState.total}",
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -303,6 +316,27 @@ fun SettingsScreen(
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     Text(stringResource(R.string.sync_now))
+                }
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = stringResource(R.string.sync_legend),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(Modifier.height(8.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text(stringResource(R.string.auto_sync_title), style = MaterialTheme.typography.titleMedium)
+                        Text(
+                            stringResource(R.string.auto_sync_body),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    Switch(
+                        checked = autoSync,
+                        onCheckedChange = { settingsStore.setAutoSync(it) },
+                    )
                 }
             }
         }
@@ -1244,6 +1278,18 @@ private fun orientationLabel(mode: ScreenOrientation): Int = when (mode) {
 private fun playerStyleLabel(style: PlayerStyle): Int = when (style) {
     PlayerStyle.STANDARD -> R.string.np_style_standard
     PlayerStyle.LARGE_COVER -> R.string.np_style_large
+}
+
+@Composable
+private fun syncPhaseLabel(phase: String): String = when (phase) {
+    "albums" -> stringResource(R.string.sync_phase_albums)
+    "tracks" -> stringResource(R.string.sync_phase_tracks)
+    "artists" -> stringResource(R.string.sync_phase_artists)
+    "genres" -> stringResource(R.string.sync_phase_genres)
+    "writing" -> stringResource(R.string.sync_phase_writing)
+    "incremental" -> stringResource(R.string.sync_phase_incremental)
+    "start" -> stringResource(R.string.sync_phase_start)
+    else -> phase
 }
 
 private fun playerBackgroundLabel(bg: PlayerBackground): Int = when (bg) {

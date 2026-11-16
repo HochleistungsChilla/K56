@@ -177,6 +177,10 @@ class SettingsStore(context: Context) {
     private val _frugalMode = MutableStateFlow(prefs.getBoolean(KEY_FRUGAL_MODE, false))
     val frugalMode: StateFlow<Boolean> = _frugalMode.asStateFlow()
 
+    /** Refresh the offline library automatically on app start. */
+    private val _autoSync = MutableStateFlow(prefs.getBoolean(KEY_AUTO_SYNC, true))
+    val autoSync: StateFlow<Boolean> = _autoSync.asStateFlow()
+
     fun setForceTranscode(value: Boolean) {
         prefs.edit().putBoolean(KEY_FORCE_TRANSCODE, value).apply()
         _forceTranscode.value = value
@@ -299,6 +303,7 @@ class SettingsStore(context: Context) {
         }.getOrDefault(PlayerBackground.GRADIENT)
         _animatedProgress.value = prefs.getBoolean(KEY_ANIMATED_PROGRESS, false)
         _frugalMode.value = prefs.getBoolean(KEY_FRUGAL_MODE, false)
+        _autoSync.value = prefs.getBoolean(KEY_AUTO_SYNC, true)
     }
 
     fun setWifiOnlyDownloads(value: Boolean) {
@@ -421,6 +426,11 @@ class SettingsStore(context: Context) {
         _frugalMode.value = value
     }
 
+    fun setAutoSync(value: Boolean) {
+        prefs.edit().putBoolean(KEY_AUTO_SYNC, value).apply()
+        _autoSync.value = value
+    }
+
     companion object {
         private const val KEY_FORCE_TRANSCODE = "force_transcode"
         private const val KEY_PREFER_EXTERNAL = "prefer_external"
@@ -457,6 +467,7 @@ class SettingsStore(context: Context) {
         private const val KEY_NP_FIT_COVER = "np_fit_cover"
         private const val KEY_NP_COMPACT = "np_compact"
         private const val KEY_FRUGAL_MODE = "frugal_mode"
+        private const val KEY_AUTO_SYNC = "auto_sync"
 
         val DEFAULT_HOME_SECTIONS = "recent,random_albums,random_artists"
 

@@ -366,10 +366,21 @@
     <string name="home_random_songs">Random titles</string>
     <string name="library_loaded_count">%1$d of %2$d loaded</string>
     <string name="library_offline_copy">Offline — device copy from %1$s</string>
-    <string name="library_syncing">Syncing … %1$d / %2$d</string>
+    <string name="library_syncing">Syncing %1$s · %2$d / %3$d</string>
     <string name="library_sync_failed">Sync failed — tap to retry</string>
     <string name="sync_title">Library sync</string>
     <string name="sync_status">%1$d of %2$d tracks on device</string>
+    <string name="sync_counts">%1$d tracks · %2$d albums · %3$d artists</string>
     <string name="sync_last">Last synced: %1$s</string>
     <string name="sync_now">Sync now</string>
+    <string name="sync_legend">Check = downloaded · Pin = in cache</string>
+    <string name="auto_sync_title">Sync automatically on start</string>
+    <string name="auto_sync_body">Refresh the offline library in the background when the app starts.</string>
+    <string name="sync_phase_albums">Albums</string>
+    <string name="sync_phase_tracks">Tracks</string>
+    <string name="sync_phase_artists">Artists</string>
+    <string name="sync_phase_genres">Genres</string>
+    <string name="sync_phase_writing">Saving</string>
+    <string name="sync_phase_incremental">Updating</string>
+    <string name="sync_phase_start">Starting</string>
 </resources>

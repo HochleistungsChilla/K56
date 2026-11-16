@@ -152,7 +152,9 @@ private fun MainShell(container: AppContainer) {
     }
 
     // Refresh the offline library copy: full sync when missing/very old, incremental otherwise.
-    LaunchedEffect(Unit) {
+    val autoSync by container.settingsStore.autoSync.collectAsStateWithLifecycle()
+    LaunchedEffect(autoSync) {
+        if (!autoSync) return@LaunchedEffect
         runCatching {
             when {
                 container.librarySync.needsFullSync() -> container.librarySync.sync()

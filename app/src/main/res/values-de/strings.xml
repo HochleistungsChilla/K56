@@ -356,10 +356,21 @@
     <string name="home_random_songs">Zufällige Titel</string>
     <string name="library_loaded_count">%1$d von %2$d geladen</string>
     <string name="library_offline_copy">Offline — Kopie am Gerät, Stand %1$s</string>
-    <string name="library_syncing">Synchronisiere … %1$d / %2$d</string>
+    <string name="library_syncing">Synchronisiere %1$s · %2$d / %3$d</string>
     <string name="library_sync_failed">Sync fehlgeschlagen — tippen zum Wiederholen</string>
     <string name="sync_title">Bibliotheks-Sync</string>
     <string name="sync_status">%1$d von %2$d Titeln am Gerät</string>
+    <string name="sync_counts">%1$d Titel · %2$d Alben · %3$d Interpreten</string>
     <string name="sync_last">Zuletzt synchronisiert: %1$s</string>
     <string name="sync_now">Jetzt synchronisieren</string>
+    <string name="sync_legend">Häkchen = heruntergeladen · Nadel = im Cache</string>
+    <string name="auto_sync_title">Automatisch beim Start synchronisieren</string>
+    <string name="auto_sync_body">Aktualisiert die Offline-Bibliothek beim App-Start im Hintergrund.</string>
+    <string name="sync_phase_albums">Alben</string>
+    <string name="sync_phase_tracks">Titel</string>
+    <string name="sync_phase_artists">Interpreten</string>
+    <string name="sync_phase_genres">Genres</string>
+    <string name="sync_phase_writing">Speichern</string>
+    <string name="sync_phase_incremental">Aktualisieren</string>
+    <string name="sync_phase_start">Start</string>
 </resources>
