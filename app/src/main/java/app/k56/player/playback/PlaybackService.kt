@@ -10,6 +10,7 @@ import androidx.media3.datasource.DataSource
 import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.datasource.cache.CacheDataSource
 import androidx.media3.exoplayer.DefaultRenderersFactory
+import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.audio.AudioSink
 import androidx.media3.exoplayer.audio.DefaultAudioSink
@@ -73,6 +74,7 @@ class PlaybackService : MediaSessionService() {
                 /* handleAudioFocus = */ true,
             )
             .setHandleAudioBecomingNoisy(true)
+            .setLoadControl(buildLoadControl())
             .build()
 
         mediaSession = MediaSession.Builder(this, player).build()
@@ -226,6 +228,22 @@ class PlaybackService : MediaSessionService() {
             .setAudioProcessors(arrayOf(DspProcessor(appContainer.dspState)))
             .setEnableFloatOutput(true)
             .setEnableAudioTrackPlaybackParams(enableAudioTrackPlaybackParams)
+            .build()
+    }
+
+    /**
+     * Frugal mode keeps the prebuffer small so a metered connection does not
+     * pull more than a few seconds ahead of the current position.
+     */
+    private fun buildLoadControl(): DefaultLoadControl {
+        if (!appContainer.settingsStore.frugalMode.value) return DefaultLoadControl()
+        return DefaultLoadControl.Builder()
+            .setBufferDurationsMs(
+                DefaultLoadControl.DEFAULT_MIN_BUFFER_MS,
+                DefaultLoadControl.DEFAULT_MAX_BUFFER_MS / 4,
+                DefaultLoadControl.DEFAULT_BUFFER_FOR_PLAYBACK_MS / 2,
+                DefaultLoadControl.DEFAULT_BUFFER_FOR_PLAYBACK_AFTER_REBUFFER_MS / 2,
+            )
             .build()
     }
 

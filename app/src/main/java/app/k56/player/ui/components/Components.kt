@@ -3,6 +3,7 @@ package app.k56.player.ui.components
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -21,6 +22,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.FavoriteBorder
 import androidx.compose.material.icons.rounded.CloudDownload
@@ -109,9 +111,16 @@ fun AlbumCard(
     Column(
         modifier = modifier
             .clip(RoundedCornerShape(16.dp))
-            .background(
-                if (selected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
-                else androidx.compose.ui.graphics.Color.Transparent,
+            .then(
+                if (selected) {
+                    Modifier.border(
+                        2.dp,
+                        MaterialTheme.colorScheme.primary,
+                        RoundedCornerShape(16.dp),
+                    )
+                } else {
+                    Modifier
+                },
             )
             .combinedClickable(onClick = onClick, onLongClick = onLongClick)
             .padding(2.dp),
@@ -124,6 +133,19 @@ fun AlbumCard(
                     .aspectRatio(1f),
                 shape = RoundedCornerShape(14.dp),
             )
+            if (selected) {
+                Box(
+                    Modifier
+                        .matchParentSize()
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.30f)),
+                )
+                SelectionBadge(
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(6.dp),
+                )
+            }
             if (onToggleFavorite != null) {
                 IconButton(
                     onClick = onToggleFavorite,
@@ -167,21 +189,43 @@ fun ArtistCard(
     Column(
         modifier = modifier
             .clip(RoundedCornerShape(16.dp))
-            .background(
-                if (selected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
-                else androidx.compose.ui.graphics.Color.Transparent,
+            .then(
+                if (selected) {
+                    Modifier.border(
+                        2.dp,
+                        MaterialTheme.colorScheme.primary,
+                        RoundedCornerShape(16.dp),
+                    )
+                } else {
+                    Modifier
+                },
             )
             .combinedClickable(onClick = onClick, onLongClick = onLongClick)
             .padding(2.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Artwork(
-            url = artist.imageUrl,
-            modifier = Modifier
-                .fillMaxWidth()
-                .aspectRatio(1f),
-            shape = CircleShape,
-        )
+        Box {
+            Artwork(
+                url = artist.imageUrl,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(1f),
+                shape = CircleShape,
+            )
+            if (selected) {
+                Box(
+                    Modifier
+                        .matchParentSize()
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.30f)),
+                )
+                SelectionBadge(
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(6.dp),
+                )
+            }
+        }
         Spacer(Modifier.height(8.dp))
         Text(
             text = artist.name,
@@ -189,6 +233,27 @@ fun ArtistCard(
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             textAlign = TextAlign.Center,
+        )
+    }
+}
+
+/** Filled check mark that marks a selected row or card. */
+@Composable
+private fun SelectionBadge(
+    modifier: Modifier = Modifier,
+    size: Dp = 22.dp,
+) {
+    Box(
+        modifier = modifier
+            .size(size)
+            .background(MaterialTheme.colorScheme.primary, CircleShape),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            imageVector = Icons.Rounded.Check,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onPrimary,
+            modifier = Modifier.size(size * 0.68f),
         )
     }
 }
@@ -506,15 +571,27 @@ fun HorizontalAlbumRow(
     onOpenAlbum: (String) -> Unit,
     cardWidth: Dp = 150.dp,
     spacing: Dp = 12.dp,
+    onAlbumLongClick: ((String) -> Unit)? = null,
+    selectedIds: Set<String> = emptySet(),
+    selectionMode: Boolean = false,
 ) {
     androidx.compose.foundation.lazy.LazyRow(
         contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp),
         horizontalArrangement = Arrangement.spacedBy(spacing),
     ) {
         items(albums.size, key = { albums[it].id }) { index ->
+            val album = albums[index]
             AlbumCard(
-                album = albums[index],
-                onClick = { onOpenAlbum(albums[index].id) },
+                album = album,
+                onClick = {
+                    if (onAlbumLongClick != null && (selectionMode || album.id in selectedIds)) {
+                        onAlbumLongClick(album.id)
+                    } else {
+                        onOpenAlbum(album.id)
+                    }
+                },
+                onLongClick = onAlbumLongClick?.let { { it(album.id) } },
+                selected = album.id in selectedIds,
                 modifier = Modifier.width(cardWidth),
             )
         }

@@ -114,6 +114,8 @@
     <string name="settings_prefer_external_body">Off: on Wi-Fi the LAN address is used when reachable, on mobile data always the external address. No location permission required.</string>
     <string name="settings_force_transcode">Force transcoding</string>
     <string name="settings_force_transcode_body">AAC/HLS instead of direct play. Useful when a codec does not run on the device.</string>
+    <string name="frugal_mode_title">Data saver</string>
+    <string name="frugal_mode_body">On mobile data, stream at a lower bitrate and buffer less ahead. Applies the next time playback starts.</string>
     <string name="settings_sign_out">Sign out</string>
     <string name="settings_theme_title">Appearance</string>
     <string name="theme_system">System</string>

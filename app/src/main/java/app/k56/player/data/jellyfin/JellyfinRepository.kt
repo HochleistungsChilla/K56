@@ -18,6 +18,7 @@ import app.k56.player.core.model.isJellyfinFamily
 import app.k56.player.core.net.EndpointResolver
 import app.k56.player.core.net.NetworkMonitor
 import app.k56.player.core.net.NetworkStatus
+import app.k56.player.core.net.NetworkTransport
 import app.k56.player.core.net.ServerUrl
 import app.k56.player.data.MediaRepository
 import app.k56.player.data.NotAuthenticatedException
@@ -43,7 +44,7 @@ class QuickConnectTimeoutException : IllegalStateException("Quick Connect was no
 class JellyfinRepository(
     private val sessionStore: SessionStore,
     private val settingsStore: SettingsStore,
-    networkMonitor: NetworkMonitor,
+    private val networkMonitor: NetworkMonitor,
 ) : MediaRepository {
 
     private val minimumVersion = BuildConfig.JELLYFIN_MIN_VERSION
@@ -580,7 +581,11 @@ class JellyfinRepository(
         val current = session ?: throw NotAuthenticatedException()
         val base = baseUrl().ifBlank { current.serverUrl }
         val container = track.container?.lowercase()
+        // Frugal mode + mobile data: force a low-bitrate transcode to save data.
+        val frugal = settingsStore.frugalMode.value &&
+            networkStatus.value.transport == NetworkTransport.CELLULAR
         val canDirectPlay = settingsStore.forceTranscode.value.not() &&
+            !frugal &&
             (container.isNullOrBlank() || container in DIRECT_PLAY_CONTAINERS)
 
         return if (canDirectPlay) {
@@ -589,9 +594,10 @@ class JellyfinRepository(
                 "&DeviceId=${current.deviceId}&api_key=${current.token}"
             PlaybackSource(url = url, mimeType = null, transcoded = false)
         } else {
+            val maxBitrate = if (frugal) 128_000 else 320_000
             val url = "${base}Audio/${track.id}/universal" +
                 "?UserId=${current.userId}&DeviceId=${current.deviceId}" +
-                "&MaxStreamingBitrate=320000" +
+                "&MaxStreamingBitrate=$maxBitrate" +
                 "&Container=opus,mp3,aac,m4a,m4b,flac,ogg,wav" +
                 "&TranscodingContainer=ts&TranscodingProtocol=hls&AudioCodec=aac" +
                 "&api_key=${current.token}&EnableRedirection=true"

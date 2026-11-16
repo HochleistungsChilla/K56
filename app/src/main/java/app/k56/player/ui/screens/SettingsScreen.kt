@@ -107,6 +107,7 @@ fun SettingsScreen(
     val downloadFormat by settingsStore.downloadFormat.collectAsStateWithLifecycle()
     val hasSdCard = remember { SettingsStore.externalRoot(context) != null }
     val forceTranscode by repository.forceTranscode.collectAsStateWithLifecycle()
+    val frugalMode by settingsStore.frugalMode.collectAsStateWithLifecycle()
     val preferExternal by repository.preferExternal.collectAsStateWithLifecycle()
     val networkStatus by repository.networkStatus.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
@@ -527,6 +528,38 @@ fun SettingsScreen(
                 Switch(
                     checked = forceTranscode,
                     onCheckedChange = { repository.setForceTranscode(it) },
+                )
+            }
+        }
+
+        Spacer(Modifier.height(14.dp))
+
+        Surface(
+            color = MaterialTheme.colorScheme.surfaceContainer,
+            shape = RoundedCornerShape(20.dp),
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        stringResource(R.string.frugal_mode_title),
+                        style = MaterialTheme.typography.titleMedium,
+                    )
+                    Text(
+                        stringResource(R.string.frugal_mode_body),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Spacer(Modifier.width(12.dp))
+                Switch(
+                    checked = frugalMode,
+                    onCheckedChange = { settingsStore.setFrugalMode(it) },
                 )
             }
         }

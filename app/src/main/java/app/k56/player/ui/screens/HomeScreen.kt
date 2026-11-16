@@ -1,7 +1,9 @@
 package app.k56.player.ui.screens
 
 import android.content.Context
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -11,11 +13,15 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.Shuffle
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material.icons.rounded.KeyboardArrowUp
 import androidx.compose.material3.AlertDialog
@@ -24,10 +30,12 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -146,15 +154,51 @@ fun HomeScreen(
     val sections by settingsStore.homeSections.collectAsStateWithLifecycle()
     var editOpen by remember { mutableStateOf(false) }
 
-    when {
-        vm.loading -> LoadingState()
+    val selectedAlbums = remember { mutableStateListOf<String>() }
+    val selectedArtists = remember { mutableStateListOf<String>() }
+    val selectionMode = selectedAlbums.isNotEmpty() || selectedArtists.isNotEmpty()
 
-        vm.error != null -> ErrorState(vm.error!!, vm::load)
+    fun toggleAlbum(id: String) {
+        if (!selectedAlbums.remove(id)) selectedAlbums.add(id)
+    }
 
-        else -> LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(bottom = 20.dp),
-        ) {
+    fun toggleArtist(id: String) {
+        if (!selectedArtists.remove(id)) selectedArtists.add(id)
+    }
+
+    fun clearSelection() {
+        selectedAlbums.clear()
+        selectedArtists.clear()
+    }
+
+    suspend fun resolveSelection(): List<Track> {
+        val out = LinkedHashMap<String, Track>()
+        for (albumId in selectedAlbums) {
+            runCatching { repository.albumDetails(albumId) }.getOrNull()
+                ?.tracks?.forEach { out[it.id] = it }
+        }
+        for (artistId in selectedArtists) {
+            runCatching { repository.artistDetails(artistId) }.getOrNull()
+                ?.albums?.take(6)?.forEach { album ->
+                    runCatching { repository.albumDetails(album.id) }.getOrNull()
+                        ?.tracks?.forEach { out[it.id] = it }
+                }
+        }
+        return out.values.toList()
+    }
+
+    BackHandler(enabled = selectionMode) { clearSelection() }
+
+    Box(Modifier.fillMaxSize()) {
+        when {
+            vm.loading -> LoadingState()
+
+            vm.error != null -> ErrorState(vm.error!!, vm::load)
+
+            else -> LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(bottom = if (selectionMode) 96.dp else 20.dp),
+            ) {
             item {
                 Row(
                     modifier = Modifier
@@ -215,12 +259,30 @@ fun HomeScreen(
                 when (key) {
                     "recent" -> if (vm.recentAlbums.isNotEmpty()) {
                         item { SectionHeader(stringResource(R.string.home_recently_added)) }
-                        item { HorizontalAlbumRow(vm.recentAlbums, onOpenAlbum, spacing = gridSpacing.dp) }
+                        item {
+                            HorizontalAlbumRow(
+                                albums = vm.recentAlbums,
+                                onOpenAlbum = onOpenAlbum,
+                                spacing = gridSpacing.dp,
+                                onAlbumLongClick = { toggleAlbum(it) },
+                                selectedIds = selectedAlbums.toSet(),
+                                selectionMode = selectionMode,
+                            )
+                        }
                     }
 
                     "random_albums" -> if (vm.allAlbums.isNotEmpty()) {
                         item { SectionHeader(stringResource(R.string.home_random_albums)) }
-                        item { HorizontalAlbumRow(vm.allAlbums.shuffled().take(24), onOpenAlbum, spacing = gridSpacing.dp) }
+                        item {
+                            HorizontalAlbumRow(
+                                albums = vm.allAlbums.shuffled().take(24),
+                                onOpenAlbum = onOpenAlbum,
+                                spacing = gridSpacing.dp,
+                                onAlbumLongClick = { toggleAlbum(it) },
+                                selectedIds = selectedAlbums.toSet(),
+                                selectionMode = selectionMode,
+                            )
+                        }
                     }
 
                     "random_artists" -> if (vm.artists.isNotEmpty()) {
@@ -233,7 +295,12 @@ fun HomeScreen(
                                 items(vm.artists.shuffled().take(20), key = { it.id }) { artist ->
                                     ArtistCard(
                                         artist = artist,
-                                        onClick = { onOpenArtist(artist.id) },
+                                        onClick = {
+                                            if (selectionMode) toggleArtist(artist.id)
+                                            else onOpenArtist(artist.id)
+                                        },
+                                        onLongClick = { toggleArtist(artist.id) },
+                                        selected = artist.id in selectedArtists,
                                         modifier = Modifier.width(118.dp),
                                     )
                                 }
@@ -264,6 +331,35 @@ fun HomeScreen(
                     )
                 }
             }
+            }
+        }
+
+        if (selectionMode) {
+            HomeSelectionBar(
+                count = selectedAlbums.size + selectedArtists.size,
+                onPlay = {
+                    scope.launch {
+                        val list = resolveSelection()
+                        clearSelection()
+                        if (list.isNotEmpty()) onPlay(list, 0)
+                    }
+                },
+                onShuffle = {
+                    scope.launch {
+                        val list = resolveSelection().shuffled()
+                        clearSelection()
+                        if (list.isNotEmpty()) onPlay(list, 0)
+                    }
+                },
+                onSelectAll = {
+                    selectedAlbums.clear()
+                    selectedAlbums.addAll(vm.allAlbums.map { it.id })
+                    selectedArtists.clear()
+                    selectedArtists.addAll(vm.artists.map { it.id })
+                },
+                onCancel = { clearSelection() },
+                modifier = Modifier.align(Alignment.BottomCenter),
+            )
         }
     }
 
@@ -368,4 +464,61 @@ private fun HomeSectionsDialog(
             }
         },
     )
+}
+
+@Composable
+private fun HomeSelectionBar(
+    count: Int,
+    onPlay: () -> Unit,
+    onShuffle: () -> Unit,
+    onSelectAll: () -> Unit,
+    onCancel: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        tonalElevation = 6.dp,
+        shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
+        modifier = modifier.fillMaxWidth(),
+    ) {
+        Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = stringResource(R.string.selection_count, count),
+                    style = MaterialTheme.typography.titleSmall,
+                    modifier = Modifier.weight(1f),
+                )
+                TextButton(onClick = onSelectAll) {
+                    Text(stringResource(R.string.selection_all))
+                }
+                IconButton(onClick = onCancel) {
+                    Icon(
+                        imageVector = Icons.Rounded.Close,
+                        contentDescription = stringResource(R.string.selection_cancel),
+                    )
+                }
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+            ) {
+                HomeSelectionAction(Icons.Rounded.PlayArrow, stringResource(R.string.common_play), onPlay)
+                HomeSelectionAction(Icons.Rounded.Shuffle, stringResource(R.string.player_shuffle), onShuffle)
+            }
+        }
+    }
+}
+
+@Composable
+private fun HomeSelectionAction(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    onClick: () -> Unit,
+) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        IconButton(onClick = onClick) {
+            Icon(icon, contentDescription = label)
+        }
+        Text(label, style = MaterialTheme.typography.labelSmall)
+    }
 }

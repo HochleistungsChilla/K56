@@ -173,6 +173,10 @@ class SettingsStore(context: Context) {
     private val _compactControls = MutableStateFlow(prefs.getBoolean(KEY_NP_COMPACT, false))
     val compactControls: StateFlow<Boolean> = _compactControls.asStateFlow()
 
+    /** Data-saver: smaller buffer and lower bitrate on a metered connection. */
+    private val _frugalMode = MutableStateFlow(prefs.getBoolean(KEY_FRUGAL_MODE, false))
+    val frugalMode: StateFlow<Boolean> = _frugalMode.asStateFlow()
+
     fun setForceTranscode(value: Boolean) {
         prefs.edit().putBoolean(KEY_FORCE_TRANSCODE, value).apply()
         _forceTranscode.value = value
@@ -294,6 +298,7 @@ class SettingsStore(context: Context) {
             PlayerBackground.valueOf(prefs.getString(KEY_PLAYER_BACKGROUND, null) ?: "GRADIENT")
         }.getOrDefault(PlayerBackground.GRADIENT)
         _animatedProgress.value = prefs.getBoolean(KEY_ANIMATED_PROGRESS, false)
+        _frugalMode.value = prefs.getBoolean(KEY_FRUGAL_MODE, false)
     }
 
     fun setWifiOnlyDownloads(value: Boolean) {
@@ -411,6 +416,11 @@ class SettingsStore(context: Context) {
         _compactControls.value = value
     }
 
+    fun setFrugalMode(value: Boolean) {
+        prefs.edit().putBoolean(KEY_FRUGAL_MODE, value).apply()
+        _frugalMode.value = value
+    }
+
     companion object {
         private const val KEY_FORCE_TRANSCODE = "force_transcode"
         private const val KEY_PREFER_EXTERNAL = "prefer_external"
@@ -446,6 +456,7 @@ class SettingsStore(context: Context) {
         private const val KEY_ANIMATED_PROGRESS = "animated_progress"
         private const val KEY_NP_FIT_COVER = "np_fit_cover"
         private const val KEY_NP_COMPACT = "np_compact"
+        private const val KEY_FRUGAL_MODE = "frugal_mode"
 
         val DEFAULT_HOME_SECTIONS = "recent,random_albums,random_artists"
 

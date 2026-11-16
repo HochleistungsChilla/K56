@@ -107,6 +107,8 @@
     <string name="settings_prefer_external_body">Aus: Im WLAN wird die LAN-Adresse genutzt, wenn sie erreichbar ist; im Mobilfunk immer die externe Adresse. Keine Standortberechtigung nötig.</string>
     <string name="settings_force_transcode">Transcoding erzwingen</string>
     <string name="settings_force_transcode_body">AAC/HLS statt Direct Play. Nützlich, wenn ein Codec auf dem Gerät nicht läuft.</string>
+    <string name="frugal_mode_title">Datensparmodus</string>
+    <string name="frugal_mode_body">Bei mobilem Netz mit niedrigerer Bitrate streamen und weniger vorladen. Greift beim nächsten Start der Wiedergabe.</string>
     <string name="settings_sign_out">Abmelden</string>
     <string name="settings_theme_title">Darstellung</string>
     <string name="theme_system">System</string>
