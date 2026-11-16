@@ -365,4 +365,8 @@
     <string name="home_random_songs">Random titles</string>
     <string name="library_loaded_count">%1$d of %2$d loaded</string>
     <string name="library_offline_copy">Offline — device copy from %1$s</string>
+    <string name="sync_title">Library sync</string>
+    <string name="sync_status">%1$d of %2$d tracks on device</string>
+    <string name="sync_last">Last synced: %1$s</string>
+    <string name="sync_now">Sync now</string>
 </resources>

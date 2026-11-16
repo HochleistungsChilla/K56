@@ -24,6 +24,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
@@ -55,6 +56,8 @@ import app.k56.player.data.PlayerStyle
 import app.k56.player.data.ScreenOrientation
 import app.k56.player.data.SettingsStore
 import app.k56.player.data.StorageLocation
+import app.k56.player.data.library.LibraryDb
+import app.k56.player.data.library.LibrarySync
 import app.k56.player.data.offline.OfflineStore
 import app.k56.player.dsp.DspState
 import kotlinx.coroutines.launch
@@ -67,6 +70,8 @@ fun SettingsScreen(
     repository: MediaRepository,
     offlineStore: OfflineStore,
     settingsStore: SettingsStore,
+    libraryDb: LibraryDb,
+    librarySync: LibrarySync,
     dspState: DspState,
     onOpenDsp: () -> Unit = {},
     onOpenCache: () -> Unit = {},
@@ -74,6 +79,7 @@ fun SettingsScreen(
     val context = LocalContext.current
     val session by repository.sessionFlow.collectAsStateWithLifecycle()
     val offlineTracks by offlineStore.tracks.collectAsStateWithLifecycle()
+    val syncState by librarySync.state.collectAsStateWithLifecycle()
     val storageLocation by settingsStore.storageLocation.collectAsStateWithLifecycle()
     val cacheLimitMb by settingsStore.cacheLimitMb.collectAsStateWithLifecycle()
     val autoplay by settingsStore.autoplay.collectAsStateWithLifecycle()
@@ -236,6 +242,67 @@ fun SettingsScreen(
                     Icon(Icons.Rounded.Edit, contentDescription = null)
                     Spacer(Modifier.width(8.dp))
                     Text(stringResource(R.string.settings_edit_connection))
+                }
+            }
+        }
+
+        Surface(
+            color = MaterialTheme.colorScheme.surfaceContainer,
+            shape = RoundedCornerShape(20.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 14.dp),
+        ) {
+            Column(Modifier.padding(16.dp)) {
+                Text(stringResource(R.string.sync_title), style = MaterialTheme.typography.titleLarge)
+                Spacer(Modifier.height(8.dp))
+                val counts = libraryDb.counts()
+                val serverCounts = libraryDb.serverCounts()
+                Text(
+                    text = stringResource(
+                        R.string.sync_status,
+                        counts.songs,
+                        serverCounts.songs.takeIf { it > 0 } ?: counts.songs,
+                    ),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                val lastSync = libraryDb.lastSync()
+                if (lastSync > 0) {
+                    Text(
+                        text = stringResource(
+                            R.string.sync_last,
+                            java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault())
+                                .format(java.util.Date(lastSync)),
+                        ),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                if (syncState.running) {
+                    Spacer(Modifier.height(6.dp))
+                    LinearProgressIndicator(Modifier.fillMaxWidth())
+                    Text(
+                        text = "${syncState.phase}: ${syncState.loaded}/${syncState.total}",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                syncState.error?.let { message ->
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        text = message,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
+                Spacer(Modifier.height(10.dp))
+                OutlinedButton(
+                    onClick = { scope.launch { librarySync.sync(force = true) } },
+                    enabled = !syncState.running,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(stringResource(R.string.sync_now))
                 }
             }
         }

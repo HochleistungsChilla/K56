@@ -355,4 +355,8 @@
     <string name="home_random_songs">Zufällige Titel</string>
     <string name="library_loaded_count">%1$d von %2$d geladen</string>
     <string name="library_offline_copy">Offline — Kopie am Gerät, Stand %1$s</string>
+    <string name="sync_title">Bibliotheks-Sync</string>
+    <string name="sync_status">%1$d von %2$d Titeln am Gerät</string>
+    <string name="sync_last">Zuletzt synchronisiert: %1$s</string>
+    <string name="sync_now">Jetzt synchronisieren</string>
 </resources>

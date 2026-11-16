@@ -394,6 +394,8 @@ private fun MainShell(container: AppContainer) {
                     repository = repository,
                     offlineStore = container.offlineStore,
                     settingsStore = container.settingsStore,
+                    libraryDb = container.libraryDb,
+                    librarySync = container.librarySync,
                     dspState = container.dspState,
                     onOpenDsp = { navController.navigate("dsp") },
                     onOpenCache = { navController.navigate("cache") },
