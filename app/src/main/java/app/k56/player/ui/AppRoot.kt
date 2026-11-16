@@ -352,6 +352,7 @@ private fun MainShell(container: AppContainer) {
                     repository = repository,
                     offlineStore = container.offlineStore,
                     settingsStore = container.settingsStore,
+                    librarySync = container.librarySync,
                     onOpenAlbum = { navController.navigate("album/$it") },
                     onOpenArtist = { navController.navigate("artist/$it") },
                     onPlay = playTracks,

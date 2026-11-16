@@ -2,6 +2,9 @@ package app.k56.player.ui.screens
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -25,6 +28,8 @@ import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.FavoriteBorder
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material.icons.rounded.KeyboardArrowUp
+import androidx.compose.material.icons.rounded.DragHandle
+import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.QueueMusic
@@ -86,7 +91,7 @@ import coil.imageLoader
 import coil.request.ImageRequest
 import coil.request.SuccessResult
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun PlayerScreen(
     controller: MediaController?,
@@ -368,11 +373,13 @@ fun PlayerScreen(
         val queueCount = controller?.mediaItemCount ?: 0
         if (queueCount > 0) {
             val nextIndex = (controller?.currentMediaItemIndex ?: -1) + 1
-            val nextTitle = if (nextIndex in 0 until queueCount) {
-                controller?.getMediaItemAt(nextIndex)?.mediaMetadata?.title?.toString().orEmpty()
+            val nextItem = if (nextIndex in 0 until queueCount) {
+                controller?.getMediaItemAt(nextIndex)
             } else {
-                ""
+                null
             }
+            val nextTitle = nextItem?.mediaMetadata?.title?.toString().orEmpty()
+            val nextArtworkUri = nextItem?.mediaMetadata?.artworkUri?.toString()
             var dragAccum by remember { mutableStateOf(0f) }
             Surface(
                 color = MaterialTheme.colorScheme.surfaceContainerHigh,
@@ -397,11 +404,10 @@ fun PlayerScreen(
                     modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Icon(
-                        imageVector = Icons.Rounded.QueueMusic,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(18.dp),
+                    Artwork(
+                        url = nextArtworkUri,
+                        modifier = Modifier.size(28.dp),
+                        shape = RoundedCornerShape(6.dp),
                     )
                     Spacer(Modifier.width(10.dp))
                     Column(Modifier.weight(1f)) {
@@ -569,79 +575,106 @@ fun PlayerScreen(
                 }
                 items(count) { index ->
                     val item = controller?.getMediaItemAt(index)
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(
-                                if (index == currentIndex) {
-                                    MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.30f)
-                                } else {
-                                    Color.Transparent
-                                },
+                    val artworkUri = item?.mediaMetadata?.artworkUri?.toString()
+                    var menuOpen by remember { mutableStateOf(false) }
+                    Box {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(
+                                    if (index == currentIndex) {
+                                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.30f)
+                                    } else {
+                                        Color.Transparent
+                                    },
+                                )
+                                .combinedClickable(
+                                    onClick = {
+                                        controller?.seekTo(index, 0L)
+                                        showQueue = false
+                                    },
+                                    onLongClick = { menuOpen = true },
+                                )
+                                .padding(horizontal = 16.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Artwork(
+                                url = artworkUri,
+                                modifier = Modifier.size(36.dp),
+                                shape = RoundedCornerShape(6.dp),
                             )
-                            .clickable {
-                                controller?.seekTo(index, 0L)
-                                showQueue = false
-                            }
-                            .padding(horizontal = 20.dp, vertical = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(
-                            text = (index + 1).toString(),
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.width(28.dp),
-                        )
-                        Column(Modifier.weight(1f)) {
-                            Text(
-                                text = item?.mediaMetadata?.title?.toString().orEmpty(),
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = if (index == currentIndex) {
-                                    MaterialTheme.colorScheme.primary
-                                } else {
-                                    MaterialTheme.colorScheme.onSurface
-                                },
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                            )
-                            Text(
-                                text = item?.mediaMetadata?.artist?.toString().orEmpty(),
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                            )
-                            if (index == currentIndex) {
+                            Spacer(Modifier.width(12.dp))
+                            Column(Modifier.weight(1f)) {
                                 Text(
-                                    text = stringResource(R.string.player_queue_now_playing),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.primary,
+                                    text = item?.mediaMetadata?.title?.toString().orEmpty(),
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = if (index == currentIndex) {
+                                        MaterialTheme.colorScheme.primary
+                                    } else {
+                                        MaterialTheme.colorScheme.onSurface
+                                    },
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+                                Text(
+                                    text = item?.mediaMetadata?.artist?.toString().orEmpty(),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+                                if (index == currentIndex) {
+                                    Text(
+                                        text = stringResource(R.string.player_queue_now_playing),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.primary,
+                                    )
+                                }
+                            }
+                            Icon(
+                                imageVector = Icons.Rounded.DragHandle,
+                                contentDescription = stringResource(R.string.queue_move_up),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier
+                                    .size(24.dp)
+                                    .pointerInput(index, count) {
+                                        val itemHeightPx = 56.dp.toPx()
+                                        var offset = 0f
+                                        detectDragGesturesAfterLongPress(
+                                            onDragStart = { offset = 0f },
+                                            onDrag = { change, amount ->
+                                                change.consume()
+                                                offset += amount.y
+                                            },
+                                            onDragEnd = {
+                                                val delta = Math.round(offset / itemHeightPx).toInt()
+                                                val target = (index + delta).coerceIn(0, count - 1)
+                                                if (target != index) onMoveQueueItem(index, target)
+                                            },
+                                        )
+                                    },
+                            )
+                            IconButton(onClick = { menuOpen = true }) {
+                                Icon(
+                                    imageVector = Icons.Rounded.MoreVert,
+                                    contentDescription = stringResource(R.string.action_more),
                                 )
                             }
                         }
-                        IconButton(
-                            onClick = { onMoveQueueItem(index, index - 1) },
-                            enabled = index > 0,
-                        ) {
-                            Icon(
-                                Icons.Rounded.ArrowUpward,
-                                contentDescription = stringResource(R.string.queue_move_up),
+                        DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.action_play_next)) },
+                                onClick = {
+                                    menuOpen = false
+                                    onMoveQueueItem(index, (currentIndex + 1).coerceIn(0, count - 1))
+                                },
                             )
-                        }
-                        IconButton(
-                            onClick = { onMoveQueueItem(index, index + 1) },
-                            enabled = index < count - 1,
-                        ) {
-                            Icon(
-                                Icons.Rounded.ArrowDownward,
-                                contentDescription = stringResource(R.string.queue_move_down),
-                            )
-                        }
-                        IconButton(onClick = { onRemoveQueueItem(index) }) {
-                            Icon(
-                                Icons.Rounded.DeleteOutline,
-                                contentDescription = stringResource(R.string.queue_remove),
-                                tint = MaterialTheme.colorScheme.error,
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.queue_remove)) },
+                                onClick = {
+                                    menuOpen = false
+                                    onRemoveQueueItem(index)
+                                },
                             )
                         }
                     }
