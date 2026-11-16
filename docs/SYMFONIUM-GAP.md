@@ -34,8 +34,8 @@ Aufwand: S (< 1 h) · M (1–3 h) · L (> 3 h)
 | Hide Filter Button | ❌ | S | Top-Button-Bar |
 | Hide Cast Button | ⛔ | S | kein Cast implementiert |
 | Changelog nach Update | ❌ | S | |
-| Media Lists: Anzahl anzeigen | ❌ | S | Badge in Listen |
-| Media Lists: Zusatzinfo 1/2 | 🟡 | S | Album/Interpret-Zeile |
+| Media Lists: Anzahl anzeigen | ✅ | S | Badge in Listen |
+| Media Lists: Zusatzinfo 1/2 | ✅ | S | Album/Interpret-Zeile |
 | Media Lists: Top-Button-Row ausblenden | ❌ | S | Quick-Action-Leiste |
 | Media Lists: Swipe-Aktionen (links/rechts) | ❌ | M | Play/Queue/Favorit |
 | Media Lists: Favorit/Offline-Overlay | ❌ | S | Badge auf Artwork |
@@ -70,9 +70,9 @@ Aufwand: S (< 1 h) · M (1–3 h) · L (> 3 h)
 | Now Playing: animierter Progressbar + Overlay-Icons | ❌ | S | |
 | Now Playing: zusätzliche Künstler | ❌ | S | |
 | Now Playing: Thumbnail in Landscape tauschen | ❌ | S | |
-| Now Playing: Favorit verstecken | ❌ | S | |
-| Now Playing: Cover nicht croppen | ❌ | S | ContentScale.Fit |
-| Now Playing: kompakt / Buttons wählbar | ❌ | M | |
+| Now Playing: Favorit verstecken | ✅ | S | Option |
+| Now Playing: Cover nicht croppen | ✅ | S | ContentScale.Fit (Option) |
+| Now Playing: kompakt / Buttons wählbar | 🟡 | S | kompakte Bedienelemente (Option); freie Button-Wahl fehlt |
 | Now Playing: Rating/Volume/Infos | ❌ | M | |
 | Queue unten statt oben | ✅ | – | Button unter Transport |
 
@@ -82,14 +82,14 @@ Aufwand: S (< 1 h) · M (1–3 h) · L (> 3 h)
 |---|---|---|---|
 | DSP / EQ / Convolver / DDC | ✅ | – | eigener DSP |
 | Endlos-Autoplay richtungsgebunden | ✅ | – | Jellyfin InstantMix |
-| Resume-Punkt (Position merken) | ❌ | M | Prio 1 |
-| Min. Spielzeit für Resume-Punkt (s) | ❌ | S | Teil von Resume |
+| Resume-Punkt (Position merken) | ✅ | M | SharedPreferences, pro Item |
+| Min. Spielzeit für Resume-Punkt (s) | ✅ | S | Schwelle als Einstellung (Default 15 s) |
 | Audiobook-Resume-Rollback | ❌ | S | beim Fortsetzen zurückrollen |
 | „Save Now Playing state" | ❌ | M | letzter Titel + Queue |
 | Multiple queues | ❌ | L | |
 | Personal mixes size | 🟡 | S | 60 Titel fix |
 | Min. play % bevor „gespielt" | ❌ | S | |
-| Circular queue navigation | ❌ | S | Ende → Anfang |
+| Circular queue navigation | ✅ | S | Ende → Anfang (Option) |
 | Previous/Next-Rewind-Verhalten | 🟡 | S | Prev bei Titelbeginn zurückspulen |
 | Retain player state (Shuffle/Repeat/Speed/Pitch) | 🟡 | S | nur Standard |
 | Pitch control | ❌ | M | |
@@ -132,7 +132,7 @@ Aufwand: S (< 1 h) · M (1–3 h) · L (> 3 h)
 | Cache-Manager | ✅ | – | |
 | Nur WLAN für Downloads | ✅ | – | |
 | WLAN-Status nur primäre Verbindung | ❌ | S | VPN/WireGuard-Erkennung |
-| Automatisches Offline-Cachen von Favoriten | ❌ | M | Prio 2 |
+| Automatisches Offline-Cachen von Favoriten | ✅ | M | respektiert WLAN-only |
 | Favoriten in Original-Qualität cachen | ❌ | S | |
 | Automatischer Offline-Modus | ❌ | M | |
 | Bei Transcode vom Server streamen | ❌ | S | |
@@ -186,11 +186,16 @@ Aufwand: S (< 1 h) · M (1–3 h) · L (> 3 h)
 
 ## Nächste Schritte (Reihenfolge)
 
-1. Resume-Punkt + „Save Now Playing" (M) — größter Effekt beim Start.
-2. Now-Playing-Optionen: Tracknummer ✅, Favorit verstecken, Cover nicht croppen (S).
-3. Automatisches Offline-Cachen von Favoriten (M, respektiert WLAN-only).
-4. Circular queue navigation (S).
-5. Media-Listen-Zusatzinfo + Anzahl (S).
-6. Orientation + Grid-Abstand (S).
-7. Backup & Restore der Einstellungen (M) — schützt Setup vor Verlust.
-8. Expanded-Now-Playing-Styles (L) — größtes visuelles Differenzierungsmerkmal.
+Erledigt (2026-11-16, 5 Commits):
+1. ✅ Resume-Punkt + Schwelle — „Save Now Playing" (letzter Titel + Queue) weiter offen.
+2. ✅ Now-Playing: Favorit verstecken, Cover nicht croppen, kompakte Bedienelemente.
+3. ✅ Automatisches Offline-Cachen von Favoriten (respektiert WLAN-only).
+4. ✅ Circular queue navigation.
+5. ✅ Media-Listen: Zusatzinfo + Anzahl.
+
+Weiter offen:
+- „Save Now Playing state" (letzter Titel + Queue wiederherstellen) (M).
+- Orientation + Grid-Abstand (S).
+- Backup & Restore der Einstellungen (M) — schützt Setup vor Verlust.
+- Expanded-Now-Playing-Styles (L) — größtes visuelles Differenzierungsmerkmal.
+- Freie Button-Wahl im Player (Rest von „kompakt / Buttons wählbar").
