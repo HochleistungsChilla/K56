@@ -181,31 +181,51 @@ private fun MainShell(container: AppContainer) {
         val active = controller
         if (active != null && tracks.isNotEmpty()) {
             scope.launch {
-                val items = tracks.mapNotNull { track ->
+                val offlineMode =
+                    repository.networkStatus.value.transport == app.k56.player.core.net.NetworkTransport.OFFLINE
+                val selectedId = tracks.getOrNull(index)?.id
+                val items = mutableListOf<androidx.media3.common.MediaItem>()
+                var startAt = -1
+                tracks.forEach { track ->
                     val offline = container.offlineStore.find(track.id)
-                    if (offline != null) {
-                        // Already on disk: no server round-trip, works without a network.
-                        return@mapNotNull PlaybackQueue.mediaItem(
+                    val item = if (offline != null) {
+                        // On disk: no server round-trip, works without a network.
+                        PlaybackQueue.mediaItem(
                             track,
-                            PlaybackSource(url = offline.uri(context).toString(), mimeType = null, transcoded = false),
+                            PlaybackSource(
+                                url = offline.uri(context).toString(),
+                                mimeType = null,
+                                transcoded = false,
+                            ),
                         )
-                    }
-                    val source = try {
-                        repository.playbackSource(track)
-                    } catch (_: Exception) {
+                    } else if (offlineMode) {
+                        // Offline and not downloaded: leave it out instead of hanging.
                         null
-                    } ?: return@mapNotNull null
-                    PlaybackQueue.mediaItem(track, source)
+                    } else {
+                        runCatching { repository.playbackSource(track) }.getOrNull()
+                            ?.let { PlaybackQueue.mediaItem(track, it) }
+                    }
+                    if (item != null) {
+                        if (track.id == selectedId) startAt = items.size
+                        items += item
+                    }
                 }
-                if (items.isNotEmpty()) {
-                    active.setMediaItems(items, index.coerceIn(0, items.lastIndex), 0L)
-                    active.prepare()
-                    active.play()
-                    queueTracks.clear()
-                    queueTracks.addAll(tracks)
-                    persistQueue()
-                    navController.navigate("player")
+                if (items.isEmpty()) {
+                    android.widget.Toast.makeText(
+                        context,
+                        R.string.err_offline_not_downloaded,
+                        android.widget.Toast.LENGTH_LONG,
+                    ).show()
+                    return@launch
                 }
+                val start = if (startAt >= 0) startAt else 0
+                active.setMediaItems(items, start, 0L)
+                active.prepare()
+                active.play()
+                queueTracks.clear()
+                queueTracks.addAll(tracks.filter { t -> items.any { it.mediaId == t.id } })
+                persistQueue()
+                navController.navigate("player")
             }
         }
     }
@@ -405,6 +425,8 @@ private fun MainShell(container: AppContainer) {
             composable("search") {
                 SearchScreen(
                     repository = repository,
+                    offlineStore = container.offlineStore,
+                    settingsStore = container.settingsStore,
                     onOpenAlbum = { navController.navigate("album/$it") },
                     onOpenArtist = { navController.navigate("artist/$it") },
                     onPlay = playTracks,
@@ -431,6 +453,8 @@ private fun MainShell(container: AppContainer) {
             ) { entry ->
                 AlbumScreen(
                     repository = repository,
+                    offlineStore = container.offlineStore,
+                    settingsStore = container.settingsStore,
                     albumId = entry.arguments?.getString("albumId").orEmpty(),
                     onBack = { navController.popBackStack() },
                     onOpenArtist = { navController.navigate("artist/$it") },
@@ -446,6 +470,8 @@ private fun MainShell(container: AppContainer) {
             ) { entry ->
                 ArtistScreen(
                     repository = repository,
+                    offlineStore = container.offlineStore,
+                    settingsStore = container.settingsStore,
                     artistId = entry.arguments?.getString("artistId").orEmpty(),
                     onBack = { navController.popBackStack() },
                     onOpenAlbum = { navController.navigate("album/$it") },

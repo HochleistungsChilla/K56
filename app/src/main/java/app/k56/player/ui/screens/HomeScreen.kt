@@ -183,6 +183,13 @@ fun HomeScreen(
 
     val downloadOne: (Track) -> Unit = { track -> enqueueTracks(listOf(track)) }
 
+    fun downloadAlbum(albumId: String) {
+        scope.launch {
+            val tracks = runCatching { repository.albumDetails(albumId).tracks }.getOrDefault(emptyList())
+            enqueueTracks(tracks)
+        }
+    }
+
     val selectedAlbums = remember { mutableStateListOf<String>() }
     val selectedArtists = remember { mutableStateListOf<String>() }
     val selectionMode = selectedAlbums.isNotEmpty() || selectedArtists.isNotEmpty()
@@ -296,6 +303,7 @@ fun HomeScreen(
                                 onAlbumLongClick = { toggleAlbum(it) },
                                 selectedIds = selectedAlbums.toSet(),
                                 selectionMode = selectionMode,
+                                onDownloadAlbum = { downloadAlbum(it) },
                             )
                         }
                     }
@@ -310,6 +318,7 @@ fun HomeScreen(
                                 onAlbumLongClick = { toggleAlbum(it) },
                                 selectedIds = selectedAlbums.toSet(),
                                 selectionMode = selectionMode,
+                                onDownloadAlbum = { downloadAlbum(it) },
                             )
                         }
                     }

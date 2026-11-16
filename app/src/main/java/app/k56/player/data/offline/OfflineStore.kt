@@ -108,6 +108,7 @@ class OfflineStore(
     val streamed: StateFlow<Set<String>> = _streamed.asStateFlow()
 
     private val cancelled = ConcurrentHashMap.newKeySet<String>()
+    private val queuedIds = ConcurrentHashMap<String, Boolean>()
 
     private val _queue = MutableStateFlow(DownloadQueueState())
     val queue: StateFlow<DownloadQueueState> = _queue.asStateFlow()
@@ -146,7 +147,9 @@ class OfflineStore(
 
     /** Queues a batch; up to [concurrentDownloads] run at once, the rest wait. */
     fun enqueue(requests: List<DownloadRequest>) {
-        val pending = requests.filter { !isDownloaded(it.track.id) }
+        val pending = requests
+            .distinctBy { it.track.id }
+            .filter { req -> !isDownloaded(req.track.id) && queuedIds.putIfAbsent(req.track.id, true) == null }
         if (pending.isEmpty()) return
         val version = ++queueVersion
         val permits = settingsStore.concurrentDownloads.value.coerceIn(1, 5)
@@ -154,17 +157,21 @@ class OfflineStore(
         _queue.value = DownloadQueueState(total = pending.size)
         pending.forEach { request ->
             downloadScope.launch {
-                semaphore.withPermit {
-                    if (version != queueVersion) return@withPermit
-                    waitForWifiAllowed(version)
-                    if (version != queueVersion) return@withPermit
-                    _queue.value = _queue.value.copy(active = _queue.value.active + 1)
-                    val result = downloadWithRetry(request)
-                    _queue.value = _queue.value.copy(
-                        active = _queue.value.active - 1,
-                        done = _queue.value.done + if (result != null) 1 else 0,
-                        failed = _queue.value.failed + if (result == null) 1 else 0,
-                    )
+                try {
+                    semaphore.withPermit {
+                        if (version != queueVersion) return@withPermit
+                        waitForWifiAllowed(version)
+                        if (version != queueVersion) return@withPermit
+                        _queue.value = _queue.value.copy(active = _queue.value.active + 1)
+                        val result = downloadWithRetry(request)
+                        _queue.value = _queue.value.copy(
+                            active = _queue.value.active - 1,
+                            done = _queue.value.done + if (result != null) 1 else 0,
+                            failed = _queue.value.failed + if (result == null) 1 else 0,
+                        )
+                    }
+                } finally {
+                    queuedIds.remove(request.track.id)
                 }
             }
         }

@@ -716,6 +716,7 @@ fun HorizontalAlbumRow(
     onAlbumLongClick: ((String) -> Unit)? = null,
     selectedIds: Set<String> = emptySet(),
     selectionMode: Boolean = false,
+    onDownloadAlbum: ((String) -> Unit)? = null,
 ) {
     androidx.compose.foundation.lazy.LazyRow(
         contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp),
@@ -723,19 +724,34 @@ fun HorizontalAlbumRow(
     ) {
         items(albums.size, key = { albums[it].id }) { index ->
             val album = albums[index]
-            AlbumCard(
-                album = album,
-                onClick = {
-                    if (onAlbumLongClick != null && (selectionMode || album.id in selectedIds)) {
-                        onAlbumLongClick(album.id)
-                    } else {
-                        onOpenAlbum(album.id)
+            var menuOpen by remember { mutableStateOf(false) }
+            Box {
+                AlbumCard(
+                    album = album,
+                    onClick = {
+                        if (onAlbumLongClick != null && (selectionMode || album.id in selectedIds)) {
+                            onAlbumLongClick(album.id)
+                        } else {
+                            onOpenAlbum(album.id)
+                        }
+                    },
+                    onLongClick = onAlbumLongClick?.let { { it(album.id) } },
+                    selected = album.id in selectedIds,
+                    onMenu = onDownloadAlbum?.let { { menuOpen = true } },
+                    modifier = Modifier.width(cardWidth),
+                )
+                if (onDownloadAlbum != null) {
+                    DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.offline_download)) },
+                            onClick = {
+                                menuOpen = false
+                                onDownloadAlbum(album.id)
+                            },
+                        )
                     }
-                },
-                onLongClick = onAlbumLongClick?.let { { it(album.id) } },
-                selected = album.id in selectedIds,
-                modifier = Modifier.width(cardWidth),
-            )
+                }
+            }
         }
     }
 }

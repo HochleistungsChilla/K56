@@ -1,6 +1,7 @@
 package app.k56.player.ui.screens
 
 import android.content.Context
+import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -10,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -19,14 +21,18 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.FavoriteBorder
+import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.Shuffle
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -40,11 +46,16 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.k56.player.R
 import app.k56.player.core.model.ArtistDetails
+import app.k56.player.core.model.Album
 import app.k56.player.core.model.Track
+import app.k56.player.core.net.NetworkTransport
 import app.k56.player.data.MediaRepository
+import app.k56.player.data.SettingsStore
 import app.k56.player.data.library.LibraryDb
 import app.k56.player.data.library.SyncLog
+import app.k56.player.data.offline.OfflineStore
 import app.k56.player.ui.appViewModel
+import app.k56.player.ui.enqueueDownloads
 import app.k56.player.ui.components.AlbumCard
 import app.k56.player.ui.components.Artwork
 import app.k56.player.ui.components.ErrorState
@@ -131,6 +142,8 @@ class ArtistViewModel(
 @Composable
 fun ArtistScreen(
     repository: MediaRepository,
+    offlineStore: OfflineStore,
+    settingsStore: SettingsStore,
     artistId: String,
     onBack: () -> Unit,
     onOpenAlbum: (String) -> Unit,
@@ -139,7 +152,37 @@ fun ArtistScreen(
     onAddToQueue: (Track) -> Unit = {},
 ) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     val vm = appViewModel { ArtistViewModel(repository, artistId, context.applicationContext) }
+    val offline by offlineStore.tracks.collectAsState()
+    val downloadedIds = offline.map { it.id }.toSet()
+    val downloads by offlineStore.progress.collectAsState()
+    val net by repository.networkStatus.collectAsState()
+    val onWifi = net.transport == NetworkTransport.WIFI || net.transport == NetworkTransport.ETHERNET
+    val wifiOnlyDownloads = settingsStore.wifiOnlyDownloads.value
+
+    fun downloadTracks(tracks: List<Track>) {
+        scope.launch {
+            if (wifiOnlyDownloads && !onWifi) {
+                Toast.makeText(context, R.string.download_wifi_only, Toast.LENGTH_SHORT).show()
+                return@launch
+            }
+            enqueueDownloads(tracks, repository, offlineStore)
+        }
+    }
+
+    fun downloadAllAlbums(albums: List<Album>) {
+        scope.launch {
+            if (wifiOnlyDownloads && !onWifi) {
+                Toast.makeText(context, R.string.download_wifi_only, Toast.LENGTH_SHORT).show()
+                return@launch
+            }
+            val tracks = albums.flatMap { album ->
+                runCatching { repository.albumDetails(album.id).tracks }.getOrDefault(emptyList())
+            }
+            enqueueDownloads(tracks.distinctBy { it.id }, repository, offlineStore)
+        }
+    }
 
     Column(Modifier.fillMaxSize()) {
         ScreenHeader(title = stringResource(R.string.artist_title), onBack = onBack)
@@ -178,6 +221,7 @@ fun ArtistScreen(
                         },
                         isFavorite = vm.artistIsFavorite,
                         onToggleFavorite = { vm.toggleFavorite() },
+                        onDownloadAll = { downloadAllAlbums(details.albums) },
                     )
                 }
 
@@ -203,6 +247,9 @@ fun ArtistScreen(
                                 track = track,
                                 onClick = { onPlay(details.topTracks, index) },
                                 index = index + 1,
+                                isDownloaded = track.id in downloadedIds,
+                                downloadProgress = downloads[track.id],
+                                onDownload = if (track.id in downloadedIds) null else { { downloadTracks(listOf(track)) } },
                                 onPlayNext = { onPlayNext(track) },
                                 onAddToQueue = { onAddToQueue(track) },
                             )
@@ -243,6 +290,7 @@ private fun ArtistHeader(
     onShuffle: () -> Unit,
     isFavorite: Boolean,
     onToggleFavorite: () -> Unit,
+    onDownloadAll: () -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -290,6 +338,18 @@ private fun ArtistHeader(
                     Icon(Icons.Rounded.Shuffle, contentDescription = stringResource(R.string.player_shuffle))
                 }
             }
+        }
+        Spacer(Modifier.height(10.dp))
+        OutlinedButton(
+            onClick = onDownloadAll,
+            enabled = details.albums.isNotEmpty(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp),
+        ) {
+            Icon(Icons.Rounded.Download, contentDescription = null)
+            Spacer(Modifier.width(8.dp))
+            Text(stringResource(R.string.artist_download_all))
         }
     }
 }

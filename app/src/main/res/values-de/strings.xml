@@ -389,4 +389,7 @@
     <string name="sync_phase_writing">Speichern</string>
     <string name="sync_phase_incremental">Aktualisieren</string>
     <string name="sync_phase_start">Start</string>
+    <string name="err_offline_not_downloaded">Offline — dieser Titel ist nicht heruntergeladen</string>
+    <string name="album_download">Album herunterladen</string>
+    <string name="artist_download_all">Alles herunterladen</string>
 </resources>

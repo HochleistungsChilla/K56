@@ -1061,6 +1061,9 @@ fun LibraryScreen(
                     vm = vm,
                     onOpenAlbum = onOpenAlbum,
                     onPlay = onPlay,
+                    downloadedIds = downloadedIds,
+                    downloads = downloads,
+                    downloadTracks = { tracks -> enqueueTracks(tracks) },
                 )
             }
 
@@ -1070,6 +1073,9 @@ fun LibraryScreen(
                     onPlay = onPlay,
                     onPlayNext = onPlayNext,
                     onAddToQueue = onAddToQueue,
+                    downloadedIds = downloadedIds,
+                    downloads = downloads,
+                    downloadTracks = { tracks -> enqueueTracks(tracks) },
                 )
             }
         }
@@ -1242,6 +1248,9 @@ private fun GenreContent(
     vm: LibraryViewModel,
     onOpenAlbum: (String) -> Unit,
     onPlay: (List<Track>, Int) -> Unit,
+    downloadedIds: Set<String>,
+    downloads: Map<String, Float>,
+    downloadTracks: (List<Track>) -> Unit,
 ) {
     val genre = vm.selectedGenre
     if (genre == null) {
@@ -1285,7 +1294,13 @@ private fun GenreContent(
             IconButton(onClick = vm::closeGenre) {
                 Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = stringResource(R.string.common_back))
             }
-            Text(genre, style = MaterialTheme.typography.titleLarge)
+            Text(genre, style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
+            IconButton(
+                onClick = { downloadTracks(vm.genreTracks) },
+                enabled = vm.genreTracks.isNotEmpty(),
+            ) {
+                Icon(Icons.Rounded.Download, contentDescription = stringResource(R.string.offline_download))
+            }
         }
         if (vm.genreOffline) {
             Text(
@@ -1315,6 +1330,9 @@ private fun GenreContent(
                         track = track,
                         onClick = { onPlay(vm.genreTracks, index) },
                         showArtwork = true,
+                        isDownloaded = track.id in downloadedIds,
+                        downloadProgress = downloads[track.id],
+                        onDownload = if (track.id in downloadedIds) null else { { downloadTracks(listOf(track)) } },
                     )
                 }
             }
@@ -1328,6 +1346,9 @@ private fun PlaylistContent(
     onPlay: (List<Track>, Int) -> Unit,
     onPlayNext: (Track) -> Unit,
     onAddToQueue: (Track) -> Unit,
+    downloadedIds: Set<String>,
+    downloads: Map<String, Float>,
+    downloadTracks: (List<Track>) -> Unit,
 ) {
     val playlist = vm.selectedPlaylist
     var showCreate by remember { mutableStateOf(false) }
@@ -1399,6 +1420,12 @@ private fun PlaylistContent(
                     overflow = TextOverflow.Ellipsis,
                 )
                 IconButton(
+                    onClick = { downloadTracks(vm.playlistTracks) },
+                    enabled = vm.playlistTracks.isNotEmpty(),
+                ) {
+                    Icon(Icons.Rounded.Download, contentDescription = stringResource(R.string.offline_download))
+                }
+                IconButton(
                     onClick = { if (vm.playlistTracks.isNotEmpty()) onPlay(vm.playlistTracks, 0) },
                 ) {
                     Icon(Icons.Rounded.PlayArrow, contentDescription = stringResource(R.string.common_play))
@@ -1440,6 +1467,9 @@ private fun PlaylistContent(
                             track = track,
                             onClick = { onPlay(vm.playlistTracks, index) },
                             showArtwork = true,
+                            isDownloaded = track.id in downloadedIds,
+                            downloadProgress = downloads[track.id],
+                            onDownload = if (track.id in downloadedIds) null else { { downloadTracks(listOf(track)) } },
                             onPlayNext = { onPlayNext(track) },
                             onAddToQueue = { onAddToQueue(track) },
                             onRemoveFromPlaylist = { vm.removeFromPlaylist(track) },

@@ -1,6 +1,7 @@
 package app.k56.player.ui.screens
 
 import android.content.Context
+import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -33,8 +34,10 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -50,9 +53,13 @@ import androidx.lifecycle.viewModelScope
 import app.k56.player.R
 import app.k56.player.core.model.SearchResults
 import app.k56.player.core.model.Track
+import app.k56.player.core.net.NetworkTransport
 import app.k56.player.data.MediaRepository
+import app.k56.player.data.SettingsStore
 import app.k56.player.data.library.LibraryDb
+import app.k56.player.data.offline.OfflineStore
 import app.k56.player.ui.appViewModel
+import app.k56.player.ui.enqueueDownloads
 import app.k56.player.ui.components.Artwork
 import app.k56.player.ui.components.ErrorState
 import app.k56.player.ui.components.SectionHeader
@@ -151,6 +158,8 @@ class SearchViewModel(
 @Composable
 fun SearchScreen(
     repository: MediaRepository,
+    offlineStore: OfflineStore,
+    settingsStore: SettingsStore,
     onOpenAlbum: (String) -> Unit,
     onOpenArtist: (String) -> Unit,
     onPlay: (List<Track>, Int) -> Unit,
@@ -158,7 +167,25 @@ fun SearchScreen(
     onAddToQueue: (Track) -> Unit = {},
 ) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     val vm = appViewModel { SearchViewModel(repository, context.applicationContext) }
+    val offline by offlineStore.tracks.collectAsState()
+    val downloadedIds = offline.map { it.id }.toSet()
+    val downloads by offlineStore.progress.collectAsState()
+    val net by repository.networkStatus.collectAsState()
+    val onWifi = net.transport == NetworkTransport.WIFI || net.transport == NetworkTransport.ETHERNET
+    val wifiOnlyDownloads = settingsStore.wifiOnlyDownloads.value
+
+    fun downloadTracks(tracks: List<Track>) {
+        scope.launch {
+            if (wifiOnlyDownloads && !onWifi) {
+                Toast.makeText(context, R.string.download_wifi_only, Toast.LENGTH_SHORT).show()
+                return@launch
+            }
+            enqueueDownloads(tracks, repository, offlineStore)
+        }
+    }
+
     var query by rememberSaveable { mutableStateOf("") }
     var filterAlbums by rememberSaveable { mutableStateOf(true) }
     var filterArtists by rememberSaveable { mutableStateOf(true) }
@@ -318,6 +345,9 @@ fun SearchScreen(
                         track = track,
                         onClick = { onPlay(results.tracks, index) },
                         showArtwork = true,
+                        isDownloaded = track.id in downloadedIds,
+                        downloadProgress = downloads[track.id],
+                        onDownload = if (track.id in downloadedIds) null else { { downloadTracks(listOf(track)) } },
                         onPlayNext = { onPlayNext(track) },
                         onAddToQueue = { onAddToQueue(track) },
                     )
