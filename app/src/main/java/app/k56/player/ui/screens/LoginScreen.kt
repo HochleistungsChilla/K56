@@ -106,10 +106,18 @@ class LoginViewModel(
             loginLocal()
             return
         }
-        val primary = internalUrl.trim()
-        if (primary.isEmpty()) {
+        val internal = internalUrl.trim()
+        val external = externalUrl.trim()
+        if (internal.isEmpty() && external.isEmpty()) {
             error = appContext.getString(R.string.err_server_address_missing)
             return
+        }
+        // Either field may carry the address: try both, whichever answers first wins.
+        val primary = internal.ifEmpty { external }
+        val secondary = when {
+            internal.isEmpty() -> null
+            external.isEmpty() || external == internal -> null
+            else -> external
         }
         if (backend != BackendKind.KODI && backend != BackendKind.LOCAL &&
             backend != BackendKind.WEBDAV && username.isBlank()
@@ -124,7 +132,7 @@ class LoginViewModel(
                 repository.login(
                     backend = backend,
                     internalUrl = primary,
-                    externalUrl = externalUrl.trim().takeIf { it.isNotEmpty() },
+                    externalUrl = secondary,
                     username = username,
                     password = password,
                 )
@@ -180,10 +188,17 @@ class LoginViewModel(
 
     fun startQuickConnect() {
         if (quickConnectBusy) return
-        val primary = internalUrl.trim()
-        if (primary.isEmpty()) {
+        val internal = internalUrl.trim()
+        val external = externalUrl.trim()
+        if (internal.isEmpty() && external.isEmpty()) {
             quickConnectError = appContext.getString(R.string.err_server_address_missing)
             return
+        }
+        val primary = internal.ifEmpty { external }
+        val quickConnectSecondary = when {
+            internal.isEmpty() -> null
+            external.isEmpty() || external == internal -> null
+            else -> external
         }
         quickConnectBusy = true
         quickConnectError = null
@@ -193,7 +208,7 @@ class LoginViewModel(
                 repository.quickConnect(
                     backend = backend,
                     internalUrl = primary,
-                    externalUrl = externalUrl.trim().takeIf { it.isNotEmpty() },
+                    externalUrl = quickConnectSecondary,
                 ) { code -> quickConnectCode = code }
             } catch (e: CancellationException) {
                 // dialog closed
