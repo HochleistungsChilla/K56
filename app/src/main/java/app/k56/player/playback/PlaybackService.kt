@@ -91,6 +91,7 @@ class PlaybackService : MediaSessionService() {
                     rememberSeed(id)
                     currentItemId = id
                     appContainer.offlineStore.markStreamed(id)
+                    appContainer.libraryDb.recordPlay(id)
                     resumeIfAvailable(id)
                     reportStart(id)
                     extendWithSimilar(autoStart = false)

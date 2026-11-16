@@ -2,12 +2,14 @@ package app.k56.player.ui.screens
 
 import android.content.Context
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -31,6 +33,7 @@ import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -44,8 +47,10 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -57,16 +62,20 @@ import app.k56.player.core.model.Artist
 import app.k56.player.core.model.Track
 import app.k56.player.core.net.NetworkTransport
 import app.k56.player.data.MediaRepository
+import app.k56.player.data.ResumeStore
 import app.k56.player.data.SettingsStore
+import app.k56.player.data.library.LibraryDb
 import app.k56.player.data.offline.OfflineStore
 import app.k56.player.data.offline.DownloadRequest
 import app.k56.player.ui.appViewModel
 import app.k56.player.ui.components.ArtistCard
+import app.k56.player.ui.components.Artwork
 import app.k56.player.ui.components.EmptyState
 import app.k56.player.ui.components.ErrorState
 import app.k56.player.ui.components.HorizontalAlbumRow
 import app.k56.player.ui.components.LoadingState
 import app.k56.player.ui.components.SectionHeader
+import app.k56.player.ui.components.TrackRow
 import app.k56.player.ui.userMessage
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -74,6 +83,8 @@ import kotlinx.coroutines.launch
 
 class HomeViewModel(
     private val repository: MediaRepository,
+    private val libraryDb: LibraryDb,
+    private val resumeStore: ResumeStore,
     private val appContext: Context,
 ) : ViewModel() {
 
@@ -84,6 +95,10 @@ class HomeViewModel(
     var artists by mutableStateOf<List<Artist>>(emptyList())
         private set
     var songs by mutableStateOf<List<Track>>(emptyList())
+        private set
+    var continueItems by mutableStateOf<List<ResumeItem>>(emptyList())
+        private set
+    var recentPlayed by mutableStateOf<List<Track>>(emptyList())
         private set
     var loading by mutableStateOf(true)
         private set
@@ -103,6 +118,7 @@ class HomeViewModel(
     fun load() {
         loading = true
         error = null
+        refreshLocal()
         viewModelScope.launch {
             try {
                 coroutineScope {
@@ -122,6 +138,27 @@ class HomeViewModel(
                 loading = false
             }
         }
+    }
+
+    /** Refreshes the local (device) sections: resume points and play history. */
+    fun refreshLocal() {
+        continueItems = resumeStore.recent(6).mapNotNull { point ->
+            val track = libraryDb.trackById(point.itemId) ?: Track(
+                id = point.itemId,
+                title = point.title,
+                albumId = null,
+                albumName = null,
+                artistName = null,
+                durationMs = point.durationMs,
+                indexNumber = null,
+                discNumber = null,
+                container = null,
+                bitrate = null,
+                imageUrl = null,
+            )
+            ResumeItem(track, point.positionMs, point.durationMs)
+        }
+        recentPlayed = libraryDb.recentPlays(12)
     }
 
     /** Title mix: a wide random slice of the library. */
@@ -145,11 +182,20 @@ class HomeViewModel(
     }
 }
 
+/** A resumed track with where it was left off, for the "continue" row. */
+data class ResumeItem(
+    val track: Track,
+    val positionMs: Long,
+    val durationMs: Long,
+)
+
 @Composable
 fun HomeScreen(
     repository: MediaRepository,
     settingsStore: SettingsStore,
     offlineStore: OfflineStore,
+    libraryDb: LibraryDb,
+    resumeStore: ResumeStore,
     onOpenAlbum: (String) -> Unit,
     onOpenArtist: (String) -> Unit,
     onPlay: (List<Track>, Int) -> Unit,
@@ -158,13 +204,16 @@ fun HomeScreen(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val vm = appViewModel { HomeViewModel(repository, context.applicationContext) }
+    val vm = appViewModel { HomeViewModel(repository, libraryDb, resumeStore, context.applicationContext) }
     val sections by settingsStore.homeSections.collectAsStateWithLifecycle()
     var editOpen by remember { mutableStateOf(false) }
 
     val net by repository.networkStatus.collectAsStateWithLifecycle()
     val onWifi = net.transport == NetworkTransport.WIFI || net.transport == NetworkTransport.ETHERNET
     val wifiOnlyDownloads = settingsStore.wifiOnlyDownloads.value
+    val offlineTracks by offlineStore.tracks.collectAsStateWithLifecycle()
+    val downloadedIds = offlineTracks.map { it.id }.toSet()
+    val downloads by offlineStore.progress.collectAsStateWithLifecycle()
     fun enqueueTracks(tracks: List<Track>) {
         scope.launch {
             val requests = tracks.mapNotNull { track ->
@@ -342,6 +391,42 @@ fun HomeScreen(
                         }
                     }
 
+                    "continue" -> if (vm.continueItems.isNotEmpty()) {
+                        item { SectionHeader(stringResource(R.string.home_continue)) }
+                        item {
+                            val items = vm.continueItems
+                            LazyRow(
+                                contentPadding = PaddingValues(horizontal = 16.dp),
+                                horizontalArrangement = Arrangement.spacedBy(gridSpacing.dp),
+                            ) {
+                                items(items, key = { it.track.id }) { resume ->
+                                    ContinueCard(
+                                        resume = resume,
+                                        onClick = { onPlay(items.map { it.track }, items.indexOf(resume)) },
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    "recent_played" -> if (vm.recentPlayed.isNotEmpty()) {
+                        item { SectionHeader(stringResource(R.string.home_recent_played)) }
+                        item {
+                            Column(Modifier.padding(horizontal = 16.dp)) {
+                                vm.recentPlayed.forEachIndexed { index, track ->
+                                    TrackRow(
+                                        track = track,
+                                        onClick = { onPlay(vm.recentPlayed, index) },
+                                        isDownloaded = track.id in downloadedIds,
+                                        downloadProgress = downloads[track.id],
+                                        onDownload = if (track.id in downloadedIds) null else { { downloadOne(track) } },
+                                        onAddToQueue = { onAddToQueue(track) },
+                                    )
+                                }
+                            }
+                        }
+                    }
+
                     "songs" -> if (vm.songs.isNotEmpty()) {
                         item { SectionHeader(stringResource(R.string.home_random_songs)) }
                         item {
@@ -435,6 +520,52 @@ private fun TrackRowCompact(track: Track, onClick: () -> Unit) {
 }
 
 @Composable
+private fun ContinueCard(resume: ResumeItem, onClick: () -> Unit) {
+    val progress = if (resume.durationMs > 0) {
+        (resume.positionMs.toFloat() / resume.durationMs).coerceIn(0f, 1f)
+    } else {
+        0f
+    }
+    Column(
+        modifier = Modifier
+            .width(150.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .clickable(onClick = onClick)
+            .padding(2.dp),
+    ) {
+        Artwork(
+            url = resume.track.imageUrl,
+            modifier = Modifier
+                .fillMaxWidth()
+                .aspectRatio(1f),
+            shape = RoundedCornerShape(14.dp),
+        )
+        Spacer(Modifier.height(8.dp))
+        Text(
+            text = resume.track.title,
+            style = MaterialTheme.typography.titleMedium,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+        Text(
+            text = resume.track.artistName.orEmpty(),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+        Spacer(Modifier.height(6.dp))
+        LinearProgressIndicator(
+            progress = { progress },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(3.dp)
+                .clip(RoundedCornerShape(2.dp)),
+        )
+    }
+}
+
+@Composable
 private fun HomeSectionsDialog(
     current: List<String>,
     onDismiss: () -> Unit,
@@ -442,6 +573,8 @@ private fun HomeSectionsDialog(
 ) {
     val catalog = listOf(
         "recent" to stringResource(R.string.home_recently_added),
+        "continue" to stringResource(R.string.home_continue),
+        "recent_played" to stringResource(R.string.home_recent_played),
         "random_albums" to stringResource(R.string.home_random_albums),
         "random_artists" to stringResource(R.string.home_random_artists),
         "songs" to stringResource(R.string.home_random_songs),

@@ -69,12 +69,23 @@ class LibraryDb private constructor(context: Context) :
         db.execSQL("CREATE INDEX idx_tracks_album ON tracks(album_id)")
         db.execSQL("CREATE INDEX idx_albums_name ON albums(name)")
         createFavoriteTables(db)
+        createPlayHistoryTable(db)
     }
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
         if (oldVersion < 2) {
             createFavoriteTables(db)
         }
+        if (oldVersion < 3) {
+            createPlayHistoryTable(db)
+        }
+    }
+
+    private fun createPlayHistoryTable(db: SQLiteDatabase) {
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS play_history (track_id TEXT PRIMARY KEY, played_at INTEGER NOT NULL)",
+        )
+        db.execSQL("CREATE INDEX IF NOT EXISTS idx_play_history_time ON play_history(played_at)")
     }
 
     private fun createFavoriteTables(db: SQLiteDatabase) {
@@ -542,6 +553,45 @@ class LibraryDb private constructor(context: Context) :
             out
         }
 
+    /** Remembers that [trackId] started playing, capped to the 500 most recent. */
+    fun recordPlay(trackId: String) {
+        if (trackId.isBlank()) return
+        val db = writableDatabase
+        db.beginTransaction()
+        try {
+            db.insertWithOnConflict(
+                "play_history",
+                null,
+                ContentValues().apply {
+                    put("track_id", trackId)
+                    put("played_at", System.currentTimeMillis())
+                },
+                SQLiteDatabase.CONFLICT_REPLACE,
+            )
+            db.execSQL(
+                "DELETE FROM play_history WHERE track_id NOT IN (" +
+                    "SELECT track_id FROM play_history ORDER BY played_at DESC LIMIT 500)",
+            )
+            db.setTransactionSuccessful()
+        } finally {
+            db.endTransaction()
+        }
+    }
+
+    /** Most recently played tracks, newest first. */
+    fun recentPlays(limit: Int = 12): List<Track> = readableDatabase
+        .rawQuery(
+            "SELECT t.* FROM play_history p JOIN tracks t ON p.track_id = t.id " +
+                "ORDER BY p.played_at DESC LIMIT $limit",
+            null,
+        )
+        .use { cursor -> buildList { while (cursor.moveToNext()) add(cursor.toTrack()) } }
+
+    /** One track by server id, or null when it was never indexed. */
+    fun trackById(id: String): Track? = readableDatabase
+        .rawQuery("SELECT * FROM tracks WHERE id = ?", arrayOf(id))
+        .use { cursor -> if (cursor.moveToFirst()) cursor.toTrack() else null }
+
     private fun count(table: String): Int = readableDatabase
         .rawQuery("SELECT COUNT(*) FROM $table", null)
         .use { cursor -> if (cursor.moveToFirst()) cursor.getInt(0) else 0 }
@@ -608,7 +658,7 @@ class LibraryDb private constructor(context: Context) :
     }
 
     companion object {
-        private const val DB_VERSION = 2
+        private const val DB_VERSION = 3
         private val STAGED_TABLES = listOf("tracks", "albums", "artists", "genres")
         private const val KEY_LAST_SYNC = "last_sync"
         private const val KEY_SERVER_TRACKS = "server_tracks"

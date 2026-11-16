@@ -37,6 +37,10 @@ class ResumeStore(context: Context) {
 
     fun read(itemId: String): ResumePoint? = readAll()[itemId]
 
+    /** Most recently saved resume points, newest first, capped at [limit]. */
+    fun recent(limit: Int): List<ResumePoint> =
+        readAll().values.sortedByDescending { it.savedAt }.take(limit)
+
     fun clear(itemId: String) {
         val all = readAll()
         if (itemId !in all) return
