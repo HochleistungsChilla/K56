@@ -315,6 +315,7 @@
     <string name="np_style_standard">Standard</string>
     <string name="np_style_large">Large cover</string>
     <string name="np_cover_radius">Cover corner radius</string>
+    <string name="np_cover_margin">Cover margin</string>
     <string name="np_background_title">Background</string>
     <string name="np_background_gradient">Gradient</string>
     <string name="np_background_solid">Solid</string>

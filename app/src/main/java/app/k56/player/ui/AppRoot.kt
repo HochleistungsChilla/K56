@@ -94,6 +94,7 @@ private fun MainShell(container: AppContainer) {
     val showSleepTimerButton by container.settingsStore.showSleepTimerButton.collectAsStateWithLifecycle()
     val playerStyle by container.settingsStore.playerStyle.collectAsStateWithLifecycle()
     val coverCornerRadius by container.settingsStore.coverCornerRadius.collectAsStateWithLifecycle()
+    val coverMarginDp by container.settingsStore.coverMarginDp.collectAsStateWithLifecycle()
     val playerBackground by container.settingsStore.playerBackground.collectAsStateWithLifecycle()
     val animatedProgress by container.settingsStore.animatedProgress.collectAsStateWithLifecycle()
     val fitCover by container.settingsStore.fitCover.collectAsStateWithLifecycle()
@@ -426,6 +427,7 @@ private fun MainShell(container: AppContainer) {
                     showSleepTimer = showSleepTimerButton,
                     playerStyle = playerStyle,
                     coverCornerRadius = coverCornerRadius,
+                    coverMarginDp = coverMarginDp,
                     playerBackground = playerBackground,
                     animatedProgress = animatedProgress,
                     onToggleFavorite = toggleFavorite,

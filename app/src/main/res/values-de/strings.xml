@@ -305,6 +305,7 @@
     <string name="np_style_standard">Standard</string>
     <string name="np_style_large">Großes Cover</string>
     <string name="np_cover_radius">Cover-Eckradius</string>
+    <string name="np_cover_margin">Cover-Abstand</string>
     <string name="np_background_title">Hintergrund</string>
     <string name="np_background_gradient">Verlauf</string>
     <string name="np_background_solid">Einfarbig</string>

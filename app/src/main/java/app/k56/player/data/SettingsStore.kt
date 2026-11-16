@@ -155,6 +155,9 @@ class SettingsStore(context: Context) {
     private val _coverCornerRadius = MutableStateFlow(prefs.getInt(KEY_COVER_RADIUS, 24))
     val coverCornerRadius: StateFlow<Int> = _coverCornerRadius.asStateFlow()
 
+    private val _coverMarginDp = MutableStateFlow(prefs.getInt(KEY_COVER_MARGIN, 0))
+    val coverMarginDp: StateFlow<Int> = _coverMarginDp.asStateFlow()
+
     private val _playerBackground = MutableStateFlow(
         runCatching { PlayerBackground.valueOf(prefs.getString(KEY_PLAYER_BACKGROUND, null) ?: "GRADIENT") }
             .getOrDefault(PlayerBackground.GRADIENT),
@@ -286,6 +289,7 @@ class SettingsStore(context: Context) {
             PlayerStyle.valueOf(prefs.getString(KEY_PLAYER_STYLE, null) ?: "STANDARD")
         }.getOrDefault(PlayerStyle.STANDARD)
         _coverCornerRadius.value = prefs.getInt(KEY_COVER_RADIUS, 24)
+        _coverMarginDp.value = prefs.getInt(KEY_COVER_MARGIN, 0)
         _playerBackground.value = runCatching {
             PlayerBackground.valueOf(prefs.getString(KEY_PLAYER_BACKGROUND, null) ?: "GRADIENT")
         }.getOrDefault(PlayerBackground.GRADIENT)
@@ -382,6 +386,11 @@ class SettingsStore(context: Context) {
         _coverCornerRadius.value = value
     }
 
+    fun setCoverMarginDp(value: Int) {
+        prefs.edit().putInt(KEY_COVER_MARGIN, value).apply()
+        _coverMarginDp.value = value
+    }
+
     fun setPlayerBackground(value: PlayerBackground) {
         prefs.edit().putString(KEY_PLAYER_BACKGROUND, value.name).apply()
         _playerBackground.value = value
@@ -432,6 +441,7 @@ class SettingsStore(context: Context) {
         private const val KEY_NP_SLEEP = "np_sleep"
         private const val KEY_PLAYER_STYLE = "player_style"
         private const val KEY_COVER_RADIUS = "cover_radius"
+        private const val KEY_COVER_MARGIN = "cover_margin"
         private const val KEY_PLAYER_BACKGROUND = "player_background"
         private const val KEY_ANIMATED_PROGRESS = "animated_progress"
         private const val KEY_NP_FIT_COVER = "np_fit_cover"

@@ -100,6 +100,7 @@ fun PlayerScreen(
     showSleepTimer: Boolean = true,
     playerStyle: PlayerStyle = PlayerStyle.STANDARD,
     coverCornerRadius: Int = 24,
+    coverMarginDp: Int = 0,
     playerBackground: PlayerBackground = PlayerBackground.GRADIENT,
     animatedProgress: Boolean = false,
     onToggleFavorite: (String, Boolean) -> Unit = { _, _ -> },
@@ -302,13 +303,13 @@ fun PlayerScreen(
         ) {
             Artwork(
                 url = state.artworkUri,
-                modifier = if (playerStyle == PlayerStyle.LARGE_COVER) {
+                modifier = (if (playerStyle == PlayerStyle.LARGE_COVER) {
                     Modifier.fillMaxSize()
                 } else {
                     Modifier
                         .fillMaxWidth(0.92f)
                         .aspectRatio(1f)
-                },
+                }).padding(horizontal = coverMarginDp.dp),
                 shape = RoundedCornerShape(coverCornerRadius.dp),
                 contentScale = if (fitCover) ContentScale.Fit else ContentScale.Crop,
             )

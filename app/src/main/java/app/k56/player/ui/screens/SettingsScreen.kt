@@ -87,6 +87,7 @@ fun SettingsScreen(
     val showSleepTimerButton by settingsStore.showSleepTimerButton.collectAsStateWithLifecycle()
     val playerStyle by settingsStore.playerStyle.collectAsStateWithLifecycle()
     val coverCornerRadius by settingsStore.coverCornerRadius.collectAsStateWithLifecycle()
+    val coverMarginDp by settingsStore.coverMarginDp.collectAsStateWithLifecycle()
     val playerBackground by settingsStore.playerBackground.collectAsStateWithLifecycle()
     val animatedProgress by settingsStore.animatedProgress.collectAsStateWithLifecycle()
     val fitCover by settingsStore.fitCover.collectAsStateWithLifecycle()
@@ -836,10 +837,22 @@ fun SettingsScreen(
                 Text(stringResource(R.string.np_cover_radius), style = MaterialTheme.typography.titleMedium)
                 Spacer(Modifier.height(4.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    listOf(0, 8, 16, 24).forEach { value ->
+                    listOf(0, 8, 16, 24, 28).forEach { value ->
                         FilterChip(
                             selected = coverCornerRadius == value,
                             onClick = { settingsStore.setCoverCornerRadius(value) },
+                            label = { Text("$value dp") },
+                        )
+                    }
+                }
+                Spacer(Modifier.height(10.dp))
+                Text(stringResource(R.string.np_cover_margin), style = MaterialTheme.typography.titleMedium)
+                Spacer(Modifier.height(4.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf(0, 8, 16, 24).forEach { value ->
+                        FilterChip(
+                            selected = coverMarginDp == value,
+                            onClick = { settingsStore.setCoverMarginDp(value) },
                             label = { Text("$value dp") },
                         )
                     }
