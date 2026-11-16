@@ -68,6 +68,7 @@ import kotlinx.coroutines.launch
 import app.k56.player.R
 import app.k56.player.core.model.Album
 import app.k56.player.core.model.Artist
+import app.k56.player.core.model.LibraryCounts
 import app.k56.player.core.model.Playlist
 import app.k56.player.core.model.Track
 import app.k56.player.core.net.NetworkTransport
@@ -116,6 +117,8 @@ class LibraryViewModel(
     var selectedPlaylist by mutableStateOf<Playlist?>(null)
         private set
     var playlistTracks by mutableStateOf<List<Track>>(emptyList())
+        private set
+    var counts by mutableStateOf(LibraryCounts())
         private set
     var loading by mutableStateOf(true)
         private set
@@ -298,18 +301,20 @@ class LibraryViewModel(
             try {
                 coroutineScope {
                     val libraryId = repository.defaultLibraryId()
-                    val albumsJob = async { repository.albums(libraryId, limit = 300) }
-                    val artistsJob = async { repository.artists(libraryId, limit = 300) }
-                    val songsJob = async { repository.songs(libraryId, limit = 600) }
-                    val favoritesJob = async { repository.favoriteTracks() }
+                    val albumsJob = async { repository.albums(libraryId, limit = -1) }
+                    val artistsJob = async { repository.artists(libraryId, limit = -1) }
+                    val songsJob = async { repository.songs(libraryId, limit = -1) }
+                    val favoritesJob = async { repository.favoriteTracks(-1) }
                     val genresJob = async { repository.genres(libraryId) }
                     val playlistsJob = async { repository.playlists() }
+                    val countsJob = async { repository.libraryCounts(libraryId) }
                     albums = albumsJob.await()
                     artists = artistsJob.await()
                     songs = songsJob.await()
                     favorites = favoritesJob.await()
                     genres = genresJob.await()
                     playlists = playlistsJob.await()
+                    counts = countsJob.await()
                 }
             } catch (e: Exception) {
                 error = e.userMessage(appContext)
@@ -437,14 +442,27 @@ fun LibraryScreen(
             }
         }
 
-        if (showItemCount && !vm.loading && tab <= 3) {
+        if (!vm.loading && tab <= 3) {
+            val loaded = when (tab) {
+                0 -> vm.albums.size
+                1 -> vm.artists.size
+                2 -> vm.songs.size
+                else -> vm.favorites.size
+            }
+            val total = when (tab) {
+                0 -> vm.counts.albums
+                1 -> vm.counts.artists
+                2 -> vm.counts.songs
+                else -> 0
+            }
+            val text = when {
+                total > 0 -> stringResource(R.string.library_loaded_count, loaded, total)
+                tab == 0 -> context.resources.getQuantityString(R.plurals.plural_albums, loaded, loaded)
+                tab == 1 -> context.resources.getQuantityString(R.plurals.plural_artists, loaded, loaded)
+                else -> context.resources.getQuantityString(R.plurals.plural_tracks, loaded, loaded)
+            }
             Text(
-                text = when (tab) {
-                    0 -> context.resources.getQuantityString(R.plurals.plural_albums, vm.albums.size, vm.albums.size)
-                    1 -> context.resources.getQuantityString(R.plurals.plural_artists, vm.artists.size, vm.artists.size)
-                    2 -> context.resources.getQuantityString(R.plurals.plural_tracks, vm.songs.size, vm.songs.size)
-                    else -> context.resources.getQuantityString(R.plurals.plural_tracks, vm.favorites.size, vm.favorites.size)
-                },
+                text = text,
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),

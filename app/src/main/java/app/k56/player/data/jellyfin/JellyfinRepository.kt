@@ -8,6 +8,7 @@ import app.k56.player.core.model.Artist
 import app.k56.player.core.model.ArtistDetails
 import app.k56.player.core.model.BackendKind
 import app.k56.player.core.model.DiscoveredServer
+import app.k56.player.core.model.LibraryCounts
 import app.k56.player.core.model.LibraryView
 import app.k56.player.core.model.PlaybackSource
 import app.k56.player.core.model.Playlist
@@ -270,6 +271,18 @@ class JellyfinRepository(
         return libraries().firstOrNull()?.id
     }
 
+    override suspend fun libraryCounts(parentId: String?): LibraryCounts {
+        val api = ensureApi()
+        val albumsTotal = api.items(
+            itemQuery(parentId = parentId, includeTypes = "MusicAlbum", recursive = true, limit = 1),
+        ).TotalRecordCount
+        val songsTotal = api.items(
+            itemQuery(parentId = parentId, includeTypes = "Audio", recursive = true, limit = 1),
+        ).TotalRecordCount
+        val artistsTotal = api.artists(artistQuery(parentId = parentId, limit = 1)).TotalRecordCount
+        return LibraryCounts(albums = albumsTotal, artists = artistsTotal, songs = songsTotal)
+    }
+
     override suspend fun recentAlbums(limit: Int): List<Album> = albums(
         parentId = null,
         sortBy = "DateCreated",
@@ -283,25 +296,53 @@ class JellyfinRepository(
         sortOrder: String,
         limit: Int,
         startIndex: Int,
-    ): List<Album> = ensureApi()
-        .items(
-            itemQuery(
-                parentId = parentId,
-                includeTypes = "MusicAlbum",
-                recursive = true,
-                sortBy = sortBy,
-                sortOrder = sortOrder,
-                limit = limit,
-                startIndex = startIndex,
-            ),
-        )
-        .Items.orEmpty()
-        .map { it.toAlbum() }
+    ): List<Album> {
+        if (limit == ALL_LIMIT) {
+            return pagedQuery(
+                buildQuery = { index ->
+                    itemQuery(
+                        parentId = parentId,
+                        includeTypes = "MusicAlbum",
+                        recursive = true,
+                        sortBy = sortBy,
+                        sortOrder = sortOrder,
+                        limit = PAGE_SIZE,
+                        startIndex = index,
+                    )
+                },
+                fetch = { query -> ensureApi().items(query) },
+            ).map { it.toAlbum() }
+        }
+        return ensureApi()
+            .items(
+                itemQuery(
+                    parentId = parentId,
+                    includeTypes = "MusicAlbum",
+                    recursive = true,
+                    sortBy = sortBy,
+                    sortOrder = sortOrder,
+                    limit = limit,
+                    startIndex = startIndex,
+                ),
+            )
+            .Items.orEmpty()
+            .map { it.toAlbum() }
+    }
 
-    override suspend fun artists(parentId: String?, limit: Int): List<Artist> = ensureApi()
-        .artists(artistQuery(parentId = parentId, limit = limit))
-        .Items.orEmpty()
-        .map { it.toArtist() }
+    override suspend fun artists(parentId: String?, limit: Int): List<Artist> {
+        if (limit == ALL_LIMIT) {
+            return pagedQuery(
+                buildQuery = { index ->
+                    artistQuery(parentId = parentId, limit = PAGE_SIZE, startIndex = index)
+                },
+                fetch = { query -> ensureApi().artists(query) },
+            ).map { it.toArtist() }
+        }
+        return ensureApi()
+            .artists(artistQuery(parentId = parentId, limit = limit))
+            .Items.orEmpty()
+            .map { it.toArtist() }
+    }
 
     override suspend fun albumDetails(albumId: String): AlbumDetails {
         val current = requireSession()
@@ -485,19 +526,37 @@ class JellyfinRepository(
         }.isSuccess
     }
 
-    override suspend fun songs(parentId: String?, limit: Int): List<Track> = ensureApi()
-        .items(
-            itemQuery(
-                parentId = parentId,
-                includeTypes = "Audio",
-                recursive = true,
-                sortBy = "SortName",
-                sortOrder = "Ascending",
-                limit = limit,
-            ),
-        )
-        .Items.orEmpty()
-        .map { it.toTrack() }
+    override suspend fun songs(parentId: String?, limit: Int): List<Track> {
+        if (limit == ALL_LIMIT) {
+            return pagedQuery(
+                buildQuery = { index ->
+                    itemQuery(
+                        parentId = parentId,
+                        includeTypes = "Audio",
+                        recursive = true,
+                        sortBy = "SortName",
+                        sortOrder = "Ascending",
+                        limit = PAGE_SIZE,
+                        startIndex = index,
+                    )
+                },
+                fetch = { query -> ensureApi().items(query) },
+            ).map { it.toTrack() }
+        }
+        return ensureApi()
+            .items(
+                itemQuery(
+                    parentId = parentId,
+                    includeTypes = "Audio",
+                    recursive = true,
+                    sortBy = "SortName",
+                    sortOrder = "Ascending",
+                    limit = limit,
+                ),
+            )
+            .Items.orEmpty()
+            .map { it.toTrack() }
+    }
 
     override suspend fun instantMix(seedIds: List<String>, limit: Int): List<Track> {
         if (seedIds.isEmpty()) return emptyList()
@@ -526,19 +585,37 @@ class JellyfinRepository(
         return collected.values.take(limit)
     }
 
-    override suspend fun favoriteTracks(limit: Int): List<Track> = ensureApi()
-        .items(
-            itemQuery(
-                includeTypes = "Audio",
-                recursive = true,
-                sortBy = "SortName",
-                sortOrder = "Ascending",
-                limit = limit,
-                filters = "IsFavorite",
-            ),
-        )
-        .Items.orEmpty()
-        .map { it.toTrack() }
+    override suspend fun favoriteTracks(limit: Int): List<Track> {
+        if (limit == ALL_LIMIT) {
+            return pagedQuery(
+                buildQuery = { index ->
+                    itemQuery(
+                        includeTypes = "Audio",
+                        recursive = true,
+                        sortBy = "SortName",
+                        sortOrder = "Ascending",
+                        limit = PAGE_SIZE,
+                        startIndex = index,
+                        filters = "IsFavorite",
+                    )
+                },
+                fetch = { query -> ensureApi().items(query) },
+            ).map { it.toTrack() }
+        }
+        return ensureApi()
+            .items(
+                itemQuery(
+                    includeTypes = "Audio",
+                    recursive = true,
+                    sortBy = "SortName",
+                    sortOrder = "Ascending",
+                    limit = limit,
+                    filters = "IsFavorite",
+                ),
+            )
+            .Items.orEmpty()
+            .map { it.toTrack() }
+    }
 
     override suspend fun search(term: String): SearchResults {
         val query = term.trim()
@@ -721,15 +798,39 @@ class JellyfinRepository(
         put("EnableTotalRecordCount", "true")
     }
 
-    private fun artistQuery(parentId: String?, limit: Int?): Map<String, String> = buildMap {
+    private fun artistQuery(parentId: String?, limit: Int?, startIndex: Int? = null): Map<String, String> = buildMap {
         parentId?.takeIf { it.isNotBlank() }?.let { put("ParentId", it) }
         put("Recursive", "true")
         put("SortBy", "SortName")
         put("SortOrder", "Ascending")
         limit?.let { put("Limit", it.toString()) }
+        startIndex?.let { put("StartIndex", it.toString()) }
         put("Fields", "PrimaryImageAspectRatio,Overview,Genres")
         put("ImageTypeLimit", "1")
         put("EnableImageTypes", "Primary")
+    }
+
+    /**
+     * Follows Jellyfin's StartIndex/Limit paging until the result is exhausted
+     * or the hard cap is reached, so the whole library can be loaded instead of
+     * silently dropping everything past an arbitrary limit.
+     */
+    private suspend fun pagedQuery(
+        buildQuery: (startIndex: Int) -> Map<String, String>,
+        fetch: suspend (Map<String, String>) -> QueryResultDto,
+        pageSize: Int = PAGE_SIZE,
+        cap: Int = HARD_CAP,
+    ): List<BaseItemDto> {
+        val collected = mutableListOf<BaseItemDto>()
+        var startIndex = 0
+        while (collected.size < cap) {
+            val page = fetch(buildQuery(startIndex)).Items.orEmpty()
+            if (page.isEmpty()) break
+            collected.addAll(page)
+            if (page.size < pageSize) break
+            startIndex += pageSize
+        }
+        return collected.take(cap)
     }
 
     // ------------------------------------------------------------- mapper
@@ -796,6 +897,11 @@ class JellyfinRepository(
         const val TICKS_PER_MILLISECOND = 10_000L
         const val QUICK_CONNECT_INTERVAL_MS = 2_000L
         const val QUICK_CONNECT_POLLS = 90
+
+        /** Sentinel limit value: load everything (paginated) instead of a single page. */
+        const val ALL_LIMIT = -1
+        const val PAGE_SIZE = 500
+        const val HARD_CAP = 20_000
 
         const val ITEM_FIELDS =
             "PrimaryImageAspectRatio,ProductionYear,AlbumArtist,Artists,RunTimeTicks," +

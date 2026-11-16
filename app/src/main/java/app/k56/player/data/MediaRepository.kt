@@ -6,6 +6,7 @@ import app.k56.player.core.model.Artist
 import app.k56.player.core.model.ArtistDetails
 import app.k56.player.core.model.BackendKind
 import app.k56.player.core.model.DiscoveredServer
+import app.k56.player.core.model.LibraryCounts
 import app.k56.player.core.model.LibraryView
 import app.k56.player.core.model.PlaybackSource
 import app.k56.player.core.model.Playlist
@@ -54,6 +55,9 @@ interface MediaRepository {
     /** Plex uses a PIN/link flow instead of URL+password. */
     suspend fun plexSignIn(onCode: (String) -> Unit): Session =
         throw IllegalStateException("Plex sign-in is not supported by this backend.")
+
+    /** Total item counts for one library, so the UI can show truncation. */
+    suspend fun libraryCounts(parentId: String?): LibraryCounts = LibraryCounts()
 
     suspend fun libraries(): List<LibraryView>
     suspend fun defaultLibraryId(): String?

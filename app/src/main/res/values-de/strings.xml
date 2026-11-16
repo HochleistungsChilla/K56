@@ -282,6 +282,8 @@
     <string name="selection_cancel">Abbrechen</string>
 
     <string name="player_queue_count">Warteschlange (%1$d)</string>
+    <string name="player_queue_up_next">Als Nächstes</string>
+    <string name="player_queue_now_playing">Jetzt läuft</string>
 
     <string name="display_title">Darstellung</string>
     <string name="display_keep_on">Bildschirm an lassen</string>
@@ -351,4 +353,5 @@
     <string name="home_random_albums">Zufällige Alben</string>
     <string name="home_random_artists">Zufällige Interpreten</string>
     <string name="home_random_songs">Zufällige Titel</string>
+    <string name="library_loaded_count">%1$d von %2$d geladen</string>
 </resources>

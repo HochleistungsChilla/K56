@@ -119,6 +119,13 @@ data class Playlist(
     val imageUrl: String? = null,
 )
 
+/** Total item counts for the library, used to show whether anything was truncated. */
+data class LibraryCounts(
+    val albums: Int = 0,
+    val artists: Int = 0,
+    val songs: Int = 0,
+)
+
 data class SearchResults(
     val albums: List<Album> = emptyList(),
     val artists: List<Artist> = emptyList(),

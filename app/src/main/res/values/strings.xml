@@ -292,6 +292,8 @@
     <string name="selection_cancel">Cancel</string>
 
     <string name="player_queue_count">Queue (%1$d)</string>
+    <string name="player_queue_up_next">Up next</string>
+    <string name="player_queue_now_playing">Now playing</string>
 
     <string name="display_title">Display</string>
     <string name="display_keep_on">Keep screen on</string>
@@ -361,4 +363,5 @@
     <string name="home_random_albums">Random albums</string>
     <string name="home_random_artists">Random artists</string>
     <string name="home_random_songs">Random titles</string>
+    <string name="library_loaded_count">%1$d of %2$d loaded</string>
 </resources>
