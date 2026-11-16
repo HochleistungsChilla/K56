@@ -121,6 +121,21 @@ class SettingsStore(context: Context) {
     private val _showNowPlayingFavorite = MutableStateFlow(prefs.getBoolean(KEY_NP_FAVORITE, true))
     val showNowPlayingFavorite: StateFlow<Boolean> = _showNowPlayingFavorite.asStateFlow()
 
+    private val _showShuffleButton = MutableStateFlow(prefs.getBoolean(KEY_NP_SHUFFLE, true))
+    val showShuffleButton: StateFlow<Boolean> = _showShuffleButton.asStateFlow()
+
+    private val _showRepeatButton = MutableStateFlow(prefs.getBoolean(KEY_NP_REPEAT, true))
+    val showRepeatButton: StateFlow<Boolean> = _showRepeatButton.asStateFlow()
+
+    private val _showQueueButton = MutableStateFlow(prefs.getBoolean(KEY_NP_QUEUE, true))
+    val showQueueButton: StateFlow<Boolean> = _showQueueButton.asStateFlow()
+
+    private val _showDspButton = MutableStateFlow(prefs.getBoolean(KEY_NP_DSP, true))
+    val showDspButton: StateFlow<Boolean> = _showDspButton.asStateFlow()
+
+    private val _showSleepTimerButton = MutableStateFlow(prefs.getBoolean(KEY_NP_SLEEP, true))
+    val showSleepTimerButton: StateFlow<Boolean> = _showSleepTimerButton.asStateFlow()
+
     private val _fitCover = MutableStateFlow(prefs.getBoolean(KEY_NP_FIT_COVER, false))
     val fitCover: StateFlow<Boolean> = _fitCover.asStateFlow()
 
@@ -290,6 +305,31 @@ class SettingsStore(context: Context) {
         _showNowPlayingFavorite.value = value
     }
 
+    fun setShowShuffleButton(value: Boolean) {
+        prefs.edit().putBoolean(KEY_NP_SHUFFLE, value).apply()
+        _showShuffleButton.value = value
+    }
+
+    fun setShowRepeatButton(value: Boolean) {
+        prefs.edit().putBoolean(KEY_NP_REPEAT, value).apply()
+        _showRepeatButton.value = value
+    }
+
+    fun setShowQueueButton(value: Boolean) {
+        prefs.edit().putBoolean(KEY_NP_QUEUE, value).apply()
+        _showQueueButton.value = value
+    }
+
+    fun setShowDspButton(value: Boolean) {
+        prefs.edit().putBoolean(KEY_NP_DSP, value).apply()
+        _showDspButton.value = value
+    }
+
+    fun setShowSleepTimerButton(value: Boolean) {
+        prefs.edit().putBoolean(KEY_NP_SLEEP, value).apply()
+        _showSleepTimerButton.value = value
+    }
+
     fun setFitCover(value: Boolean) {
         prefs.edit().putBoolean(KEY_NP_FIT_COVER, value).apply()
         _fitCover.value = value
@@ -322,6 +362,11 @@ class SettingsStore(context: Context) {
         private const val KEY_DOWNLOAD_FORMAT = "download_format"
         private const val KEY_RESUME_THRESHOLD = "resume_threshold_seconds"
         private const val KEY_NP_FAVORITE = "np_favorite"
+        private const val KEY_NP_SHUFFLE = "np_shuffle"
+        private const val KEY_NP_REPEAT = "np_repeat"
+        private const val KEY_NP_QUEUE = "np_queue"
+        private const val KEY_NP_DSP = "np_dsp"
+        private const val KEY_NP_SLEEP = "np_sleep"
         private const val KEY_NP_FIT_COVER = "np_fit_cover"
         private const val KEY_NP_COMPACT = "np_compact"
 

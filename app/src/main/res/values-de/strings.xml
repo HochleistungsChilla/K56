@@ -290,6 +290,12 @@
     <string name="np_fit_cover_body">Zeigt das komplette Artwork statt es zu beschneiden.</string>
     <string name="np_compact">Kompakte Bedienelemente</string>
     <string name="np_compact_body">Kleinere Wiedergabe-Buttons im Player.</string>
+    <string name="np_buttons_title">Player-Buttons</string>
+    <string name="np_show_shuffle">Zufallswiedergabe</string>
+    <string name="np_show_repeat">Wiederholen</string>
+    <string name="np_show_queue">Warteschlange</string>
+    <string name="np_show_dsp">DSP</string>
+    <string name="np_show_sleep">Sleep-Timer</string>
 
     <string name="download_wifi_only">Downloads laufen nur im WLAN. Einstellung ändern.</string>
 

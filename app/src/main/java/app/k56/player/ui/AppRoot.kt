@@ -87,6 +87,11 @@ private fun MainShell(container: AppContainer) {
     val wifiOnlyDownloads by container.settingsStore.wifiOnlyDownloads.collectAsStateWithLifecycle()
     val ignoreArticles by container.settingsStore.ignoreArticles.collectAsStateWithLifecycle()
     val showNowPlayingFavorite by container.settingsStore.showNowPlayingFavorite.collectAsStateWithLifecycle()
+    val showShuffleButton by container.settingsStore.showShuffleButton.collectAsStateWithLifecycle()
+    val showRepeatButton by container.settingsStore.showRepeatButton.collectAsStateWithLifecycle()
+    val showQueueButton by container.settingsStore.showQueueButton.collectAsStateWithLifecycle()
+    val showDspButton by container.settingsStore.showDspButton.collectAsStateWithLifecycle()
+    val showSleepTimerButton by container.settingsStore.showSleepTimerButton.collectAsStateWithLifecycle()
     val fitCover by container.settingsStore.fitCover.collectAsStateWithLifecycle()
     val compactControls by container.settingsStore.compactControls.collectAsStateWithLifecycle()
     val autoCacheFavorites by container.settingsStore.autoCacheFavorites.collectAsStateWithLifecycle()
@@ -402,6 +407,11 @@ private fun MainShell(container: AppContainer) {
                     showFavorite = showNowPlayingFavorite,
                     fitCover = fitCover,
                     compactControls = compactControls,
+                    showShuffle = showShuffleButton,
+                    showRepeat = showRepeatButton,
+                    showQueue = showQueueButton,
+                    showDsp = showDspButton,
+                    showSleepTimer = showSleepTimerButton,
                     onToggleFavorite = toggleFavorite,
                     onMoveQueueItem = moveQueueItem,
                     onRemoveQueueItem = removeQueueItem,

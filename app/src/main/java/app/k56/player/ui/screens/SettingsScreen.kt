@@ -75,6 +75,11 @@ fun SettingsScreen(
     val circularQueue by settingsStore.circularQueue.collectAsStateWithLifecycle()
     val resumeThresholdSeconds by settingsStore.resumeThresholdSeconds.collectAsStateWithLifecycle()
     val showNowPlayingFavorite by settingsStore.showNowPlayingFavorite.collectAsStateWithLifecycle()
+    val showShuffleButton by settingsStore.showShuffleButton.collectAsStateWithLifecycle()
+    val showRepeatButton by settingsStore.showRepeatButton.collectAsStateWithLifecycle()
+    val showQueueButton by settingsStore.showQueueButton.collectAsStateWithLifecycle()
+    val showDspButton by settingsStore.showDspButton.collectAsStateWithLifecycle()
+    val showSleepTimerButton by settingsStore.showSleepTimerButton.collectAsStateWithLifecycle()
     val fitCover by settingsStore.fitCover.collectAsStateWithLifecycle()
     val compactControls by settingsStore.compactControls.collectAsStateWithLifecycle()
     val keepScreenOn by settingsStore.keepScreenOn.collectAsStateWithLifecycle()
@@ -739,6 +744,24 @@ fun SettingsScreen(
             modifier = Modifier.fillMaxWidth(),
         ) {
             Column(Modifier.padding(16.dp)) {
+                Text(stringResource(R.string.np_buttons_title), style = MaterialTheme.typography.titleLarge)
+                Spacer(Modifier.height(8.dp))
+                PlayerButtonSwitch(stringResource(R.string.np_show_shuffle), showShuffleButton) { settingsStore.setShowShuffleButton(it) }
+                PlayerButtonSwitch(stringResource(R.string.np_show_repeat), showRepeatButton) { settingsStore.setShowRepeatButton(it) }
+                PlayerButtonSwitch(stringResource(R.string.np_show_queue), showQueueButton) { settingsStore.setShowQueueButton(it) }
+                PlayerButtonSwitch(stringResource(R.string.np_show_dsp), showDspButton) { settingsStore.setShowDspButton(it) }
+                PlayerButtonSwitch(stringResource(R.string.np_show_sleep), showSleepTimerButton) { settingsStore.setShowSleepTimerButton(it) }
+            }
+        }
+
+        Spacer(Modifier.height(14.dp))
+
+        Surface(
+            color = MaterialTheme.colorScheme.surfaceContainer,
+            shape = RoundedCornerShape(20.dp),
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Column(Modifier.padding(16.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
                         Text(stringResource(R.string.articles_title), style = MaterialTheme.typography.titleMedium)
@@ -952,6 +975,14 @@ private fun orientationLabel(mode: ScreenOrientation): Int = when (mode) {
     ScreenOrientation.AUTO -> R.string.orientation_auto
     ScreenOrientation.PORTRAIT -> R.string.orientation_portrait
     ScreenOrientation.LANDSCAPE -> R.string.orientation_landscape
+}
+
+@Composable
+private fun PlayerButtonSwitch(label: String, checked: Boolean, onChange: (Boolean) -> Unit) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Text(label, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+        Switch(checked = checked, onCheckedChange = onChange)
+    }
 }
 
 @Composable

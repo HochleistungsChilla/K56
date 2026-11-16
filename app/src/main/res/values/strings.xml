@@ -300,6 +300,12 @@
     <string name="np_fit_cover_body">Show the full artwork instead of cropping it.</string>
     <string name="np_compact">Compact controls</string>
     <string name="np_compact_body">Smaller transport buttons in the player.</string>
+    <string name="np_buttons_title">Player buttons</string>
+    <string name="np_show_shuffle">Shuffle</string>
+    <string name="np_show_repeat">Repeat</string>
+    <string name="np_show_queue">Queue</string>
+    <string name="np_show_dsp">DSP</string>
+    <string name="np_show_sleep">Sleep timer</string>
 
     <string name="download_wifi_only">Downloads only run on Wi-Fi. Change it in settings.</string>
 

@@ -84,6 +84,11 @@ fun PlayerScreen(
     showFavorite: Boolean = true,
     fitCover: Boolean = false,
     compactControls: Boolean = false,
+    showShuffle: Boolean = true,
+    showRepeat: Boolean = true,
+    showQueue: Boolean = true,
+    showDsp: Boolean = true,
+    showSleepTimer: Boolean = true,
     onToggleFavorite: (String, Boolean) -> Unit = { _, _ -> },
     onMoveQueueItem: (Int, Int) -> Unit = { _, _ -> },
     onRemoveQueueItem: (Int) -> Unit = {},
@@ -184,36 +189,40 @@ fun PlayerScreen(
                     )
                 }
             }
-            IconButton(onClick = onOpenDsp) {
-                Icon(
-                    Icons.Rounded.Tune,
-                    contentDescription = stringResource(R.string.dsp_title),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            Box {
-                IconButton(onClick = { timerMenu = true }) {
+            if (showDsp) {
+                IconButton(onClick = onOpenDsp) {
                     Icon(
-                        Icons.Rounded.Timer,
-                        contentDescription = stringResource(R.string.player_sleep_timer),
-                        tint = if (sleepMinutes > 0) MaterialTheme.colorScheme.primary
-                        else MaterialTheme.colorScheme.onSurfaceVariant,
+                        Icons.Rounded.Tune,
+                        contentDescription = stringResource(R.string.dsp_title),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-                DropdownMenu(expanded = timerMenu, onDismissRequest = { timerMenu = false }) {
-                    listOf(0, 15, 30, 45, 60).forEach { minutes ->
-                        DropdownMenuItem(
-                            text = {
-                                Text(
-                                    if (minutes == 0) stringResource(R.string.player_sleep_off)
-                                    else "$minutes min",
-                                )
-                            },
-                            onClick = {
-                                sleepMinutes = minutes
-                                timerMenu = false
-                            },
+            }
+            if (showSleepTimer) {
+                Box {
+                    IconButton(onClick = { timerMenu = true }) {
+                        Icon(
+                            Icons.Rounded.Timer,
+                            contentDescription = stringResource(R.string.player_sleep_timer),
+                            tint = if (sleepMinutes > 0) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.onSurfaceVariant,
                         )
+                    }
+                    DropdownMenu(expanded = timerMenu, onDismissRequest = { timerMenu = false }) {
+                        listOf(0, 15, 30, 45, 60).forEach { minutes ->
+                            DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        if (minutes == 0) stringResource(R.string.player_sleep_off)
+                                        else "$minutes min",
+                                    )
+                                },
+                                onClick = {
+                                    sleepMinutes = minutes
+                                    timerMenu = false
+                                },
+                            )
+                        }
                     }
                 }
             }
@@ -284,16 +293,18 @@ fun PlayerScreen(
 
         Spacer(Modifier.height(10.dp))
 
-        OutlinedButton(
-            onClick = { showQueue = true },
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Icon(Icons.Rounded.QueueMusic, contentDescription = null)
-            Spacer(Modifier.width(8.dp))
-            Text(stringResource(R.string.player_queue_count, controller?.mediaItemCount ?: 0))
-        }
+        if (showQueue) {
+            OutlinedButton(
+                onClick = { showQueue = true },
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Icon(Icons.Rounded.QueueMusic, contentDescription = null)
+                Spacer(Modifier.width(8.dp))
+                Text(stringResource(R.string.player_queue_count, controller?.mediaItemCount ?: 0))
+            }
 
-        Spacer(Modifier.height(6.dp))
+            Spacer(Modifier.height(6.dp))
+        }
 
         val playButtonSize = if (compactControls) 56.dp else 72.dp
         val playIconSize = if (compactControls) 30.dp else 38.dp
@@ -304,12 +315,14 @@ fun PlayerScreen(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            IconButton(onClick = { controller?.shuffleModeEnabled = !state.shuffle }) {
-                Icon(
-                    Icons.Rounded.Shuffle,
-                    contentDescription = stringResource(R.string.player_shuffle),
-                    tint = if (state.shuffle) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+            if (showShuffle) {
+                IconButton(onClick = { controller?.shuffleModeEnabled = !state.shuffle }) {
+                    Icon(
+                        Icons.Rounded.Shuffle,
+                        contentDescription = stringResource(R.string.player_shuffle),
+                        tint = if (state.shuffle) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
             Spacer(Modifier.weight(1f))
             IconButton(onClick = { controller?.seekToPreviousMediaItem() }) {
@@ -343,26 +356,28 @@ fun PlayerScreen(
                 )
             }
             Spacer(Modifier.weight(1f))
-            IconButton(onClick = {
-                controller?.repeatMode = when (state.repeatMode) {
-                    Player.REPEAT_MODE_OFF -> Player.REPEAT_MODE_ALL
-                    Player.REPEAT_MODE_ALL -> Player.REPEAT_MODE_ONE
-                    else -> Player.REPEAT_MODE_OFF
+            if (showRepeat) {
+                IconButton(onClick = {
+                    controller?.repeatMode = when (state.repeatMode) {
+                        Player.REPEAT_MODE_OFF -> Player.REPEAT_MODE_ALL
+                        Player.REPEAT_MODE_ALL -> Player.REPEAT_MODE_ONE
+                        else -> Player.REPEAT_MODE_OFF
+                    }
+                }) {
+                    Icon(
+                        imageVector = if (state.repeatMode == Player.REPEAT_MODE_ONE) {
+                            Icons.Rounded.RepeatOne
+                        } else {
+                            Icons.Rounded.Repeat
+                        },
+                        contentDescription = stringResource(R.string.player_repeat),
+                        tint = if (state.repeatMode == Player.REPEAT_MODE_OFF) {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        } else {
+                            MaterialTheme.colorScheme.primary
+                        },
+                    )
                 }
-            }) {
-                Icon(
-                    imageVector = if (state.repeatMode == Player.REPEAT_MODE_ONE) {
-                        Icons.Rounded.RepeatOne
-                    } else {
-                        Icons.Rounded.Repeat
-                    },
-                    contentDescription = stringResource(R.string.player_repeat),
-                    tint = if (state.repeatMode == Player.REPEAT_MODE_OFF) {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    } else {
-                        MaterialTheme.colorScheme.primary
-                    },
-                )
             }
         }
 
