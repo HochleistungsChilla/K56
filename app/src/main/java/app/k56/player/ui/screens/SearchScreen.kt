@@ -83,12 +83,15 @@ class SearchViewModel(
         private set
     var offlineCopy by mutableStateOf(false)
         private set
+    private var job: Job? = null
+
+    // Declared before `history`: property initializers run in declaration order,
+    // so loadHistory() below would otherwise see a null SharedPreferences.
+    private val prefs = appContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+    private val libraryDb = LibraryDb.get(appContext)
+
     var history by mutableStateOf(loadHistory())
         private set
-
-    private var job: Job? = null
-    private val libraryDb = LibraryDb.get(appContext)
-    private val prefs = appContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 
     fun search(query: String) {
         job?.cancel()
@@ -265,9 +268,14 @@ fun SearchScreen(
         }
 
         val results = vm.results
-        val showAlbums = filterAlbums && results.albums.isNotEmpty()
-        val showArtists = filterArtists && results.artists.isNotEmpty()
-        val showTracks = filterTracks && results.tracks.isNotEmpty()
+        // Server search can return the same item more than once; a duplicate
+        // id would crash LazyColumn's `key = { it.id }` below.
+        val albums = results.albums.distinctBy { it.id }
+        val artists = results.artists.distinctBy { it.id }
+        val tracks = results.tracks.distinctBy { it.id }
+        val showAlbums = filterAlbums && albums.isNotEmpty()
+        val showArtists = filterArtists && artists.isNotEmpty()
+        val showTracks = filterTracks && tracks.isNotEmpty()
         val empty = !showAlbums && !showArtists && !showTracks
 
         LazyColumn(
@@ -276,7 +284,7 @@ fun SearchScreen(
         ) {
             if (showAlbums) {
                 item { SectionHeader(stringResource(R.string.library_tab_albums)) }
-                items(results.albums, key = { it.id }) { album ->
+                items(albums, key = { it.id }) { album ->
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -310,7 +318,7 @@ fun SearchScreen(
 
             if (showArtists) {
                 item { SectionHeader(stringResource(R.string.library_tab_artists)) }
-                items(results.artists, key = { it.id }) { artist ->
+                items(artists, key = { it.id }) { artist ->
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -336,10 +344,10 @@ fun SearchScreen(
 
             if (showTracks) {
                 item { SectionHeader(stringResource(R.string.library_tab_tracks)) }
-                itemsIndexed(results.tracks, key = { _, track -> track.id }) { index, track ->
+                itemsIndexed(tracks, key = { _, track -> track.id }) { index, track ->
                     TrackRow(
                         track = track,
-                        onClick = { onPlay(results.tracks, index) },
+                        onClick = { onPlay(tracks, index) },
                         showArtwork = true,
                         isDownloaded = track.id in downloadedIds,
                         downloadProgress = downloads[track.id],
