@@ -355,6 +355,10 @@
     <string name="concurrent_downloads_title">Simultaneous downloads</string>
     <string name="download_queue_progress">%1$d of %2$d · %3$d active</string>
     <string name="download_queue_cancel">Cancel</string>
+    <string name="download_queue_pause">Pause</string>
+    <string name="download_queue_resume">Resume</string>
+    <string name="download_queue_retry">Retry failed</string>
+    <string name="download_queue_clear_finished">Clear finished</string>
     <string name="auto_cache_favorites_title">Auto-cache favorites</string>
     <string name="auto_cache_favorites_body">Download favorites automatically so they are available offline. Respects the Wi-Fi rule.</string>
     <string name="articles_title">Ignore articles when sorting</string>

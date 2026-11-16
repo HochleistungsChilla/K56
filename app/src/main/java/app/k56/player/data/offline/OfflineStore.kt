@@ -19,6 +19,8 @@ import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
@@ -108,16 +110,32 @@ class OfflineStore(
     val streamed: StateFlow<Set<String>> = _streamed.asStateFlow()
 
     private val cancelled = ConcurrentHashMap.newKeySet<String>()
-    private val queuedIds = ConcurrentHashMap<String, Boolean>()
+
+    /** Not-yet-finished requests, persisted so a restart resumes them. */
+    private val pending = ConcurrentHashMap<String, DownloadRequest>()
+
+    /** Requests that gave up after the retry budget; kept for the retry action. */
+    private val failedRequests = ConcurrentHashMap<String, DownloadRequest>()
+
+    private val _paused = MutableStateFlow(false)
+    val paused: StateFlow<Boolean> = _paused.asStateFlow()
 
     private val _queue = MutableStateFlow(DownloadQueueState())
     val queue: StateFlow<DownloadQueueState> = _queue.asStateFlow()
+
+    // Session counters for the progress line (total is cumulative across enqueues).
+    private var sessionTotal = 0
+    private var sessionDone = 0
+    private var sessionFailed = 0
 
     private val downloadScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     @Volatile private var queueVersion = 0
 
     init {
-        downloadScope.launch { cleanupParts() }
+        downloadScope.launch {
+            cleanupParts()
+            resumePending()
+        }
     }
 
     fun isDownloaded(id: String): Boolean = _tracks.value.any { it.id == id }
@@ -145,69 +163,149 @@ class OfflineStore(
         cancelled += id
     }
 
-    /** Queues a batch; up to [concurrentDownloads] run at once, the rest wait. */
+    /** Queues a batch; up to [SettingsStore.concurrentDownloads] run at once. */
     fun enqueue(requests: List<DownloadRequest>) {
-        val pending = requests
-            .distinctBy { it.track.id }
-            .filter { req -> !isDownloaded(req.track.id) && queuedIds.putIfAbsent(req.track.id, true) == null }
-        if (pending.isEmpty()) return
         val version = ++queueVersion
+        val fresh = requests
+            .distinctBy { it.track.id }
+            .filter { req ->
+                !isDownloaded(req.track.id) &&
+                    failedRequests.remove(req.track.id) == null &&
+                    pending.putIfAbsent(req.track.id, req) == null
+            }
+        if (fresh.isEmpty()) return
+        sessionTotal += fresh.size
+        persistQueue()
+        runBatch(fresh, version)
+    }
+
+    /** Resumes the persisted queue after a restart. */
+    private fun resumePending() {
+        val saved = readQueue()
+        if (saved.isEmpty()) return
+        val version = ++queueVersion
+        val fresh = saved
+            .distinctBy { it.track.id }
+            .filter { req -> !isDownloaded(req.track.id) && pending.putIfAbsent(req.track.id, req) == null }
+        if (fresh.isEmpty()) {
+            persistQueue()
+            return
+        }
+        sessionTotal += fresh.size
+        runBatch(fresh, version)
+    }
+
+    private fun runBatch(requests: List<DownloadRequest>, version: Int) {
         val permits = settingsStore.concurrentDownloads.value.coerceIn(1, 5)
         val semaphore = Semaphore(permits)
-        _queue.value = DownloadQueueState(total = pending.size)
-        pending.forEach { request ->
+        refreshQueueState()
+        requests.forEach { request ->
             downloadScope.launch {
                 try {
                     semaphore.withPermit {
                         if (version != queueVersion) return@withPermit
-                        waitForWifiAllowed(version)
+                        waitForAllowed(version)
                         if (version != queueVersion) return@withPermit
                         _queue.value = _queue.value.copy(active = _queue.value.active + 1)
-                        val result = downloadWithRetry(request)
+                        val result = downloadWithAttempts(request)
+                        if (result != null) sessionDone++ else sessionFailed++
+                        onFinished(request, result != null)
                         _queue.value = _queue.value.copy(
                             active = _queue.value.active - 1,
-                            done = _queue.value.done + if (result != null) 1 else 0,
-                            failed = _queue.value.failed + if (result == null) 1 else 0,
+                            done = sessionDone,
+                            failed = sessionFailed,
                         )
                     }
-                } finally {
-                    queuedIds.remove(request.track.id)
+                } catch (_: Exception) {
+                    sessionFailed++
+                    onFinished(request, false)
+                    _queue.value = _queue.value.copy(done = sessionDone, failed = sessionFailed)
                 }
             }
         }
+    }
+
+    private fun onFinished(request: DownloadRequest, success: Boolean) {
+        pending.remove(request.track.id)
+        if (!success) failedRequests[request.track.id] = request
+        persistQueue()
+    }
+
+    private fun refreshQueueState() {
+        _queue.value = _queue.value.copy(
+            total = sessionTotal,
+            done = sessionDone,
+            failed = sessionFailed,
+        )
+    }
+
+    /** Pauses the queue: running downloads finish, new ones wait. */
+    fun pause() {
+        _paused.value = true
+    }
+
+    fun resume() {
+        _paused.value = false
+    }
+
+    /** Re-queues every request that gave up after the retry budget. */
+    fun retryFailed() {
+        val retry = failedRequests.values.toList()
+        failedRequests.clear()
+        enqueue(retry)
+    }
+
+    /** Drops the finished entries from the progress line, keeping in-flight work. */
+    fun clearFinished() {
+        failedRequests.clear()
+        sessionTotal = pending.size
+        sessionDone = 0
+        sessionFailed = 0
+        persistQueue()
+        refreshQueueState()
     }
 
     /** Stops queued and in-flight downloads. */
     fun cancelAll() {
         queueVersion++
         _active.value.toList().forEach { cancelled += it }
+        pending.clear()
+        failedRequests.clear()
+        sessionTotal = 0
+        sessionDone = 0
+        sessionFailed = 0
+        persistQueue()
         _queue.value = DownloadQueueState()
     }
 
-    /** One attempt plus a single retry, so a transient error does not fail the batch. */
-    private suspend fun downloadWithRetry(request: DownloadRequest): OfflineTrack? {
-        val first = try {
-            download(request.track, request.url, request.headers)
-        } catch (_: Exception) {
-            null
+    /** Three attempts, so a transient error does not fail the batch. */
+    private suspend fun downloadWithAttempts(request: DownloadRequest): OfflineTrack? {
+        repeat(MAX_ATTEMPTS) {
+            val result = try {
+                download(request.track, request.url, request.headers)
+            } catch (_: Exception) {
+                null
+            }
+            if (result != null) return result
+            if (request.track.id in cancelled) return null
         }
-        if (first != null) return first
-        if (request.track.id in cancelled) return null
-        return try {
-            download(request.track, request.url, request.headers)
-        } catch (_: Exception) {
-            null
+        return null
+    }
+
+    /** Waits until downloads are allowed: not paused, and Wi-Fi if the rule is on. */
+    private suspend fun waitForAllowed(version: Int) {
+        while (version == queueVersion) {
+            val status = networkMonitor.status.value
+            if (!_paused.value && networkAllows(status)) return
+            // React to a pause-toggle or a network change without polling.
+            combine(_paused, networkMonitor.status) { p, s -> p to s }
+                .first { (p, s) -> !p && networkAllows(s) }
         }
     }
 
-    /** Waits until downloads are allowed: on Wi-Fi/Ethernet, or the rule is off. */
-    private suspend fun waitForWifiAllowed(version: Int) {
-        if (!settingsStore.wifiOnlyDownloads.value) return
-        while (version == queueVersion) {
-            val transport = networkMonitor.status.value.transport
-            if (transport == NetworkTransport.WIFI || transport == NetworkTransport.ETHERNET) return
-            delay(500)
-        }
+    private fun networkAllows(status: app.k56.player.core.net.NetworkStatus): Boolean {
+        if (!settingsStore.wifiOnlyDownloads.value) return status.online
+        return status.transport == NetworkTransport.WIFI || status.transport == NetworkTransport.ETHERNET
     }
 
     /** Removes left-over `.part` files from a previous run. */
@@ -410,10 +508,79 @@ class OfflineStore(
         return optString(key).takeIf { it.isNotBlank() }
     }
 
+    // ------------------------------------------------------ queue persistence
+
+    private val queueFile: File
+        get() = File(directoryFor(appContext, StorageLocation.INTERNAL), "queue.json")
+
+    /** Writes the pending set atomically so a half-written file never corrupts the queue. */
+    private fun persistQueue() {
+        val array = JSONArray()
+        pending.values.forEach { array.put(it.toJson()) }
+        val file = queueFile
+        file.parentFile?.mkdirs()
+        val tmp = File(file.parentFile, file.name + ".tmp")
+        tmp.writeText(array.toString())
+        if (!tmp.renameTo(file)) {
+            file.delete()
+            tmp.renameTo(file)
+        }
+    }
+
+    private fun readQueue(): List<DownloadRequest> {
+        val file = queueFile
+        if (!file.exists()) return emptyList()
+        return runCatching {
+            val array = JSONArray(file.readText())
+            (0 until array.length()).mapNotNull { index ->
+                array.optJSONObject(index)?.toDownloadRequest()
+            }
+        }.getOrDefault(emptyList())
+    }
+
+    private fun DownloadRequest.toJson(): JSONObject = JSONObject().apply {
+        put("id", track.id)
+        put("title", track.title)
+        put("albumId", track.albumId ?: JSONObject.NULL)
+        put("albumName", track.albumName ?: JSONObject.NULL)
+        put("artistName", track.artistName ?: JSONObject.NULL)
+        put("durationMs", track.durationMs)
+        put("imageUrl", track.imageUrl ?: JSONObject.NULL)
+        put("url", url)
+        val h = JSONObject()
+        headers.forEach { (k, v) -> h.put(k, v) }
+        put("headers", h)
+    }
+
+    private fun JSONObject.toDownloadRequest(): DownloadRequest? {
+        val id = optString("id").takeIf { it.isNotBlank() } ?: return null
+        val resolvedUrl = optString("url")
+        if (resolvedUrl.isBlank()) return null
+        val track = Track(
+            id = id,
+            title = optString("title").ifBlank { "Unbekannter Titel" },
+            albumId = optStringOrNull("albumId"),
+            albumName = optStringOrNull("albumName"),
+            artistName = optStringOrNull("artistName"),
+            durationMs = optLong("durationMs"),
+            indexNumber = null,
+            discNumber = null,
+            container = null,
+            bitrate = null,
+            imageUrl = optStringOrNull("imageUrl"),
+            isFavorite = true,
+        )
+        val headers = optJSONObject("headers")?.let { h ->
+            buildMap { h.keys().forEach { key -> put(key, h.optString(key)) } }
+        } ?: emptyMap()
+        return DownloadRequest(track, resolvedUrl, headers)
+    }
+
     companion object {
         private const val KEY_INDEX = "index"
         private const val KEY_STREAMED = "streamed"
         private const val MAX_STREAMED = 2000
+        private const val MAX_ATTEMPTS = 3
 
         fun directoryFor(context: Context, location: StorageLocation): File {
             val base = when (location) {
