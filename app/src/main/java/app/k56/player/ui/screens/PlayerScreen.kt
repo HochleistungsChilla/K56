@@ -1,6 +1,7 @@
 package app.k56.player.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -11,20 +12,26 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.QueueMusic
 import androidx.compose.material.icons.rounded.Repeat
 import androidx.compose.material.icons.rounded.RepeatOne
 import androidx.compose.material.icons.rounded.Shuffle
 import androidx.compose.material.icons.rounded.SkipNext
 import androidx.compose.material.icons.rounded.SkipPrevious
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -45,9 +52,11 @@ import androidx.media3.session.MediaController
 import app.k56.player.ui.components.Artwork
 import app.k56.player.ui.components.EmptyState
 import app.k56.player.ui.components.ScreenHeader
+import app.k56.player.ui.components.SectionHeader
 import app.k56.player.ui.formatDuration
 import app.k56.player.ui.rememberPlaybackUiState
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlayerScreen(controller: MediaController?, onBack: () -> Unit) {
     val state = rememberPlaybackUiState(controller)
@@ -65,6 +74,7 @@ fun PlayerScreen(controller: MediaController?, onBack: () -> Unit) {
     }
 
     var dragPosition by remember { mutableStateOf<Float?>(null) }
+    var showQueue by remember { mutableStateOf(false) }
     val durationMs = state.durationMs.coerceAtLeast(1L)
     val sliderPosition = dragPosition ?: state.positionMs.coerceIn(0L, durationMs).toFloat()
 
@@ -98,7 +108,12 @@ fun PlayerScreen(controller: MediaController?, onBack: () -> Unit) {
                 modifier = Modifier.weight(1f),
                 textAlign = TextAlign.Center,
             )
-            Spacer(Modifier.size(48.dp))
+            IconButton(onClick = { showQueue = true }) {
+                Icon(
+                    Icons.Rounded.QueueMusic,
+                    contentDescription = stringResource(R.string.player_queue),
+                )
+            }
         }
 
         Spacer(Modifier.height(8.dp))
@@ -232,5 +247,59 @@ fun PlayerScreen(controller: MediaController?, onBack: () -> Unit) {
         }
 
         Spacer(Modifier.height(18.dp))
+    }
+
+    if (showQueue) {
+        ModalBottomSheet(onDismissRequest = { showQueue = false }) {
+            val count = controller?.mediaItemCount ?: 0
+            val currentIndex = controller?.currentMediaItemIndex ?: -1
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 24.dp),
+            ) {
+                item { SectionHeader(stringResource(R.string.player_queue)) }
+                items(count) { index ->
+                    val item = controller?.getMediaItemAt(index)
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                controller?.seekTo(index, 0L)
+                                showQueue = false
+                            }
+                            .padding(horizontal = 20.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text = (index + 1).toString(),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.width(28.dp),
+                        )
+                        Column(Modifier.weight(1f)) {
+                            Text(
+                                text = item?.mediaMetadata?.title?.toString().orEmpty(),
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = if (index == currentIndex) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    MaterialTheme.colorScheme.onSurface
+                                },
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                            Text(
+                                text = item?.mediaMetadata?.artist?.toString().orEmpty(),
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
+                    }
+                }
+            }
+        }
     }
 }
