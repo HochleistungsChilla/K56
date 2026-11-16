@@ -29,6 +29,7 @@ import androidx.compose.material.icons.rounded.CloudDownload
 import androidx.compose.material.icons.rounded.DownloadDone
 import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material.icons.rounded.OfflinePin
 import androidx.compose.material.icons.rounded.MusicNote
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
@@ -107,6 +108,8 @@ fun AlbumCard(
     selected: Boolean = false,
     isFavorite: Boolean = false,
     onToggleFavorite: (() -> Unit)? = null,
+    offlineCount: Int? = null,
+    trackCount: Int? = null,
 ) {
     Column(
         modifier = modifier
@@ -159,6 +162,11 @@ fun AlbumCard(
                     )
                 }
             }
+            OfflineCoverageBadge(
+                offlineCount = offlineCount,
+                totalCount = trackCount,
+                modifier = Modifier.align(Alignment.BottomEnd),
+            )
         }
         Spacer(Modifier.height(8.dp))
         Text(
@@ -185,6 +193,7 @@ fun ArtistCard(
     modifier: Modifier = Modifier,
     onLongClick: (() -> Unit)? = null,
     selected: Boolean = false,
+    offlineCount: Int? = null,
 ) {
     Column(
         modifier = modifier
@@ -225,6 +234,23 @@ fun ArtistCard(
                         .padding(6.dp),
                 )
             }
+            if ((offlineCount ?: 0) > 0) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(6.dp)
+                        .size(18.dp)
+                        .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.75f), CircleShape),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.DownloadDone,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(12.dp),
+                    )
+                }
+            }
         }
         Spacer(Modifier.height(8.dp))
         Text(
@@ -258,6 +284,37 @@ private fun SelectionBadge(
     }
 }
 
+/**
+ * Small corner badge showing how much of an album is available offline:
+ * filled = fully downloaded, outline = partially, hidden = nothing.
+ */
+@Composable
+private fun OfflineCoverageBadge(
+    offlineCount: Int?,
+    totalCount: Int?,
+    modifier: Modifier = Modifier,
+) {
+    val downloaded = offlineCount ?: 0
+    if (downloaded <= 0) return
+    val total = totalCount ?: 0
+    val fullyOffline = total > 0 && downloaded >= total
+    Box(
+        modifier = modifier
+            .padding(6.dp)
+            .size(18.dp)
+            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.75f), CircleShape),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            imageVector = if (fullyOffline) Icons.Rounded.DownloadDone else Icons.Rounded.Download,
+            contentDescription = null,
+            tint = if (fullyOffline) MaterialTheme.colorScheme.primary
+            else MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(12.dp),
+        )
+    }
+}
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun TrackRow(
@@ -271,6 +328,8 @@ fun TrackRow(
     onToggleFavorite: (() -> Unit)? = null,
     /** true: file is on disk and plays without a server. */
     isDownloaded: Boolean = false,
+    /** true: recently streamed and likely in the rolling play cache. */
+    isCached: Boolean = false,
     /** 0f..1f while a transfer runs, null otherwise. */
     downloadProgress: Float? = null,
     onDownload: (() -> Unit)? = null,
@@ -361,6 +420,14 @@ fun TrackRow(
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(20.dp),
+            )
+            Spacer(Modifier.width(8.dp))
+        } else if (isCached) {
+            Icon(
+                imageVector = Icons.Rounded.OfflinePin,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                modifier = Modifier.size(16.dp),
             )
             Spacer(Modifier.width(8.dp))
         } else if (onDownload != null) {

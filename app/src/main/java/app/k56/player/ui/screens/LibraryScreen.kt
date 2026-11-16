@@ -418,6 +418,11 @@ fun LibraryScreen(
     val offline by offlineStore.tracks.collectAsState()
     val downloads by offlineStore.progress.collectAsState()
     val downloadedIds = remember(offline) { offline.map { it.id }.toSet() }
+    val streamed by offlineStore.streamed.collectAsState()
+    val cachedIds = remember(streamed, downloadedIds) { streamed - downloadedIds }
+    val albumOfflineCount = remember(offline) {
+        offline.mapNotNull { it.albumId }.groupingBy { it }.eachCount()
+    }
     val net by repository.networkStatus.collectAsState()
     val onWifi = net.transport == app.k56.player.core.net.NetworkTransport.WIFI ||
         net.transport == app.k56.player.core.net.NetworkTransport.ETHERNET
@@ -565,6 +570,8 @@ fun LibraryScreen(
                             selected = album.id in selectedAlbums,
                             isFavorite = album.isFavorite,
                             onToggleFavorite = { vm.toggleAlbumFavorite(album) },
+                            offlineCount = albumOfflineCount[album.id],
+                            trackCount = album.trackCount,
                         )
                         DropdownMenu(
                             expanded = contextAlbum?.id == album.id,
@@ -715,6 +722,7 @@ fun LibraryScreen(
                             isFavorite = track.isFavorite,
                             onToggleFavorite = { vm.toggleTrackFavorite(track) },
                             isDownloaded = track.id in downloadedIds,
+                            isCached = track.id in cachedIds,
                             downloadProgress = downloads[track.id],
                             onDownload = if (track.id in downloadedIds) null else { { downloadOne(track) } },
                             onPlayNext = { onPlayNext(track) },
@@ -837,6 +845,7 @@ fun LibraryScreen(
                                     isFavorite = true,
                                     onToggleFavorite = { vm.toggleTrackFavorite(track) },
                                     isDownloaded = track.id in downloadedIds,
+                                    isCached = track.id in cachedIds,
                                     downloadProgress = downloads[track.id],
                                     onDownload = if (track.id in downloadedIds) null else {
                                         { downloadOne(track) }

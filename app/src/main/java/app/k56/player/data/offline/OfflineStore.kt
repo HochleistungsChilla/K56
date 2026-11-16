@@ -75,9 +75,29 @@ class OfflineStore(context: Context, private val settingsStore: SettingsStore) {
     private val _active = MutableStateFlow<Set<String>>(emptySet())
     val active: StateFlow<Set<String>> = _active.asStateFlow()
 
+    private val _streamed = MutableStateFlow(readStreamed())
+    val streamed: StateFlow<Set<String>> = _streamed.asStateFlow()
+
     private val cancelled = ConcurrentHashMap.newKeySet<String>()
 
     fun isDownloaded(id: String): Boolean = _tracks.value.any { it.id == id }
+
+    /** Record a track that just streamed — a proxy for the rolling play cache. */
+    fun markStreamed(id: String) {
+        if (id.isBlank() || id in _streamed.value) return
+        val updated = _streamed.value.toMutableSet().apply { add(id) }
+        if (updated.size > MAX_STREAMED) {
+            val iterator = updated.iterator()
+            repeat(updated.size - MAX_STREAMED) {
+                if (iterator.hasNext()) {
+                    iterator.next()
+                    iterator.remove()
+                }
+            }
+        }
+        _streamed.value = updated
+        prefs.edit().putStringSet(KEY_STREAMED, updated).apply()
+    }
 
     fun find(id: String): OfflineTrack? = _tracks.value.firstOrNull { it.id == id }
 
@@ -213,6 +233,9 @@ class OfflineStore(context: Context, private val settingsStore: SettingsStore) {
 
     fun totalBytes(): Long = _tracks.value.sumOf { it.bytes }
 
+    private fun readStreamed(): Set<String> =
+        prefs.getStringSet(KEY_STREAMED, emptySet()) ?: emptySet()
+
     private fun readIndex(): List<OfflineTrack> {
         val raw = prefs.getString(KEY_INDEX, null) ?: return emptyList()
         return runCatching {
@@ -273,6 +296,8 @@ class OfflineStore(context: Context, private val settingsStore: SettingsStore) {
 
     companion object {
         private const val KEY_INDEX = "index"
+        private const val KEY_STREAMED = "streamed"
+        private const val MAX_STREAMED = 2000
 
         fun directoryFor(context: Context, location: StorageLocation): File {
             val base = when (location) {
