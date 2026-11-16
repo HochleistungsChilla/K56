@@ -6,6 +6,7 @@ and exercise search. Every request is logged to stdout.
 """
 import json
 import sys
+import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse, parse_qs
 
@@ -66,6 +67,17 @@ class H(BaseHTTPRequestHandler):
         q = parse_qs(u.query)
         print(f"GET {u.path} {u.query}", flush=True)
         path = u.path.rstrip("/")
+
+        if path.startswith("/Audio/"):
+            # Slow audio "stream" so an in-flight download can be observed.
+            time.sleep(3)
+            body = b"mock-audio-bytes" * 1024
+            self.send_response(200)
+            self.send_header("Content-Type", "audio/mpeg")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+            return
 
         if path == "/System/Info/Public":
             return self._send(200, {
