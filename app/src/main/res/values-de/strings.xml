@@ -245,6 +245,8 @@
     <string name="resume_threshold">Merken ab</string>
     <string name="resume_off">Aus</string>
     <string name="resume_seconds">%1$d s</string>
+    <string name="save_np_title">Now-Playing-Zustand speichern</string>
+    <string name="save_np_body">Stellt die letzte Warteschlange und Position beim App-Start wieder her. Nicht mehr vorhandene Titel werden übersprungen.</string>
 
     <string name="sort_title">Titel</string>
     <string name="sort_artist">Künstler</string>

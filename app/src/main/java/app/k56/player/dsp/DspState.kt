@@ -1,6 +1,7 @@
 package app.k56.player.dsp
 
 import android.content.Context
+import org.json.JSONObject
 import java.io.File
 
 /**
@@ -211,6 +212,39 @@ class DspState(context: Context) {
         currentIrName = null
         prefs.edit().remove(KEY_IR).apply()
         irVersion++
+    }
+
+    /** The DDC/IR selection (file names only), for settings backup. */
+    fun exportSelection(): JSONObject = JSONObject().apply {
+        put("ddc", currentDdcName ?: JSONObject.NULL)
+        put("ir", currentIrName ?: JSONObject.NULL)
+    }
+
+    /** Restores the DDC/IR selection from a backup; profiles load on next start. */
+    fun importSelection(selection: JSONObject) {
+        val ddc = selection.optStringOrNull("ddc")
+        val ir = selection.optStringOrNull("ir")
+        if (ddc != null) {
+            currentDdcName = ddc
+            currentDdc = null
+            prefs.edit().putString(KEY_DDC, ddc).apply()
+            ddcVersion++
+        } else {
+            clearDdc()
+        }
+        if (ir != null) {
+            currentIrName = ir
+            currentIr = null
+            prefs.edit().putString(KEY_IR, ir).apply()
+            irVersion++
+        } else {
+            clearIr()
+        }
+    }
+
+    private fun JSONObject.optStringOrNull(key: String): String? {
+        if (isNull(key)) return null
+        return optString(key).takeIf { it.isNotBlank() }
     }
 
     companion object {

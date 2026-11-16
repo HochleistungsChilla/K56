@@ -115,6 +115,10 @@ class SettingsStore(context: Context) {
     private val _circularQueue = MutableStateFlow(prefs.getBoolean(KEY_CIRCULAR_QUEUE, false))
     val circularQueue: StateFlow<Boolean> = _circularQueue.asStateFlow()
 
+    /** Restore the last queue + position on app start. */
+    private val _saveNowPlaying = MutableStateFlow(prefs.getBoolean(KEY_SAVE_NOW_PLAYING, true))
+    val saveNowPlaying: StateFlow<Boolean> = _saveNowPlaying.asStateFlow()
+
     /** Cache cap in MiB: -1 unlimited, 0 disabled, otherwise LRU size. */
     private val _cacheLimitMb = MutableStateFlow(prefs.getInt(KEY_CACHE_LIMIT, 512))
     val cacheLimitMb: StateFlow<Int> = _cacheLimitMb.asStateFlow()
@@ -271,6 +275,7 @@ class SettingsStore(context: Context) {
         _libraryColumns.value = prefs.getInt(KEY_COLUMNS, 0)
         _autoplay.value = prefs.getBoolean(KEY_AUTOPLAY, true)
         _circularQueue.value = prefs.getBoolean(KEY_CIRCULAR_QUEUE, false)
+        _saveNowPlaying.value = prefs.getBoolean(KEY_SAVE_NOW_PLAYING, true)
         _cacheLimitMb.value = prefs.getInt(KEY_CACHE_LIMIT, 512)
         _resumeThresholdSeconds.value = prefs.getInt(KEY_RESUME_THRESHOLD, 15)
         _screenOrientation.value = runCatching {
@@ -320,6 +325,11 @@ class SettingsStore(context: Context) {
     fun setCircularQueue(value: Boolean) {
         prefs.edit().putBoolean(KEY_CIRCULAR_QUEUE, value).apply()
         _circularQueue.value = value
+    }
+
+    fun setSaveNowPlaying(value: Boolean) {
+        prefs.edit().putBoolean(KEY_SAVE_NOW_PLAYING, value).apply()
+        _saveNowPlaying.value = value
     }
 
     fun setCacheLimitMb(value: Int) {
@@ -399,6 +409,7 @@ class SettingsStore(context: Context) {
         private const val KEY_CACHE_LIMIT = "cache_limit_mb"
         private const val KEY_AUTOPLAY = "autoplay"
         private const val KEY_CIRCULAR_QUEUE = "circular_queue"
+        private const val KEY_SAVE_NOW_PLAYING = "save_now_playing"
         private const val KEY_KEEP_SCREEN_ON = "keep_screen_on"
         private const val KEY_TRACK_NUMBERS = "track_numbers"
         private const val KEY_SHOW_SUBTITLE = "show_subtitle"

@@ -485,10 +485,11 @@ fun HorizontalAlbumRow(
     albums: List<Album>,
     onOpenAlbum: (String) -> Unit,
     cardWidth: Dp = 150.dp,
+    spacing: Dp = 12.dp,
 ) {
     androidx.compose.foundation.lazy.LazyRow(
         contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(spacing),
     ) {
         items(albums.size, key = { albums[it].id }) { index ->
             AlbumCard(

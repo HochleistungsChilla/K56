@@ -99,6 +99,7 @@ private fun MainShell(container: AppContainer) {
     val fitCover by container.settingsStore.fitCover.collectAsStateWithLifecycle()
     val compactControls by container.settingsStore.compactControls.collectAsStateWithLifecycle()
     val autoCacheFavorites by container.settingsStore.autoCacheFavorites.collectAsStateWithLifecycle()
+    val saveNowPlaying by container.settingsStore.saveNowPlaying.collectAsStateWithLifecycle()
     val screenOrientation by container.settingsStore.screenOrientation.collectAsStateWithLifecycle()
     val gridSpacing by container.settingsStore.gridSpacing.collectAsStateWithLifecycle()
     val activity = context as? android.app.Activity
@@ -121,7 +122,11 @@ private fun MainShell(container: AppContainer) {
     // persisted and restored as "Save Now Playing state".
     val queueTracks = remember { mutableStateListOf<Track>() }
     val persistQueue: () -> Unit = {
-        container.nowPlayingStore.save(queueTracks.toList(), controller?.currentMediaItemIndex ?: 0)
+        if (!saveNowPlaying) {
+            container.nowPlayingStore.clear()
+        } else {
+            container.nowPlayingStore.save(queueTracks.toList(), controller?.currentMediaItemIndex ?: 0)
+        }
     }
 
     // Keep the persisted active index fresh as playback moves through the queue.
@@ -192,6 +197,7 @@ private fun MainShell(container: AppContainer) {
 
     // Restore the saved queue once the controller is ready (skip tracks the server no longer has).
     LaunchedEffect(controller) {
+        if (!saveNowPlaying) return@LaunchedEffect
         val active = controller ?: return@LaunchedEffect
         val saved = container.nowPlayingStore.read() ?: return@LaunchedEffect
         val resolved = saved.tracks.mapNotNull { track -> resolveItem(track)?.let { track to it } }
@@ -325,6 +331,7 @@ private fun MainShell(container: AppContainer) {
                     onOpenAlbum = { navController.navigate("album/$it") },
                     onOpenArtist = { navController.navigate("artist/$it") },
                     onPlay = playTracks,
+                    gridSpacing = gridSpacing,
                 )
             }
             composable("library") {
@@ -375,6 +382,7 @@ private fun MainShell(container: AppContainer) {
                     repository = repository,
                     offlineStore = container.offlineStore,
                     settingsStore = container.settingsStore,
+                    dspState = container.dspState,
                     onOpenDsp = { navController.navigate("dsp") },
                     onOpenCache = { navController.navigate("cache") },
                 )

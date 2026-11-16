@@ -255,6 +255,8 @@
     <string name="resume_threshold">Remember from</string>
     <string name="resume_off">Off</string>
     <string name="resume_seconds">%1$d s</string>
+    <string name="save_np_title">Save Now Playing state</string>
+    <string name="save_np_body">Restore the last queue and position on app start. Tracks that no longer exist are skipped.</string>
 
     <string name="sort_title">Title</string>
     <string name="sort_artist">Artist</string>

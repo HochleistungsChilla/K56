@@ -56,6 +56,7 @@ import app.k56.player.data.ScreenOrientation
 import app.k56.player.data.SettingsStore
 import app.k56.player.data.StorageLocation
 import app.k56.player.data.offline.OfflineStore
+import app.k56.player.dsp.DspState
 import kotlinx.coroutines.launch
 import app.k56.player.ui.formatBytes
 import app.k56.player.ui.theme.ThemeController
@@ -66,6 +67,7 @@ fun SettingsScreen(
     repository: MediaRepository,
     offlineStore: OfflineStore,
     settingsStore: SettingsStore,
+    dspState: DspState,
     onOpenDsp: () -> Unit = {},
     onOpenCache: () -> Unit = {},
 ) {
@@ -98,6 +100,7 @@ fun SettingsScreen(
     val libraryColumns by settingsStore.libraryColumns.collectAsStateWithLifecycle()
     val wifiOnlyDownloads by settingsStore.wifiOnlyDownloads.collectAsStateWithLifecycle()
     val autoCacheFavorites by settingsStore.autoCacheFavorites.collectAsStateWithLifecycle()
+    val saveNowPlaying by settingsStore.saveNowPlaying.collectAsStateWithLifecycle()
     val ignoreArticles by settingsStore.ignoreArticles.collectAsStateWithLifecycle()
     val downloadQuality by settingsStore.downloadQuality.collectAsStateWithLifecycle()
     val downloadFormat by settingsStore.downloadFormat.collectAsStateWithLifecycle()
@@ -112,6 +115,15 @@ fun SettingsScreen(
     var importPasswordOpen by remember { mutableStateOf(false) }
     var pendingImportText by remember { mutableStateOf<String?>(null) }
 
+    val applyBackup: (String) -> Boolean = { text ->
+        runCatching {
+            val obj = org.json.JSONObject(text)
+            val settingsObj = obj.optJSONObject("settings") ?: obj
+            settingsStore.importJson(settingsObj.toString())
+            obj.optJSONObject("dsp")?.let { dspState.importSelection(it) }
+        }.isSuccess
+    }
+
     val exportLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("application/json"),
     ) { uri ->
@@ -120,8 +132,11 @@ fun SettingsScreen(
             pendingExportPassword = null
             scope.launch {
                 runCatching {
-                    val json = settingsStore.exportJson()
-                    val payload = if (password.isNullOrEmpty()) json else BackupCrypto.encrypt(json, password)
+                    val full = org.json.JSONObject()
+                        .put("settings", org.json.JSONObject(settingsStore.exportJson()))
+                        .put("dsp", dspState.exportSelection())
+                        .toString()
+                    val payload = if (password.isNullOrEmpty()) full else BackupCrypto.encrypt(full, password)
                     context.contentResolver.openOutputStream(uri)?.use { out ->
                         out.write(payload.toByteArray())
                     }
@@ -151,8 +166,11 @@ fun SettingsScreen(
                         importPasswordOpen = true
                     }
                     else -> {
-                        settingsStore.importJson(text)
-                        Toast.makeText(context, R.string.backup_import_ok, Toast.LENGTH_SHORT).show()
+                        if (applyBackup(text)) {
+                            Toast.makeText(context, R.string.backup_import_ok, Toast.LENGTH_SHORT).show()
+                        } else {
+                            Toast.makeText(context, R.string.backup_import_failed, Toast.LENGTH_LONG).show()
+                        }
                     }
                 }
             }
@@ -566,6 +584,21 @@ fun SettingsScreen(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+                Spacer(Modifier.height(8.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text(stringResource(R.string.save_np_title), style = MaterialTheme.typography.titleMedium)
+                        Text(
+                            stringResource(R.string.save_np_body),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    Switch(
+                        checked = saveNowPlaying,
+                        onCheckedChange = { settingsStore.setSaveNowPlaying(it) },
+                    )
+                }
                 Spacer(Modifier.height(10.dp))
                 Text(stringResource(R.string.resume_threshold), style = MaterialTheme.typography.titleMedium)
                 Spacer(Modifier.height(6.dp))
@@ -993,10 +1026,9 @@ fun SettingsScreen(
                 pendingImportText = null
                 scope.launch {
                     val json = runCatching { BackupCrypto.decrypt(text.orEmpty(), password) }.getOrNull()
-                    if (json == null) {
+                    if (json == null || !applyBackup(json)) {
                         Toast.makeText(context, R.string.backup_import_failed, Toast.LENGTH_LONG).show()
                     } else {
-                        settingsStore.importJson(json)
                         Toast.makeText(context, R.string.backup_import_ok, Toast.LENGTH_SHORT).show()
                     }
                 }

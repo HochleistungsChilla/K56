@@ -138,6 +138,7 @@ fun HomeScreen(
     onOpenAlbum: (String) -> Unit,
     onOpenArtist: (String) -> Unit,
     onPlay: (List<Track>, Int) -> Unit,
+    gridSpacing: Int = 12,
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -214,12 +215,12 @@ fun HomeScreen(
                 when (key) {
                     "recent" -> if (vm.recentAlbums.isNotEmpty()) {
                         item { SectionHeader(stringResource(R.string.home_recently_added)) }
-                        item { HorizontalAlbumRow(vm.recentAlbums, onOpenAlbum) }
+                        item { HorizontalAlbumRow(vm.recentAlbums, onOpenAlbum, spacing = gridSpacing.dp) }
                     }
 
                     "random_albums" -> if (vm.allAlbums.isNotEmpty()) {
                         item { SectionHeader(stringResource(R.string.home_random_albums)) }
-                        item { HorizontalAlbumRow(vm.allAlbums.shuffled().take(24), onOpenAlbum) }
+                        item { HorizontalAlbumRow(vm.allAlbums.shuffled().take(24), onOpenAlbum, spacing = gridSpacing.dp) }
                     }
 
                     "random_artists" -> if (vm.artists.isNotEmpty()) {
@@ -227,7 +228,7 @@ fun HomeScreen(
                         item {
                             LazyRow(
                                 contentPadding = PaddingValues(horizontal = 16.dp),
-                                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                horizontalArrangement = Arrangement.spacedBy(gridSpacing.dp),
                             ) {
                                 items(vm.artists.shuffled().take(20), key = { it.id }) { artist ->
                                     ArtistCard(
