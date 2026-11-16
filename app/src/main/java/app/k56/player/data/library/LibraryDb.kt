@@ -153,6 +153,48 @@ class LibraryDb private constructor(context: Context) :
         }
     }
 
+    /** Upserts changed items without touching the rest of the index. */
+    fun applyDelta(tracks: List<Track>, albums: List<Album>) {
+        if (tracks.isEmpty() && albums.isEmpty()) return
+        val db = writableDatabase
+        db.beginTransaction()
+        try {
+            tracks.forEach { track ->
+                db.insertWithOnConflict("tracks", null, ContentValues().apply {
+                    put("id", track.id)
+                    put("title", track.title)
+                    put("album_id", track.albumId)
+                    put("album_name", track.albumName)
+                    put("artist_name", track.artistName)
+                    put("duration_ms", track.durationMs)
+                    put("index_number", track.indexNumber)
+                    put("disc_number", track.discNumber)
+                    put("container", track.container)
+                    put("bitrate", track.bitrate)
+                    put("image_url", track.imageUrl)
+                    put("is_favorite", if (track.isFavorite) 1 else 0)
+                }, SQLiteDatabase.CONFLICT_REPLACE)
+            }
+            albums.forEach { album ->
+                db.insertWithOnConflict("albums", null, ContentValues().apply {
+                    put("id", album.id)
+                    put("name", album.name)
+                    put("artist", album.artist)
+                    put("artist_id", album.artistId)
+                    put("year", album.year)
+                    put("image_url", album.imageUrl)
+                    put("track_count", album.trackCount)
+                    put("is_favorite", if (album.isFavorite) 1 else 0)
+                    put("overview", album.overview)
+                    put("genres", album.genres.joinToString("\u0001"))
+                }, SQLiteDatabase.CONFLICT_REPLACE)
+            }
+            db.setTransactionSuccessful()
+        } finally {
+            db.endTransaction()
+        }
+    }
+
     fun counts(): LibraryCounts = LibraryCounts(
         albums = count("albums"),
         artists = count("artists"),

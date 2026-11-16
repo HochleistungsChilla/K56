@@ -151,10 +151,13 @@ private fun MainShell(container: AppContainer) {
         if (autoCacheFavorites) container.favoriteCache.sync()
     }
 
-    // Refresh the offline library copy when it is missing or a day old.
+    // Refresh the offline library copy: full sync when missing/very old, incremental otherwise.
     LaunchedEffect(Unit) {
         runCatching {
-            if (container.librarySync.isStale()) container.librarySync.sync()
+            when {
+                container.librarySync.needsFullSync() -> container.librarySync.sync()
+                container.librarySync.isStale() -> container.librarySync.syncIncremental()
+            }
         }
     }
 

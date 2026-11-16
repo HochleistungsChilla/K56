@@ -126,6 +126,12 @@ data class LibraryCounts(
     val songs: Int = 0,
 )
 
+/** Items changed since a point in time, used by the incremental library sync. */
+data class LibraryDelta(
+    val tracks: List<Track> = emptyList(),
+    val albums: List<Album> = emptyList(),
+)
+
 data class SearchResults(
     val albums: List<Album> = emptyList(),
     val artists: List<Artist> = emptyList(),

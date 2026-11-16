@@ -9,6 +9,7 @@ import app.k56.player.core.model.ArtistDetails
 import app.k56.player.core.model.BackendKind
 import app.k56.player.core.model.DiscoveredServer
 import app.k56.player.core.model.LibraryCounts
+import app.k56.player.core.model.LibraryDelta
 import app.k56.player.core.model.LibraryView
 import app.k56.player.core.model.PlaybackSource
 import app.k56.player.core.model.Playlist
@@ -281,6 +282,39 @@ class JellyfinRepository(
         ).TotalRecordCount
         val artistsTotal = api.artists(artistQuery(parentId = parentId, limit = 1)).TotalRecordCount
         return LibraryCounts(albums = albumsTotal, artists = artistsTotal, songs = songsTotal)
+    }
+
+    override suspend fun changedSince(minDateLastSaved: Long): LibraryDelta {
+        if (minDateLastSaved <= 0) return LibraryDelta()
+        val tracks = pagedQuery(
+            buildQuery = { index ->
+                itemQuery(
+                    includeTypes = "Audio",
+                    recursive = true,
+                    sortBy = "SortName",
+                    sortOrder = "Ascending",
+                    limit = PAGE_SIZE,
+                    startIndex = index,
+                    minDateLastSaved = minDateLastSaved,
+                )
+            },
+            fetch = { query -> ensureApi().items(query) },
+        ).map { it.toTrack() }
+        val albums = pagedQuery(
+            buildQuery = { index ->
+                itemQuery(
+                    includeTypes = "MusicAlbum",
+                    recursive = true,
+                    sortBy = "SortName",
+                    sortOrder = "Ascending",
+                    limit = PAGE_SIZE,
+                    startIndex = index,
+                    minDateLastSaved = minDateLastSaved,
+                )
+            },
+            fetch = { query -> ensureApi().items(query) },
+        ).map { it.toAlbum() }
+        return LibraryDelta(tracks = tracks, albums = albums)
     }
 
     override suspend fun recentAlbums(limit: Int): List<Album> = albums(
@@ -796,6 +830,7 @@ class JellyfinRepository(
         isPlayed: Boolean? = null,
         genres: String? = null,
         contributingArtistIds: String? = null,
+        minDateLastSaved: Long? = null,
     ): Map<String, String> = buildMap {
         parentId?.takeIf { it.isNotBlank() }?.let { put("ParentId", it) }
         includeTypes?.let { put("IncludeItemTypes", it) }
@@ -811,6 +846,7 @@ class JellyfinRepository(
         isPlayed?.let { put("IsPlayed", it.toString()) }
         genres?.let { put("Genres", it) }
         contributingArtistIds?.let { put("ContributingArtistIds", it) }
+        minDateLastSaved?.let { put("MinDateLastSaved", it.toString()) }
         put("Fields", ITEM_FIELDS)
         put("ImageTypeLimit", "1")
         put("EnableImageTypes", "Primary")

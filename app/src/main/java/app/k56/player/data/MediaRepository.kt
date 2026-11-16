@@ -7,6 +7,7 @@ import app.k56.player.core.model.ArtistDetails
 import app.k56.player.core.model.BackendKind
 import app.k56.player.core.model.DiscoveredServer
 import app.k56.player.core.model.LibraryCounts
+import app.k56.player.core.model.LibraryDelta
 import app.k56.player.core.model.LibraryView
 import app.k56.player.core.model.PlaybackSource
 import app.k56.player.core.model.Playlist
@@ -58,6 +59,9 @@ interface MediaRepository {
 
     /** Total item counts for one library, so the UI can show truncation. */
     suspend fun libraryCounts(parentId: String?): LibraryCounts = LibraryCounts()
+
+    /** Items changed since a UTC timestamp (ms), for incremental sync. */
+    suspend fun changedSince(minDateLastSaved: Long): LibraryDelta = LibraryDelta()
 
     suspend fun libraries(): List<LibraryView>
     suspend fun defaultLibraryId(): String?

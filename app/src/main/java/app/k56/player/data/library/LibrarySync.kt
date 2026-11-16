@@ -36,6 +36,40 @@ class LibrarySync(
     fun isStale(maxAgeMs: Long = DEFAULT_MAX_AGE_MS): Boolean =
         db.isEmpty() || System.currentTimeMillis() - db.lastSync() > maxAgeMs
 
+    /** True when a full sync is warranted: empty index or very old. */
+    fun needsFullSync(maxAgeMs: Long = FULL_SYNC_MAX_AGE_MS): Boolean =
+        db.isEmpty() || System.currentTimeMillis() - db.lastSync() > maxAgeMs
+
+    /**
+     * Picks up changed tracks and albums since the last full sync. Deletions are
+     * not tracked here — they are caught by the periodic full sync.
+     */
+    suspend fun syncIncremental(): Result<LibraryCounts> = withContext(Dispatchers.IO) {
+        runCatching {
+            if (_state.value.running) return@runCatching db.counts()
+            val last = db.lastSync()
+            if (last <= 0) return@runCatching sync(force = true).getOrThrow()
+
+            _state.value = SyncState(running = true, phase = "incremental")
+            val delta = repository.changedSince(last)
+            _state.value = _state.value.copy(phase = "writing", loaded = delta.tracks.size)
+            db.applyDelta(delta.tracks, delta.albums)
+            _state.value = SyncState(
+                running = false,
+                phase = "done",
+                loaded = delta.tracks.size,
+                finishedAt = System.currentTimeMillis(),
+            )
+            db.counts()
+        }.onFailure { error ->
+            _state.value = _state.value.copy(
+                running = false,
+                phase = "failed",
+                error = error.message,
+            )
+        }
+    }
+
     suspend fun sync(force: Boolean = false): Result<LibraryCounts> = withContext(Dispatchers.IO) {
         runCatching {
         if (_state.value.running && !force) return@runCatching db.counts()
@@ -115,5 +149,6 @@ class LibrarySync(
         private const val PAGE = 500
         private const val CAP = 20_000
         const val DEFAULT_MAX_AGE_MS = 24L * 60L * 60L * 1000L
+        const val FULL_SYNC_MAX_AGE_MS = 7L * 24L * 60L * 60L * 1000L
     }
 }
