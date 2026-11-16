@@ -87,13 +87,17 @@ class PlaybackService : MediaSessionService() {
                 if (id != currentItemId) {
                     rememberSeed(id)
                     currentItemId = id
+                    resumeIfAvailable(id)
                     reportStart(id)
                     extendWithSimilar(autoStart = false)
                 }
             }
 
             override fun onIsPlayingChanged(isPlaying: Boolean) {
-                if (isPlaying) startProgressLoop() else stopProgressLoop()
+                if (isPlaying) startProgressLoop() else {
+                    stopProgressLoop()
+                    saveResume()
+                }
             }
 
             override fun onPlaybackStateChanged(playbackState: Int) {
@@ -110,6 +114,26 @@ class PlaybackService : MediaSessionService() {
         recentIds.remove(id)
         recentIds.addLast(id)
         while (recentIds.size > 5) recentIds.removeFirst()
+    }
+
+    /** Continues the current track from its remembered resume point when valid. */
+    private fun resumeIfAvailable(id: String) {
+        val point = appContainer.resumeStore.read(id) ?: return
+        val thresholdMs = appContainer.settingsStore.resumeThresholdSeconds.value * 1000L
+        if (point.positionMs < thresholdMs) return
+        if (point.durationMs > 0 && point.durationMs - point.positionMs < thresholdMs) return
+        player.seekTo(point.positionMs)
+    }
+
+    /** Persists the current position so the next open can resume from it. */
+    private fun saveResume() {
+        val id = currentItemId ?: return
+        val title = runCatching { player.currentMediaItem?.mediaMetadata?.title?.toString() }
+            .getOrNull().orEmpty()
+        val positionMs = runCatching { player.currentPosition.coerceAtLeast(0L) }.getOrDefault(0L)
+        val durationMs = runCatching { player.duration }.getOrDefault(0L)
+        val thresholdMs = appContainer.settingsStore.resumeThresholdSeconds.value * 1000L
+        appContainer.resumeStore.save(id, title, positionMs, durationMs, thresholdMs)
     }
 
     /**
@@ -212,6 +236,7 @@ class PlaybackService : MediaSessionService() {
     }
 
     override fun onDestroy() {
+        saveResume()
         reportStopped()
         progressJob?.cancel()
         serviceScope.cancel()
@@ -251,10 +276,20 @@ class PlaybackService : MediaSessionService() {
                 val snapshot = withContext(Dispatchers.Main) {
                     ProgressSnapshot(
                         positionMs = player.currentPosition.coerceAtLeast(0L),
+                        durationMs = runCatching { player.duration }.getOrDefault(0L),
+                        title = runCatching { player.currentMediaItem?.mediaMetadata?.title?.toString() }
+                            .getOrNull().orEmpty(),
                         paused = !player.isPlaying,
                         repeat = player.repeatMode.toJellyfinRepeatMode(),
                     )
                 }
+                appContainer.resumeStore.save(
+                    itemId,
+                    snapshot.title,
+                    snapshot.positionMs,
+                    snapshot.durationMs,
+                    appContainer.settingsStore.resumeThresholdSeconds.value * 1000L,
+                )
                 runCatching {
                     repository.reportPlaybackProgress(
                         itemId = itemId,
@@ -275,6 +310,8 @@ class PlaybackService : MediaSessionService() {
 
     private data class ProgressSnapshot(
         val positionMs: Long,
+        val durationMs: Long,
+        val title: String,
         val paused: Boolean,
         val repeat: String,
     )

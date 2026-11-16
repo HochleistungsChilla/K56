@@ -82,6 +82,10 @@ class SettingsStore(context: Context) {
     private val _cacheLimitMb = MutableStateFlow(prefs.getInt(KEY_CACHE_LIMIT, 512))
     val cacheLimitMb: StateFlow<Int> = _cacheLimitMb.asStateFlow()
 
+    /** Minimum played seconds before a track position is remembered for resume. */
+    private val _resumeThresholdSeconds = MutableStateFlow(prefs.getInt(KEY_RESUME_THRESHOLD, 15))
+    val resumeThresholdSeconds: StateFlow<Int> = _resumeThresholdSeconds.asStateFlow()
+
     fun setForceTranscode(value: Boolean) {
         prefs.edit().putBoolean(KEY_FORCE_TRANSCODE, value).apply()
         _forceTranscode.value = value
@@ -147,6 +151,11 @@ class SettingsStore(context: Context) {
         _cacheLimitMb.value = value
     }
 
+    fun setResumeThresholdSeconds(value: Int) {
+        prefs.edit().putInt(KEY_RESUME_THRESHOLD, value).apply()
+        _resumeThresholdSeconds.value = value
+    }
+
     companion object {
         private const val KEY_FORCE_TRANSCODE = "force_transcode"
         private const val KEY_PREFER_EXTERNAL = "prefer_external"
@@ -161,6 +170,7 @@ class SettingsStore(context: Context) {
         private const val KEY_IGNORE_ARTICLES = "ignore_articles"
         private const val KEY_DOWNLOAD_QUALITY = "download_quality"
         private const val KEY_DOWNLOAD_FORMAT = "download_format"
+        private const val KEY_RESUME_THRESHOLD = "resume_threshold_seconds"
 
         val DEFAULT_HOME_SECTIONS = "recent,random_albums,random_artists"
 

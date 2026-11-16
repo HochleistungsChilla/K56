@@ -8,6 +8,7 @@ import app.k56.player.data.SessionStore
 import app.k56.player.data.SettingsStore
 import app.k56.player.data.cache.MediaCache
 import app.k56.player.data.offline.OfflineStore
+import app.k56.player.data.ResumeStore
 import app.k56.player.dsp.DspState
 import app.k56.player.dsp.DdcStore
 import app.k56.player.dsp.IrLibrary
@@ -29,6 +30,7 @@ class AppContainer(context: Context) {
 
     val sessionStore = SessionStore(appContext)
     val settingsStore = SettingsStore(appContext)
+    val resumeStore = ResumeStore(appContext)
     val networkMonitor = NetworkMonitor(appContext)
     val repository: MediaRepository = RepositoryRouter(appContext, sessionStore, settingsStore, networkMonitor)
     val offlineStore = OfflineStore(appContext, settingsStore)

@@ -68,6 +68,7 @@ fun SettingsScreen(
     val storageLocation by settingsStore.storageLocation.collectAsStateWithLifecycle()
     val cacheLimitMb by settingsStore.cacheLimitMb.collectAsStateWithLifecycle()
     val autoplay by settingsStore.autoplay.collectAsStateWithLifecycle()
+    val resumeThresholdSeconds by settingsStore.resumeThresholdSeconds.collectAsStateWithLifecycle()
     val keepScreenOn by settingsStore.keepScreenOn.collectAsStateWithLifecycle()
     val showTrackNumbers by settingsStore.showTrackNumbers.collectAsStateWithLifecycle()
     val libraryColumns by settingsStore.libraryColumns.collectAsStateWithLifecycle()
@@ -440,6 +441,43 @@ fun SettingsScreen(
                         checked = autoplay,
                         onCheckedChange = { settingsStore.setAutoplay(it) },
                     )
+                }
+            }
+        }
+
+        Spacer(Modifier.height(14.dp))
+
+        Surface(
+            color = MaterialTheme.colorScheme.surfaceContainer,
+            shape = RoundedCornerShape(20.dp),
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Column(Modifier.padding(16.dp)) {
+                Text(stringResource(R.string.resume_title), style = MaterialTheme.typography.titleLarge)
+                Text(
+                    stringResource(R.string.resume_body),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(Modifier.height(10.dp))
+                Text(stringResource(R.string.resume_threshold), style = MaterialTheme.typography.titleMedium)
+                Spacer(Modifier.height(6.dp))
+                Row(
+                    modifier = Modifier.horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    listOf(0, 5, 15, 30, 60).forEach { seconds ->
+                        FilterChip(
+                            selected = resumeThresholdSeconds == seconds,
+                            onClick = { settingsStore.setResumeThresholdSeconds(seconds) },
+                            label = {
+                                Text(
+                                    if (seconds == 0) stringResource(R.string.resume_off)
+                                    else stringResource(R.string.resume_seconds, seconds),
+                                )
+                            },
+                        )
+                    }
                 }
             }
         }

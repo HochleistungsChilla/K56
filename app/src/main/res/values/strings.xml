@@ -238,6 +238,12 @@
     <string name="autoplay_title">Endless autoplay</string>
     <string name="autoplay_body">Keeps going with similar tracks in the same direction — not random.</string>
 
+    <string name="resume_title">Resume point</string>
+    <string name="resume_body">Continue a track where you left off. Positions near the start or end are ignored.</string>
+    <string name="resume_threshold">Remember from</string>
+    <string name="resume_off">Off</string>
+    <string name="resume_seconds">%1$d s</string>
+
     <string name="sort_title">Title</string>
     <string name="sort_artist">Artist</string>
     <string name="filter_offline">Only downloads</string>
