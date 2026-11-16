@@ -290,6 +290,7 @@
 
     <string name="selection_count">%1$d selected</string>
     <string name="selection_all">All</string>
+    <string name="selection_mix">Mix</string>
     <string name="selection_cancel">Cancel</string>
 
     <string name="player_queue_count">Queue (%1$d)</string>
@@ -366,6 +367,7 @@
     <string name="home_random_songs">Random titles</string>
     <string name="library_loaded_count">%1$d of %2$d loaded</string>
     <string name="library_offline_copy">Offline — device copy from %1$s</string>
+    <string name="offline_copy">Offline copy</string>
     <string name="library_syncing">Syncing %1$s · %2$d / %3$d</string>
     <string name="library_sync_failed">Sync failed — tap to retry</string>
     <string name="sync_title">Library sync</string>
@@ -373,6 +375,17 @@
     <string name="sync_counts">%1$d tracks · %2$d albums · %3$d artists</string>
     <string name="sync_last">Last synced: %1$s</string>
     <string name="sync_now">Sync now</string>
+    <string name="sync_log_open">Open debug log</string>
+    <string name="sync_log_title">Debug log</string>
+    <string name="sync_log_copy">Copy</string>
+    <string name="sync_log_share">Share</string>
+    <string name="sync_log_clear">Clear</string>
+    <string name="sync_log_empty_title">Nothing logged yet</string>
+    <string name="sync_log_empty_body">App events, sync pages, timings and errors appear here.</string>
+    <string name="battery_title">Battery</string>
+    <string name="battery_body">Android may stop long syncs in the background. Exempting K56 from battery optimisation keeps a running sync alive.</string>
+    <string name="battery_disable">Disable battery optimisation</string>
+    <string name="battery_done">Battery optimisation already off</string>
     <string name="sync_legend">Check = downloaded · Pin = in cache</string>
     <string name="auto_sync_title">Sync automatically on start</string>
     <string name="auto_sync_body">Refresh the offline library in the background when the app starts.</string>

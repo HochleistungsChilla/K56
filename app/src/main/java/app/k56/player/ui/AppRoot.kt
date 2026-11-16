@@ -35,6 +35,7 @@ import androidx.media3.common.Player
 import app.k56.player.core.model.PlaybackSource
 import app.k56.player.core.model.Track
 import app.k56.player.data.ScreenOrientation
+import app.k56.player.BuildConfig
 import app.k56.player.R
 import app.k56.player.data.MediaRepository
 import app.k56.player.di.AppContainer
@@ -51,6 +52,7 @@ import app.k56.player.ui.screens.LoginScreen
 import app.k56.player.ui.screens.PlayerScreen
 import app.k56.player.ui.screens.SearchScreen
 import app.k56.player.ui.screens.SettingsScreen
+import app.k56.player.ui.screens.SyncLogScreen
 import kotlinx.coroutines.launch
 
 @Composable
@@ -153,12 +155,24 @@ private fun MainShell(container: AppContainer) {
 
     // Refresh the offline library copy: full sync when missing/very old, incremental otherwise.
     val autoSync by container.settingsStore.autoSync.collectAsStateWithLifecycle()
+    LaunchedEffect(Unit) {
+        app.k56.player.data.library.SyncLog.info(
+            "App gestartet · ${BuildConfig.VERSION_NAME} · ${BuildConfig.VERSION_CODE}",
+        )
+    }
+
     LaunchedEffect(autoSync) {
         if (!autoSync) return@LaunchedEffect
-        runCatching {
+        if (!container.librarySync.needsFullSync() && !container.librarySync.isStale()) {
+            return@LaunchedEffect
+        }
+        // Application scope: a sync must survive the screen that started it.
+        container.appScope.launch {
+            runCatching {
             when {
                 container.librarySync.needsFullSync() -> container.librarySync.sync()
                 container.librarySync.isStale() -> container.librarySync.syncIncremental()
+            }
             }
         }
     }
@@ -377,6 +391,9 @@ private fun MainShell(container: AppContainer) {
                     onBack = { navController.popBackStack() },
                 )
             }
+            composable("synclog") {
+                SyncLogScreen(onBack = { navController.popBackStack() })
+            }
             composable("dsp") {
                 DspScreen(
                     dsp = container.dspState,
@@ -405,6 +422,7 @@ private fun MainShell(container: AppContainer) {
                     dspState = container.dspState,
                     onOpenDsp = { navController.navigate("dsp") },
                     onOpenCache = { navController.navigate("cache") },
+                    onOpenSyncLog = { navController.navigate("synclog") },
                 )
             }
             composable(

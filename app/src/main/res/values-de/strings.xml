@@ -280,6 +280,7 @@
 
     <string name="selection_count">%1$d ausgewählt</string>
     <string name="selection_all">Alle</string>
+    <string name="selection_mix">Mix</string>
     <string name="selection_cancel">Abbrechen</string>
 
     <string name="player_queue_count">Warteschlange (%1$d)</string>
@@ -356,6 +357,7 @@
     <string name="home_random_songs">Zufällige Titel</string>
     <string name="library_loaded_count">%1$d von %2$d geladen</string>
     <string name="library_offline_copy">Offline — Kopie am Gerät, Stand %1$s</string>
+    <string name="offline_copy">Offline-Kopie</string>
     <string name="library_syncing">Synchronisiere %1$s · %2$d / %3$d</string>
     <string name="library_sync_failed">Sync fehlgeschlagen — tippen zum Wiederholen</string>
     <string name="sync_title">Bibliotheks-Sync</string>
@@ -363,6 +365,17 @@
     <string name="sync_counts">%1$d Titel · %2$d Alben · %3$d Interpreten</string>
     <string name="sync_last">Zuletzt synchronisiert: %1$s</string>
     <string name="sync_now">Jetzt synchronisieren</string>
+    <string name="sync_log_open">Debug-Protokoll anzeigen</string>
+    <string name="sync_log_title">Debug-Protokoll</string>
+    <string name="sync_log_copy">Kopieren</string>
+    <string name="sync_log_share">Teilen</string>
+    <string name="sync_log_clear">Leeren</string>
+    <string name="sync_log_empty_title">Noch nix protokolliert</string>
+    <string name="sync_log_empty_body">App-Ereignisse, Sync-Seiten, Zeiten und Fehler erscheinen hier.</string>
+    <string name="battery_title">Akku</string>
+    <string name="battery_body">Android kann lange Syncs im Hintergrund abbrechen. Wenn du K56 von der Akku-Optimierung ausnimmst, lauft der Sync weiter.</string>
+    <string name="battery_disable">Akku-Optimierung deaktivieren</string>
+    <string name="battery_done">Akku-Optimierung is scho aus</string>
     <string name="sync_legend">Häkchen = heruntergeladen · Nadel = im Cache</string>
     <string name="auto_sync_title">Automatisch beim Start synchronisieren</string>
     <string name="auto_sync_body">Aktualisiert die Offline-Bibliothek beim App-Start im Hintergrund.</string>

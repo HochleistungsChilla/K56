@@ -31,6 +31,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -75,8 +76,22 @@ fun SettingsScreen(
     dspState: DspState,
     onOpenDsp: () -> Unit = {},
     onOpenCache: () -> Unit = {},
+    onOpenSyncLog: () -> Unit = {},
 ) {
     val context = LocalContext.current
+    var batteryExempt by remember { mutableStateOf(false) }
+    val lifecycleOwner = androidx.compose.ui.platform.LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+                val pm = context.getSystemService(android.content.Context.POWER_SERVICE)
+                    as? android.os.PowerManager
+                batteryExempt = pm?.isIgnoringBatteryOptimizations(context.packageName) == true
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
     val session by repository.sessionFlow.collectAsStateWithLifecycle()
     val offlineTracks by offlineStore.tracks.collectAsStateWithLifecycle()
     val syncState by librarySync.state.collectAsStateWithLifecycle()
@@ -271,11 +286,7 @@ fun SettingsScreen(
                 )
                 if (serverCounts.songs > 0 && serverCounts.songs != counts.songs) {
                     Text(
-                        text = stringResource(
-                            R.string.sync_status,
-                            counts.songs,
-                            serverCounts.songs,
-                        ),
+                        text = stringResource(R.string.sync_status, counts.songs, serverCounts.songs),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -311,11 +322,18 @@ fun SettingsScreen(
                 }
                 Spacer(Modifier.height(10.dp))
                 OutlinedButton(
-                    onClick = { scope.launch { librarySync.sync(force = true) } },
+                    onClick = { librarySync.start(force = true) },
                     enabled = !syncState.running,
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     Text(stringResource(R.string.sync_now))
+                }
+                Spacer(Modifier.height(8.dp))
+                OutlinedButton(
+                    onClick = onOpenSyncLog,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(stringResource(R.string.sync_log_open))
                 }
                 Spacer(Modifier.height(8.dp))
                 Text(
@@ -336,6 +354,39 @@ fun SettingsScreen(
                     Switch(
                         checked = autoSync,
                         onCheckedChange = { settingsStore.setAutoSync(it) },
+                    )
+                }
+            }
+        }
+
+        Surface(
+            color = MaterialTheme.colorScheme.surfaceContainer,
+            shape = RoundedCornerShape(20.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 14.dp),
+        ) {
+            Column(Modifier.padding(16.dp)) {
+                Text(
+                    stringResource(R.string.battery_title),
+                    style = MaterialTheme.typography.titleLarge,
+                )
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    stringResource(R.string.battery_body),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(Modifier.height(10.dp))
+                OutlinedButton(
+                    onClick = { requestBatteryExemption(context) },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = !batteryExempt,
+                ) {
+                    Text(
+                        stringResource(
+                            if (batteryExempt) R.string.battery_done else R.string.battery_disable,
+                        ),
                     )
                 }
             }
@@ -1358,4 +1409,16 @@ private fun InfoRow(label: String, value: String) {
             modifier = Modifier.weight(1f),
         )
     }
+}
+
+/** Opens the system dialog that exempts K56 from battery optimisation. */
+private fun requestBatteryExemption(context: android.content.Context) {
+    val powerManager = context.getSystemService(android.content.Context.POWER_SERVICE)
+        as? android.os.PowerManager ?: return
+    if (powerManager.isIgnoringBatteryOptimizations(context.packageName)) return
+    val intent = android.content.Intent(
+        android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
+        android.net.Uri.parse("package:" + context.packageName),
+    ).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+    runCatching { context.startActivity(intent) }
 }

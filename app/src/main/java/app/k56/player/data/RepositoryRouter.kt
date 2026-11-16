@@ -141,6 +141,12 @@ class RepositoryRouter(
     override suspend fun songs(parentId: String?, limit: Int): List<Track> =
         delegate().songs(parentId, limit)
 
+    override suspend fun songsPage(
+        parentId: String?,
+        startIndex: Int,
+        limit: Int,
+    ): List<Track> = delegate().songsPage(parentId, startIndex, limit)
+
     override suspend fun instantMix(seedIds: List<String>, limit: Int): List<Track> =
         delegate().instantMix(seedIds, limit)
 

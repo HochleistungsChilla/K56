@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.Close
@@ -115,6 +116,8 @@ class LibraryViewModel(
         private set
     var genreTracks by mutableStateOf<List<Track>>(emptyList())
         private set
+    var genreOffline by mutableStateOf(false)
+        private set
     var playlists by mutableStateOf<List<Playlist>>(emptyList())
         private set
     var selectedPlaylist by mutableStateOf<Playlist?>(null)
@@ -142,12 +145,22 @@ class LibraryViewModel(
         selectedGenre = name
         genreAlbums = emptyList()
         genreTracks = emptyList()
+        genreOffline = false
         viewModelScope.launch {
             try {
                 genreAlbums = repository.genreAlbums(name)
                 genreTracks = repository.genreTracks(name)
             } catch (e: Exception) {
-                error = e.userMessage(appContext)
+                val albums = libraryDb.albumsByGenre(name)
+                val tracks = libraryDb.tracksByGenre(name)
+                if (albums.isNotEmpty() || tracks.isNotEmpty()) {
+                    genreAlbums = albums
+                    genreTracks = tracks
+                    genreOffline = true
+                    error = null
+                } else {
+                    error = e.userMessage(appContext)
+                }
             }
         }
     }
@@ -156,6 +169,7 @@ class LibraryViewModel(
         selectedGenre = null
         genreAlbums = emptyList()
         genreTracks = emptyList()
+        genreOffline = false
     }
 
     fun refreshPlaylists() {
@@ -298,6 +312,22 @@ class LibraryViewModel(
                 }
             } catch (e: Exception) {
                 albums = albums.map { if (it.id == album.id) it.copy(isFavorite = !wanted) else it }
+                error = e.userMessage(appContext)
+            }
+        }
+    }
+
+    /**
+     * Runs a selection action in the ViewModel scope so it survives the
+     * selection bar disappearing; cancellation never reaches the user.
+     */
+    fun runAction(block: suspend () -> Unit) {
+        viewModelScope.launch {
+            try {
+                block()
+            } catch (cancel: kotlinx.coroutines.CancellationException) {
+                throw cancel
+            } catch (e: Exception) {
                 error = e.userMessage(appContext)
             }
         }
@@ -529,7 +559,7 @@ fun LibraryScreen(
                 color = MaterialTheme.colorScheme.error,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { scope.launch { librarySync.sync(force = true) } }
+                    .clickable { librarySync.start(force = true) }
                     .padding(horizontal = 16.dp, vertical = 2.dp),
             )
         }
@@ -944,27 +974,35 @@ fun LibraryScreen(
             SelectionBar(
                 count = selectedTracks.size + selectedAlbums.size + selectedArtists.size,
                 onPlay = {
-                    scope.launch {
+                    vm.runAction {
                         val list = resolveSelection()
                         if (list.isNotEmpty()) onPlay(list, 0)
                         clearSelection()
                     }
                 },
+                onMix = {
+                    vm.runAction {
+                        settingsStore.setAutoplay(true)
+                        val list = resolveSelection().shuffled()
+                        if (list.isNotEmpty()) onPlay(list, 0)
+                        clearSelection()
+                    }
+                },
                 onShuffle = {
-                    scope.launch {
+                    vm.runAction {
                         val list = resolveSelection().shuffled()
                         if (list.isNotEmpty()) onPlay(list, 0)
                         clearSelection()
                     }
                 },
                 onQueue = {
-                    scope.launch {
+                    vm.runAction {
                         resolveSelection().forEach { onAddToQueue(it) }
                         clearSelection()
                     }
                 },
                 onDownload = {
-                    scope.launch {
+                    vm.runAction {
                         resolveSelection().forEach { downloadOne(it) }
                         clearSelection()
                     }
@@ -1022,6 +1060,7 @@ fun LibraryScreen(
 private fun SelectionBar(
     count: Int,
     onPlay: () -> Unit,
+    onMix: () -> Unit,
     onShuffle: () -> Unit,
     onQueue: () -> Unit,
     onDownload: () -> Unit,
@@ -1054,6 +1093,7 @@ private fun SelectionBar(
                 horizontalArrangement = Arrangement.SpaceEvenly,
             ) {
                 SelectionAction(Icons.Rounded.PlayArrow, stringResource(R.string.common_play), onPlay)
+                SelectionAction(Icons.Rounded.AutoAwesome, stringResource(R.string.selection_mix), onMix)
                 SelectionAction(Icons.Rounded.Shuffle, stringResource(R.string.player_shuffle), onShuffle)
                 SelectionAction(Icons.Rounded.Add, stringResource(R.string.action_add_queue), onQueue)
                 SelectionAction(Icons.Rounded.Download, stringResource(R.string.offline_download), onDownload)
@@ -1140,6 +1180,14 @@ private fun GenreContent(
                 Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = stringResource(R.string.common_back))
             }
             Text(genre, style = MaterialTheme.typography.titleLarge)
+        }
+        if (vm.genreOffline) {
+            Text(
+                text = stringResource(R.string.offline_copy),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 16.dp),
+            )
         }
         LazyColumn(
             modifier = Modifier.fillMaxWidth(),

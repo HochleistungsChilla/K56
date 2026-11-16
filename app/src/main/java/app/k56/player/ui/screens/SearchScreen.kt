@@ -51,6 +51,7 @@ import app.k56.player.R
 import app.k56.player.core.model.SearchResults
 import app.k56.player.core.model.Track
 import app.k56.player.data.MediaRepository
+import app.k56.player.data.library.LibraryDb
 import app.k56.player.ui.appViewModel
 import app.k56.player.ui.components.Artwork
 import app.k56.player.ui.components.ErrorState
@@ -73,10 +74,13 @@ class SearchViewModel(
         private set
     var error by mutableStateOf<String?>(null)
         private set
+    var offlineCopy by mutableStateOf(false)
+        private set
     var history by mutableStateOf(loadHistory())
         private set
 
     private var job: Job? = null
+    private val libraryDb = LibraryDb.get(appContext)
     private val prefs = appContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 
     fun search(query: String) {
@@ -93,9 +97,20 @@ class SearchViewModel(
             error = null
             try {
                 results = repository.search(term)
+                offlineCopy = false
                 remember(term)
             } catch (e: Exception) {
-                error = e.userMessage(appContext)
+                val tracks = libraryDb.searchTracks(term)
+                val albums = libraryDb.searchAlbums(term)
+                val artists = libraryDb.searchArtists(term)
+                if (tracks.isNotEmpty() || albums.isNotEmpty() || artists.isNotEmpty()) {
+                    results = SearchResults(albums = albums, artists = artists, tracks = tracks)
+                    offlineCopy = true
+                    error = null
+                    remember(term)
+                } else {
+                    error = e.userMessage(appContext)
+                }
             } finally {
                 searching = false
             }
@@ -209,6 +224,15 @@ fun SearchScreen(
 
         if (vm.searching) {
             LinearProgressIndicator(Modifier.fillMaxWidth())
+        }
+
+        if (vm.offlineCopy) {
+            Text(
+                text = stringResource(R.string.offline_copy),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 16.dp),
+            )
         }
 
         val error = vm.error

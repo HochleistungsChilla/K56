@@ -1,3 +1,20 @@
+// Version comes from git so every build is identifiable: 0.2.<commit count>.
+fun gitOutput(vararg args: String): String = runCatching {
+    val process = ProcessBuilder("git", *args)
+        .directory(rootProject.projectDir)
+        .redirectErrorStream(true)
+        .start()
+    process.inputStream.bufferedReader().readText().trim()
+}.getOrDefault("")
+
+val gitCommitCount = gitOutput("rev-list", "--count", "HEAD").toIntOrNull() ?: 1
+val gitDescribe = gitOutput("describe", "--tags", "--abbrev=0")
+val appVersionName = if (gitDescribe.startsWith("v")) {
+    "${gitDescribe.removePrefix("v")}.$gitCommitCount"
+} else {
+    "0.2.$gitCommitCount"
+}
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -14,8 +31,8 @@ android {
         // Android 9 (API 28) is the supported floor.
         minSdk = 28
         targetSdk = 35
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = 1000 + gitCommitCount
+        versionName = appVersionName
 
         // Hard compatibility floor for the Jellyfin backend. Bump together with docs/JELLYFIN.md.
         buildConfigField("String", "JELLYFIN_MIN_VERSION", "\"10.10.7\"")

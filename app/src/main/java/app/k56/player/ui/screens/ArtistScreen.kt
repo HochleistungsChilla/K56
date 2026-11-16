@@ -40,6 +40,7 @@ import app.k56.player.R
 import app.k56.player.core.model.ArtistDetails
 import app.k56.player.core.model.Track
 import app.k56.player.data.MediaRepository
+import app.k56.player.data.library.LibraryDb
 import app.k56.player.ui.appViewModel
 import app.k56.player.ui.components.AlbumCard
 import app.k56.player.ui.components.Artwork
@@ -64,6 +65,10 @@ class ArtistViewModel(
         private set
     var error by mutableStateOf<String?>(null)
         private set
+    var offlineCopy by mutableStateOf(false)
+        private set
+
+    private val libraryDb = LibraryDb.get(appContext)
 
     init {
         load()
@@ -75,8 +80,21 @@ class ArtistViewModel(
         viewModelScope.launch {
             try {
                 details = repository.artistDetails(artistId)
+                offlineCopy = false
             } catch (e: Exception) {
-                error = e.userMessage(appContext)
+                val artist = libraryDb.artistById(artistId)
+                if (artist != null) {
+                    details = ArtistDetails(
+                        artist = artist,
+                        albums = libraryDb.albumsByArtist(artistId),
+                        topTracks = libraryDb.tracksByArtist(artist.name).take(10),
+                        appearsOn = emptyList(),
+                    )
+                    offlineCopy = true
+                    error = null
+                } else {
+                    error = e.userMessage(appContext)
+                }
             } finally {
                 loading = false
             }
@@ -99,6 +117,15 @@ fun ArtistScreen(
 
     Column(Modifier.fillMaxSize()) {
         ScreenHeader(title = stringResource(R.string.artist_title), onBack = onBack)
+
+        if (vm.offlineCopy) {
+            Text(
+                text = stringResource(R.string.offline_copy),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 16.dp),
+            )
+        }
 
         val details = vm.details
         val error = vm.error

@@ -45,6 +45,7 @@ import app.k56.player.core.model.Album
 import app.k56.player.core.model.AlbumDetails
 import app.k56.player.core.model.Track
 import app.k56.player.data.MediaRepository
+import app.k56.player.data.library.LibraryDb
 import app.k56.player.ui.appViewModel
 import app.k56.player.ui.components.Artwork
 import app.k56.player.ui.components.ErrorState
@@ -72,6 +73,10 @@ class AlbumViewModel(
         private set
     var error by mutableStateOf<String?>(null)
         private set
+    var offlineCopy by mutableStateOf(false)
+        private set
+
+    private val libraryDb = LibraryDb.get(appContext)
 
     init {
         load()
@@ -93,8 +98,21 @@ class AlbumViewModel(
                 moreFromArtist = loaded.second
                     .filter { it.id != loaded.first.album.id }
                     .take(12)
+                offlineCopy = false
             } catch (e: Exception) {
-                error = e.userMessage(appContext)
+                val album = libraryDb.albumById(albumId)
+                if (album != null) {
+                    details = AlbumDetails(album = album, tracks = libraryDb.tracksByAlbum(albumId))
+                    moreFromArtist = album.artistId
+                        ?.let { libraryDb.albumsByArtist(it) }
+                        ?.filter { it.id != albumId }
+                        ?.take(12)
+                        .orEmpty()
+                    offlineCopy = true
+                    error = null
+                } else {
+                    error = e.userMessage(appContext)
+                }
             } finally {
                 loading = false
             }
@@ -118,6 +136,15 @@ fun AlbumScreen(
 
     Column(Modifier.fillMaxSize()) {
         ScreenHeader(title = stringResource(R.string.album_title), onBack = onBack)
+
+        if (vm.offlineCopy) {
+            Text(
+                text = stringResource(R.string.offline_copy),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 24.dp),
+            )
+        }
 
         val details = vm.details
         val error = vm.error
