@@ -250,4 +250,12 @@
     <string name="selection_cancel">Cancel</string>
 
     <string name="player_queue_count">Queue (%1$d)</string>
+
+    <string name="display_title">Display</string>
+    <string name="display_keep_on">Keep screen on</string>
+    <string name="display_keep_on_body">Player stays awake while it is open.</string>
+    <string name="display_numbers">Track numbers</string>
+    <string name="display_numbers_body">Show the position in front of each title.</string>
+    <string name="display_columns">Library columns</string>
+    <string name="display_columns_auto">Auto</string>
 </resources>

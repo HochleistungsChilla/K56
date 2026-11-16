@@ -69,7 +69,14 @@ fun PlayerScreen(
     controller: MediaController?,
     onBack: () -> Unit,
     onOpenDsp: () -> Unit = {},
+    keepScreenOn: Boolean = false,
 ) {
+    val view = androidx.compose.ui.platform.LocalView.current
+    androidx.compose.runtime.DisposableEffect(keepScreenOn) {
+        val previous = view.keepScreenOn
+        view.keepScreenOn = keepScreenOn
+        onDispose { view.keepScreenOn = previous }
+    }
     val state = rememberPlaybackUiState(controller)
 
     if (!state.hasItem) {

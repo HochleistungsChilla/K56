@@ -50,6 +50,16 @@ class SettingsStore(context: Context) {
     )
     val downloadFormat: StateFlow<DownloadFormat> = _downloadFormat.asStateFlow()
 
+    /** Interface options. */
+    private val _keepScreenOn = MutableStateFlow(prefs.getBoolean(KEY_KEEP_SCREEN_ON, true))
+    val keepScreenOn: StateFlow<Boolean> = _keepScreenOn.asStateFlow()
+
+    private val _showTrackNumbers = MutableStateFlow(prefs.getBoolean(KEY_TRACK_NUMBERS, true))
+    val showTrackNumbers: StateFlow<Boolean> = _showTrackNumbers.asStateFlow()
+
+    private val _libraryColumns = MutableStateFlow(prefs.getInt(KEY_COLUMNS, 0))
+    val libraryColumns: StateFlow<Int> = _libraryColumns.asStateFlow()
+
     /** Keep the queue going with similar tracks when it runs out. */
     private val _autoplay = MutableStateFlow(prefs.getBoolean(KEY_AUTOPLAY, true))
     val autoplay: StateFlow<Boolean> = _autoplay.asStateFlow()
@@ -83,6 +93,21 @@ class SettingsStore(context: Context) {
         _downloadFormat.value = value
     }
 
+    fun setKeepScreenOn(value: Boolean) {
+        prefs.edit().putBoolean(KEY_KEEP_SCREEN_ON, value).apply()
+        _keepScreenOn.value = value
+    }
+
+    fun setShowTrackNumbers(value: Boolean) {
+        prefs.edit().putBoolean(KEY_TRACK_NUMBERS, value).apply()
+        _showTrackNumbers.value = value
+    }
+
+    fun setLibraryColumns(value: Int) {
+        prefs.edit().putInt(KEY_COLUMNS, value).apply()
+        _libraryColumns.value = value
+    }
+
     fun setAutoplay(value: Boolean) {
         prefs.edit().putBoolean(KEY_AUTOPLAY, value).apply()
         _autoplay.value = value
@@ -99,6 +124,9 @@ class SettingsStore(context: Context) {
         private const val KEY_STORAGE = "storage_location"
         private const val KEY_CACHE_LIMIT = "cache_limit_mb"
         private const val KEY_AUTOPLAY = "autoplay"
+        private const val KEY_KEEP_SCREEN_ON = "keep_screen_on"
+        private const val KEY_TRACK_NUMBERS = "track_numbers"
+        private const val KEY_COLUMNS = "library_columns"
         private const val KEY_DOWNLOAD_QUALITY = "download_quality"
         private const val KEY_DOWNLOAD_FORMAT = "download_format"
 

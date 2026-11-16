@@ -176,6 +176,8 @@ fun LibraryScreen(
     onPlay: (List<Track>, Int) -> Unit,
     onPlayNext: (Track) -> Unit = {},
     onAddToQueue: (Track) -> Unit = {},
+    showTrackNumbers: Boolean = true,
+    columns: Int = 0,
 ) {
     val context = LocalContext.current
     val vm = appViewModel { LibraryViewModel(repository, context.applicationContext) }
@@ -280,7 +282,7 @@ fun LibraryScreen(
             error != null -> ErrorState(error, vm::load, Modifier.weight(1f))
 
             tab == 0 -> LazyVerticalGrid(
-                columns = GridCells.Adaptive(148.dp),
+                columns = if (columns > 0) GridCells.Fixed(columns) else GridCells.Adaptive(148.dp),
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth(),
@@ -309,7 +311,7 @@ fun LibraryScreen(
             }
 
             tab == 1 -> LazyVerticalGrid(
-                columns = GridCells.Adaptive(126.dp),
+                columns = if (columns > 0) GridCells.Fixed(columns) else GridCells.Adaptive(126.dp),
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth(),
@@ -356,7 +358,7 @@ fun LibraryScreen(
                             },
                             onLongClick = { toggleTrack(track.id) },
                             selected = track.id in selectedTracks,
-                            index = index + 1,
+                            index = if (showTrackNumbers) index + 1 else null,
                             isFavorite = track.isFavorite,
                             onToggleFavorite = { vm.toggleTrackFavorite(track) },
                             isDownloaded = track.id in downloadedIds,
@@ -476,7 +478,7 @@ fun LibraryScreen(
                                     },
                                     onLongClick = { toggleTrack(track.id) },
                                     selected = track.id in selectedTracks,
-                                    index = index + 1,
+                                    index = if (showTrackNumbers) index + 1 else null,
                                     isFavorite = true,
                                     onToggleFavorite = { vm.toggleTrackFavorite(track) },
                                     isDownloaded = track.id in downloadedIds,

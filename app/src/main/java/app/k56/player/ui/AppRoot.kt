@@ -75,6 +75,9 @@ private fun MainShell(container: AppContainer) {
     val route = backStackEntry?.destination?.route
     val showBars = route != "player"
     val repository: MediaRepository = container.repository
+    val keepScreenOn by container.settingsStore.keepScreenOn.collectAsStateWithLifecycle()
+    val showTrackNumbers by container.settingsStore.showTrackNumbers.collectAsStateWithLifecycle()
+    val libraryColumns by container.settingsStore.libraryColumns.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
 
     val playTracks: (List<Track>, Int) -> Unit = { tracks, index ->
@@ -199,6 +202,8 @@ private fun MainShell(container: AppContainer) {
                     onPlay = playTracks,
                     onPlayNext = playNext,
                     onAddToQueue = addToQueue,
+                    showTrackNumbers = showTrackNumbers,
+                    columns = libraryColumns,
                 )
             }
             composable("cache") {
@@ -262,6 +267,7 @@ private fun MainShell(container: AppContainer) {
                     controller = controller,
                     onBack = { navController.popBackStack() },
                     onOpenDsp = { navController.navigate("dsp") },
+                    keepScreenOn = keepScreenOn,
                 )
             }
         }

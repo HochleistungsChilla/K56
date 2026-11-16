@@ -240,4 +240,12 @@
     <string name="selection_cancel">Abbrechen</string>
 
     <string name="player_queue_count">Warteschlange (%1$d)</string>
+
+    <string name="display_title">Darstellung</string>
+    <string name="display_keep_on">Bildschirm an lassen</string>
+    <string name="display_keep_on_body">Der Player bleibt wach, solange er offen ist.</string>
+    <string name="display_numbers">Tracknummern</string>
+    <string name="display_numbers_body">Position vor jedem Titel anzeigen.</string>
+    <string name="display_columns">Spalten in der Bibliothek</string>
+    <string name="display_columns_auto">Auto</string>
 </resources>

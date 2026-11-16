@@ -68,6 +68,9 @@ fun SettingsScreen(
     val storageLocation by settingsStore.storageLocation.collectAsStateWithLifecycle()
     val cacheLimitMb by settingsStore.cacheLimitMb.collectAsStateWithLifecycle()
     val autoplay by settingsStore.autoplay.collectAsStateWithLifecycle()
+    val keepScreenOn by settingsStore.keepScreenOn.collectAsStateWithLifecycle()
+    val showTrackNumbers by settingsStore.showTrackNumbers.collectAsStateWithLifecycle()
+    val libraryColumns by settingsStore.libraryColumns.collectAsStateWithLifecycle()
     val downloadQuality by settingsStore.downloadQuality.collectAsStateWithLifecycle()
     val downloadFormat by settingsStore.downloadFormat.collectAsStateWithLifecycle()
     val hasSdCard = remember { SettingsStore.externalRoot(context) != null }
@@ -420,6 +423,67 @@ fun SettingsScreen(
                         checked = autoplay,
                         onCheckedChange = { settingsStore.setAutoplay(it) },
                     )
+                }
+            }
+        }
+
+        Spacer(Modifier.height(14.dp))
+
+        Surface(
+            color = MaterialTheme.colorScheme.surfaceContainer,
+            shape = RoundedCornerShape(20.dp),
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Column(Modifier.padding(16.dp)) {
+                Text(
+                    stringResource(R.string.display_title),
+                    style = MaterialTheme.typography.titleLarge,
+                )
+                Spacer(Modifier.height(8.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text(stringResource(R.string.display_keep_on), style = MaterialTheme.typography.titleMedium)
+                        Text(
+                            stringResource(R.string.display_keep_on_body),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    Switch(
+                        checked = keepScreenOn,
+                        onCheckedChange = { settingsStore.setKeepScreenOn(it) },
+                    )
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text(stringResource(R.string.display_numbers), style = MaterialTheme.typography.titleMedium)
+                        Text(
+                            stringResource(R.string.display_numbers_body),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    Switch(
+                        checked = showTrackNumbers,
+                        onCheckedChange = { settingsStore.setShowTrackNumbers(it) },
+                    )
+                }
+                Spacer(Modifier.height(8.dp))
+                Text(stringResource(R.string.display_columns), style = MaterialTheme.typography.titleMedium)
+                Spacer(Modifier.height(4.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf(0, 2, 3, 4).forEach { value ->
+                        FilterChip(
+                            selected = libraryColumns == value,
+                            onClick = { settingsStore.setLibraryColumns(value) },
+                            label = {
+                                Text(
+                                    if (value == 0) stringResource(R.string.display_columns_auto)
+                                    else value.toString(),
+                                )
+                            },
+                        )
+                    }
                 }
             }
         }
