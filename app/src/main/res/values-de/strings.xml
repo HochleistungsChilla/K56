@@ -282,6 +282,8 @@
     <string name="backup_export_ok">Einstellungen exportiert</string>
     <string name="backup_import_ok">Einstellungen importiert</string>
     <string name="backup_import_failed">Import fehlgeschlagen: ungültige Datei</string>
+    <string name="backup_export_failed">Export fehlgeschlagen</string>
+    <string name="backup_password">Passwort (optional)</string>
 
     <string name="np_options_title">Jetzt läuft</string>
     <string name="np_hide_favorite">Favorit-Button zeigen</string>

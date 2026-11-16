@@ -47,6 +47,7 @@ import app.k56.player.BuildConfig
 import app.k56.player.core.model.BackendKind
 import app.k56.player.core.net.NetworkTransport
 import app.k56.player.data.MediaRepository
+import app.k56.player.data.BackupCrypto
 import app.k56.player.data.DownloadFormat
 import app.k56.player.data.DownloadQuality
 import app.k56.player.data.PlayerBackground
@@ -106,17 +107,28 @@ fun SettingsScreen(
     val networkStatus by repository.networkStatus.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
 
+    var exportPasswordOpen by remember { mutableStateOf(false) }
+    var pendingExportPassword by remember { mutableStateOf<String?>(null) }
+    var importPasswordOpen by remember { mutableStateOf(false) }
+    var pendingImportText by remember { mutableStateOf<String?>(null) }
+
     val exportLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("application/json"),
     ) { uri ->
         if (uri != null) {
+            val password = pendingExportPassword
+            pendingExportPassword = null
             scope.launch {
                 runCatching {
+                    val json = settingsStore.exportJson()
+                    val payload = if (password.isNullOrEmpty()) json else BackupCrypto.encrypt(json, password)
                     context.contentResolver.openOutputStream(uri)?.use { out ->
-                        out.write(settingsStore.exportJson().toByteArray())
+                        out.write(payload.toByteArray())
                     }
                 }.onSuccess {
                     Toast.makeText(context, R.string.backup_export_ok, Toast.LENGTH_SHORT).show()
+                }.onFailure {
+                    Toast.makeText(context, R.string.backup_export_failed, Toast.LENGTH_LONG).show()
                 }
             }
         }
@@ -131,11 +143,17 @@ fun SettingsScreen(
                         ?.use { it.readBytes().decodeToString() }
                         .orEmpty()
                 }.getOrNull()
-                if (text.isNullOrBlank()) {
-                    Toast.makeText(context, R.string.backup_import_failed, Toast.LENGTH_LONG).show()
-                } else {
-                    settingsStore.importJson(text)
-                    Toast.makeText(context, R.string.backup_import_ok, Toast.LENGTH_SHORT).show()
+                when {
+                    text.isNullOrBlank() ->
+                        Toast.makeText(context, R.string.backup_import_failed, Toast.LENGTH_LONG).show()
+                    BackupCrypto.isEncrypted(text) -> {
+                        pendingImportText = text
+                        importPasswordOpen = true
+                    }
+                    else -> {
+                        settingsStore.importJson(text)
+                        Toast.makeText(context, R.string.backup_import_ok, Toast.LENGTH_SHORT).show()
+                    }
                 }
             }
         }
@@ -904,7 +922,7 @@ fun SettingsScreen(
                 Spacer(Modifier.height(8.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedButton(
-                        onClick = { exportLauncher.launch("k56-settings.json") },
+                        onClick = { exportPasswordOpen = true },
                         modifier = Modifier.weight(1f),
                     ) {
                         Text(stringResource(R.string.backup_export))
@@ -946,6 +964,43 @@ fun SettingsScreen(
             stringResource(R.string.settings_about_body, BuildConfig.JELLYFIN_MIN_VERSION),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+
+    if (exportPasswordOpen) {
+        PasswordDialog(
+            title = stringResource(R.string.backup_export),
+            confirmLabel = stringResource(R.string.backup_export),
+            onDismiss = { exportPasswordOpen = false },
+            onConfirm = { password ->
+                exportPasswordOpen = false
+                pendingExportPassword = password
+                exportLauncher.launch("k56-settings.json")
+            },
+        )
+    }
+    if (importPasswordOpen) {
+        PasswordDialog(
+            title = stringResource(R.string.backup_import),
+            confirmLabel = stringResource(R.string.backup_import),
+            onDismiss = {
+                importPasswordOpen = false
+                pendingImportText = null
+            },
+            onConfirm = { password ->
+                importPasswordOpen = false
+                val text = pendingImportText
+                pendingImportText = null
+                scope.launch {
+                    val json = runCatching { BackupCrypto.decrypt(text.orEmpty(), password) }.getOrNull()
+                    if (json == null) {
+                        Toast.makeText(context, R.string.backup_import_failed, Toast.LENGTH_LONG).show()
+                    } else {
+                        settingsStore.importJson(json)
+                        Toast.makeText(context, R.string.backup_import_ok, Toast.LENGTH_SHORT).show()
+                    }
+                }
+            },
         )
     }
 }
@@ -1050,6 +1105,39 @@ private fun playerBackgroundLabel(bg: PlayerBackground): Int = when (bg) {
     PlayerBackground.GRADIENT -> R.string.np_background_gradient
     PlayerBackground.SOLID -> R.string.np_background_solid
     PlayerBackground.ALBUM_COLOR -> R.string.np_background_album
+}
+
+@Composable
+private fun PasswordDialog(
+    title: String,
+    confirmLabel: String,
+    onDismiss: () -> Unit,
+    onConfirm: (String) -> Unit,
+) {
+    var password by remember { mutableStateOf("") }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(title) },
+        text = {
+            OutlinedTextField(
+                value = password,
+                onValueChange = { password = it },
+                label = { Text(stringResource(R.string.backup_password)) },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        },
+        confirmButton = {
+            TextButton(onClick = { onConfirm(password) }) {
+                Text(confirmLabel)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.settings_edit_cancel))
+            }
+        },
+    )
 }
 
 @Composable

@@ -292,6 +292,8 @@
     <string name="backup_export_ok">Settings exported</string>
     <string name="backup_import_ok">Settings imported</string>
     <string name="backup_import_failed">Import failed: invalid file</string>
+    <string name="backup_export_failed">Export failed</string>
+    <string name="backup_password">Password (optional)</string>
 
     <string name="np_options_title">Now playing</string>
     <string name="np_hide_favorite">Show favorite button</string>
