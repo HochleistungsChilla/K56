@@ -50,6 +50,7 @@ import app.k56.player.ui.screens.GenreScreen
 import app.k56.player.ui.screens.HomeScreen
 import app.k56.player.ui.screens.LibraryScreen
 import app.k56.player.ui.screens.LoginScreen
+import app.k56.player.ui.screens.PlaylistScreen
 import app.k56.player.ui.screens.PlayerScreen
 import app.k56.player.ui.screens.SearchScreen
 import app.k56.player.ui.screens.SettingsScreen
@@ -382,6 +383,7 @@ private fun MainShell(container: AppContainer) {
                     onOpenAlbum = { navController.navigate("album/$it") },
                     onOpenArtist = { navController.navigate("artist/$it") },
                     onOpenGenre = { navController.navigate("genre/$it") },
+                    onOpenPlaylist = { navController.navigate("playlist/$it") },
                     onOpenLibrary = { navController.navigate("library") },
                     onPlay = playTracks,
                     onAddToQueue = addToQueue,
@@ -496,6 +498,20 @@ private fun MainShell(container: AppContainer) {
                     genre = entry.arguments?.getString("genreName").orEmpty(),
                     onBack = { navController.popBackStack() },
                     onOpenAlbum = { navController.navigate("album/$it") },
+                    onPlay = playTracks,
+                    onPlayNext = playNext,
+                    onAddToQueue = addToQueue,
+                )
+            }
+            composable(
+                route = "playlist/{playlistId}",
+                arguments = listOf(navArgument("playlistId") { type = NavType.StringType }),
+            ) { entry ->
+                PlaylistScreen(
+                    repository = repository,
+                    offlineStore = container.offlineStore,
+                    playlistId = entry.arguments?.getString("playlistId").orEmpty(),
+                    onBack = { navController.popBackStack() },
                     onPlay = playTracks,
                     onPlayNext = playNext,
                     onAddToQueue = addToQueue,

@@ -212,6 +212,7 @@ fun HomeScreen(
     onOpenAlbum: (String) -> Unit,
     onOpenArtist: (String) -> Unit,
     onOpenGenre: (String) -> Unit,
+    onOpenPlaylist: (String) -> Unit,
     onOpenLibrary: () -> Unit,
     onPlay: (List<Track>, Int) -> Unit,
     onAddToQueue: (Track) -> Unit = {},
@@ -485,7 +486,7 @@ fun HomeScreen(
                                 horizontalArrangement = Arrangement.spacedBy(gridSpacing.dp),
                             ) {
                                 items(vm.playlists.take(12), key = { it.id }) { playlist ->
-                                    PlaylistCard(playlist, onClick = onOpenLibrary)
+                                    PlaylistCard(playlist, onClick = { onOpenPlaylist(playlist.id) })
                                 }
                             }
                         }
