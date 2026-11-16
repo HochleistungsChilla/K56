@@ -47,18 +47,18 @@ Aufwand: S (< 1 h) · M (1–3 h) · L (> 3 h)
 | Library: Spalten (Landscape) | ❌ | S | getrennt von Portrait |
 | Library: Abstand | ✅ | S | Grid-Spacing 4–16 dp |
 | Library: Shortcuts wählbar | ❌ | S | Navigationseinträge |
-| Album-Seite: „More from artist" | ❌ | S | |
+| Album-Seite: „More from artist" | ✅ | – | weitere Alben des Interpreten als Row |
 | Album-Seite: „More from artist" Sort | ❌ | S | |
-| Album-Seite: „About" | ❌ | M | braucht Metadaten |
+| Album-Seite: „About" | ✅ | – | Overview + Genre-Chips |
 | Album-Seite: About-Zeilen konfigurierbar | ❌ | S | |
 | Album-Seite: Künstler immer im Track | ❌ | S | |
 | Album-Seite: Header-Style (Live-Preview) | ❌ | M | Größe/Hintergrund/Blur |
-| Artist-Seite: „Top tracks"/„Appears on" | ❌ | M | |
+| Artist-Seite: „Top tracks"/„Appears on" | ✅ | M | Top-Tracks (PlayCount), Erscheint-auf |
 | Artist-Seite: Header-Style (Live-Preview) | ❌ | M | |
 | Artist-Seite: Albums Sort/Style/Spalten | ❌ | M | Liste/Grid |
 | Artist-Seite: Top-tracks Anzahl + Quelle | ❌ | S | Favoriten/Most-played |
-| Artist-Seite: Albums nach Typ gruppieren | ❌ | S | Live/Compilation |
-| Genre-Seite (komplett) | ❌ | L | kein GenreScreen vorhanden |
+| Artist-Seite: Albums nach Typ gruppieren | 🟡 | S | eigene Alben vs. Erscheint-auf |
+| Genre-Seite (komplett) | ✅ | L | Library-Tab mit Genres + Alben/Titel pro Genre |
 | Playlist-Seite: Header-Style | ❌ | M | Live-Preview |
 | Now Playing: Tracknummer | ✅ | – | Einstellungen → Darstellung |
 | Now Playing: Tracknummer in Media Session | ❌ | S | |
@@ -98,7 +98,7 @@ Aufwand: S (< 1 h) · M (1–3 h) · L (> 3 h)
 | Headphone/Bluetooth auto play | ❌ | M | |
 | Pause on task removal | ✅ | – | |
 | Ignore remote stop command | ❌ | S | Stop als Pause |
-| Cellular/WLAN Max-Bitrate | 🟡 | M | nur Download-Qualität |
+| Cellular/WLAN Max-Bitrate | 🟡 | M | Datensparmodus: niedrigere Bitrate + kleiner Buffer bei Mobil |
 | Prefer internal decoder | ⛔ | S | ExoPlayer default |
 | Offload-Mode | ❌ | M | USB/AAudio |
 | Hi-Res local renderer | ❌ | M | |
@@ -198,7 +198,20 @@ Erledigt (2026-11-16, 11 Commits):
 9. ✅ Queue-Bearbeitung (verschieben/entfernen/leeren).
 10. ✅ Player-Buttons frei wählbar.
 11. ✅ Expanded Now Playing (Stile, Cover-Rand, Hintergrund, animierte Progressbar).
+12. ✅ Cover-Rand (echter Außenabstand, 0–24 dp) getrennt vom Eckradius (0–28 dp).
+
+Erledigt (2026-11-16 abends, Dauerauftrag Batch 2):
+13. ✅ Album-Seite: „More from artist", „About" (Overview + Genres).
+14. ✅ Artist-Seite: Top-Tracks (PlayCount), „Appears on", Biografie.
+15. ✅ Suchseite: lokaler Verlauf (max 10), Filter-Chips, Tastatur-Submit.
+16. ✅ Genre-Seite: Library-Tab, Alben/Titel pro Genre.
+17. ✅ Playlists: anzeigen/erstellen/umbenennen/löschen/Titel hinzufügen+entfernen (Jellyfin-API), Offline-Hinweis.
+18. ✅ Datensparmodus (Frugal): niedrigere Bitrate + kleiner Buffer bei Mobil.
+19. ✅ Kontextmenüs: Play-Next/Queue/Shuffle auf Album-, Artist- und Suchseite; Track-Menüs konsistent.
 
 Weiter offen:
 - Volles Portrait/Landscape-Layout + freie Button-Styles (Expanded Now Playing abschließen).
 - Overlay-Icons auf der animierten Progressbar.
+- Playlist-Seite: Header-Style (Live-Preview).
+- Album/Artist-Header-Style (Live-Preview, Blur).
+- Suchseite: Default Song Action (Play/Enqueue wählbar).
