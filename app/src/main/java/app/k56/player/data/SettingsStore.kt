@@ -82,6 +82,10 @@ class SettingsStore(context: Context) {
     private val _autoplay = MutableStateFlow(prefs.getBoolean(KEY_AUTOPLAY, true))
     val autoplay: StateFlow<Boolean> = _autoplay.asStateFlow()
 
+    /** Wrap around to the first track when the queue reaches the end. */
+    private val _circularQueue = MutableStateFlow(prefs.getBoolean(KEY_CIRCULAR_QUEUE, false))
+    val circularQueue: StateFlow<Boolean> = _circularQueue.asStateFlow()
+
     /** Cache cap in MiB: -1 unlimited, 0 disabled, otherwise LRU size. */
     private val _cacheLimitMb = MutableStateFlow(prefs.getInt(KEY_CACHE_LIMIT, 512))
     val cacheLimitMb: StateFlow<Int> = _cacheLimitMb.asStateFlow()
@@ -165,6 +169,11 @@ class SettingsStore(context: Context) {
         _autoplay.value = value
     }
 
+    fun setCircularQueue(value: Boolean) {
+        prefs.edit().putBoolean(KEY_CIRCULAR_QUEUE, value).apply()
+        _circularQueue.value = value
+    }
+
     fun setCacheLimitMb(value: Int) {
         prefs.edit().putInt(KEY_CACHE_LIMIT, value).apply()
         _cacheLimitMb.value = value
@@ -196,6 +205,7 @@ class SettingsStore(context: Context) {
         private const val KEY_STORAGE = "storage_location"
         private const val KEY_CACHE_LIMIT = "cache_limit_mb"
         private const val KEY_AUTOPLAY = "autoplay"
+        private const val KEY_CIRCULAR_QUEUE = "circular_queue"
         private const val KEY_KEEP_SCREEN_ON = "keep_screen_on"
         private const val KEY_TRACK_NUMBERS = "track_numbers"
         private const val KEY_COLUMNS = "library_columns"

@@ -239,6 +239,9 @@
     <string name="autoplay_title">Endless autoplay</string>
     <string name="autoplay_body">Keeps going with similar tracks in the same direction — not random.</string>
 
+    <string name="circular_queue_title">Circular queue</string>
+    <string name="circular_queue_body">Jump back to the first track when the queue ends.</string>
+
     <string name="resume_title">Resume point</string>
     <string name="resume_body">Continue a track where you left off. Positions near the start or end are ignored.</string>
     <string name="resume_threshold">Remember from</string>

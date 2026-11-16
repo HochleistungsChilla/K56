@@ -103,8 +103,15 @@ class PlaybackService : MediaSessionService() {
             override fun onPlaybackStateChanged(playbackState: Int) {
                 if (playbackState == Player.STATE_ENDED) {
                     reportStopped()
-                    // Queue ran dry: continue in the same direction instead of stopping.
-                    extendWithSimilar(autoStart = true)
+                    if (appContainer.settingsStore.circularQueue.value && player.mediaItemCount > 0) {
+                        // Circular queue: wrap back to the start instead of stopping.
+                        player.seekTo(0, 0L)
+                        player.prepare()
+                        player.play()
+                    } else {
+                        // Queue ran dry: continue in the same direction instead of stopping.
+                        extendWithSimilar(autoStart = true)
+                    }
                 }
             }
         })

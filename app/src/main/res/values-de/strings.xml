@@ -229,6 +229,9 @@
     <string name="autoplay_title">Endlos-Autoplay</string>
     <string name="autoplay_body">Hängt ähnliche Titel in derselben Richtung an — kein Zufall.</string>
 
+    <string name="circular_queue_title">Endlosschleife (Queue)</string>
+    <string name="circular_queue_body">Springt am Ende der Warteschlange wieder zum ersten Titel.</string>
+
     <string name="resume_title">Fortsetzen</string>
     <string name="resume_body">Setzt einen Titel dort fort, wo du aufgehört hast. Positionen nahe Anfang oder Ende werden ignoriert.</string>
     <string name="resume_threshold">Merken ab</string>

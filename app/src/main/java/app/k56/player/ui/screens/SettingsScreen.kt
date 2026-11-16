@@ -68,6 +68,7 @@ fun SettingsScreen(
     val storageLocation by settingsStore.storageLocation.collectAsStateWithLifecycle()
     val cacheLimitMb by settingsStore.cacheLimitMb.collectAsStateWithLifecycle()
     val autoplay by settingsStore.autoplay.collectAsStateWithLifecycle()
+    val circularQueue by settingsStore.circularQueue.collectAsStateWithLifecycle()
     val resumeThresholdSeconds by settingsStore.resumeThresholdSeconds.collectAsStateWithLifecycle()
     val showNowPlayingFavorite by settingsStore.showNowPlayingFavorite.collectAsStateWithLifecycle()
     val fitCover by settingsStore.fitCover.collectAsStateWithLifecycle()
@@ -458,6 +459,21 @@ fun SettingsScreen(
                     Switch(
                         checked = autoplay,
                         onCheckedChange = { settingsStore.setAutoplay(it) },
+                    )
+                }
+                Spacer(Modifier.height(6.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text(stringResource(R.string.circular_queue_title), style = MaterialTheme.typography.titleMedium)
+                        Text(
+                            stringResource(R.string.circular_queue_body),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    Switch(
+                        checked = circularQueue,
+                        onCheckedChange = { settingsStore.setCircularQueue(it) },
                     )
                 }
             }
