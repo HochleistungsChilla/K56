@@ -306,6 +306,16 @@
     <string name="np_show_queue">Queue</string>
     <string name="np_show_dsp">DSP</string>
     <string name="np_show_sleep">Sleep timer</string>
+    <string name="np_style_title">Now playing style</string>
+    <string name="np_style_label">Player style</string>
+    <string name="np_style_standard">Standard</string>
+    <string name="np_style_large">Large cover</string>
+    <string name="np_cover_radius">Cover corner radius</string>
+    <string name="np_background_title">Background</string>
+    <string name="np_background_gradient">Gradient</string>
+    <string name="np_background_solid">Solid</string>
+    <string name="np_background_album">Album color</string>
+    <string name="np_animated_progress">Animated progress bar</string>
 
     <string name="download_wifi_only">Downloads only run on Wi-Fi. Change it in settings.</string>
 

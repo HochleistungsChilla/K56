@@ -92,6 +92,10 @@ private fun MainShell(container: AppContainer) {
     val showQueueButton by container.settingsStore.showQueueButton.collectAsStateWithLifecycle()
     val showDspButton by container.settingsStore.showDspButton.collectAsStateWithLifecycle()
     val showSleepTimerButton by container.settingsStore.showSleepTimerButton.collectAsStateWithLifecycle()
+    val playerStyle by container.settingsStore.playerStyle.collectAsStateWithLifecycle()
+    val coverCornerRadius by container.settingsStore.coverCornerRadius.collectAsStateWithLifecycle()
+    val playerBackground by container.settingsStore.playerBackground.collectAsStateWithLifecycle()
+    val animatedProgress by container.settingsStore.animatedProgress.collectAsStateWithLifecycle()
     val fitCover by container.settingsStore.fitCover.collectAsStateWithLifecycle()
     val compactControls by container.settingsStore.compactControls.collectAsStateWithLifecycle()
     val autoCacheFavorites by container.settingsStore.autoCacheFavorites.collectAsStateWithLifecycle()
@@ -412,6 +416,10 @@ private fun MainShell(container: AppContainer) {
                     showQueue = showQueueButton,
                     showDsp = showDspButton,
                     showSleepTimer = showSleepTimerButton,
+                    playerStyle = playerStyle,
+                    coverCornerRadius = coverCornerRadius,
+                    playerBackground = playerBackground,
+                    animatedProgress = animatedProgress,
                     onToggleFavorite = toggleFavorite,
                     onMoveQueueItem = moveQueueItem,
                     onRemoveQueueItem = removeQueueItem,

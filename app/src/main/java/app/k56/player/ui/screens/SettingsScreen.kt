@@ -49,6 +49,8 @@ import app.k56.player.core.net.NetworkTransport
 import app.k56.player.data.MediaRepository
 import app.k56.player.data.DownloadFormat
 import app.k56.player.data.DownloadQuality
+import app.k56.player.data.PlayerBackground
+import app.k56.player.data.PlayerStyle
 import app.k56.player.data.ScreenOrientation
 import app.k56.player.data.SettingsStore
 import app.k56.player.data.StorageLocation
@@ -80,6 +82,10 @@ fun SettingsScreen(
     val showQueueButton by settingsStore.showQueueButton.collectAsStateWithLifecycle()
     val showDspButton by settingsStore.showDspButton.collectAsStateWithLifecycle()
     val showSleepTimerButton by settingsStore.showSleepTimerButton.collectAsStateWithLifecycle()
+    val playerStyle by settingsStore.playerStyle.collectAsStateWithLifecycle()
+    val coverCornerRadius by settingsStore.coverCornerRadius.collectAsStateWithLifecycle()
+    val playerBackground by settingsStore.playerBackground.collectAsStateWithLifecycle()
+    val animatedProgress by settingsStore.animatedProgress.collectAsStateWithLifecycle()
     val fitCover by settingsStore.fitCover.collectAsStateWithLifecycle()
     val compactControls by settingsStore.compactControls.collectAsStateWithLifecycle()
     val keepScreenOn by settingsStore.keepScreenOn.collectAsStateWithLifecycle()
@@ -762,6 +768,64 @@ fun SettingsScreen(
             modifier = Modifier.fillMaxWidth(),
         ) {
             Column(Modifier.padding(16.dp)) {
+                Text(stringResource(R.string.np_style_title), style = MaterialTheme.typography.titleLarge)
+                Spacer(Modifier.height(8.dp))
+                Text(stringResource(R.string.np_style_label), style = MaterialTheme.typography.titleMedium)
+                Spacer(Modifier.height(4.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    PlayerStyle.entries.forEach { entry ->
+                        FilterChip(
+                            selected = playerStyle == entry,
+                            onClick = { settingsStore.setPlayerStyle(entry) },
+                            label = { Text(stringResource(playerStyleLabel(entry))) },
+                        )
+                    }
+                }
+                Spacer(Modifier.height(10.dp))
+                Text(stringResource(R.string.np_cover_radius), style = MaterialTheme.typography.titleMedium)
+                Spacer(Modifier.height(4.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf(0, 8, 16, 24).forEach { value ->
+                        FilterChip(
+                            selected = coverCornerRadius == value,
+                            onClick = { settingsStore.setCoverCornerRadius(value) },
+                            label = { Text("$value dp") },
+                        )
+                    }
+                }
+                Spacer(Modifier.height(10.dp))
+                Text(stringResource(R.string.np_background_title), style = MaterialTheme.typography.titleMedium)
+                Spacer(Modifier.height(4.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    PlayerBackground.entries.forEach { entry ->
+                        FilterChip(
+                            selected = playerBackground == entry,
+                            onClick = { settingsStore.setPlayerBackground(entry) },
+                            label = { Text(stringResource(playerBackgroundLabel(entry))) },
+                        )
+                    }
+                }
+                Spacer(Modifier.height(10.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text(stringResource(R.string.np_animated_progress), style = MaterialTheme.typography.titleMedium)
+                    }
+                    Switch(
+                        checked = animatedProgress,
+                        onCheckedChange = { settingsStore.setAnimatedProgress(it) },
+                    )
+                }
+            }
+        }
+
+        Spacer(Modifier.height(14.dp))
+
+        Surface(
+            color = MaterialTheme.colorScheme.surfaceContainer,
+            shape = RoundedCornerShape(20.dp),
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Column(Modifier.padding(16.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
                         Text(stringResource(R.string.articles_title), style = MaterialTheme.typography.titleMedium)
@@ -975,6 +1039,17 @@ private fun orientationLabel(mode: ScreenOrientation): Int = when (mode) {
     ScreenOrientation.AUTO -> R.string.orientation_auto
     ScreenOrientation.PORTRAIT -> R.string.orientation_portrait
     ScreenOrientation.LANDSCAPE -> R.string.orientation_landscape
+}
+
+private fun playerStyleLabel(style: PlayerStyle): Int = when (style) {
+    PlayerStyle.STANDARD -> R.string.np_style_standard
+    PlayerStyle.LARGE_COVER -> R.string.np_style_large
+}
+
+private fun playerBackgroundLabel(bg: PlayerBackground): Int = when (bg) {
+    PlayerBackground.GRADIENT -> R.string.np_background_gradient
+    PlayerBackground.SOLID -> R.string.np_background_solid
+    PlayerBackground.ALBUM_COLOR -> R.string.np_background_album
 }
 
 @Composable

@@ -25,6 +25,12 @@ enum class DownloadFormat { AAC, MP3 }
 /** Locked screen orientation. */
 enum class ScreenOrientation { AUTO, PORTRAIT, LANDSCAPE }
 
+/** Now-playing layout styles. */
+enum class PlayerStyle { STANDARD, LARGE_COVER }
+
+/** Now-playing background. */
+enum class PlayerBackground { GRADIENT, SOLID, ALBUM_COLOR }
+
 class SettingsStore(context: Context) {
 
     private val appContext = context.applicationContext
@@ -135,6 +141,24 @@ class SettingsStore(context: Context) {
 
     private val _showSleepTimerButton = MutableStateFlow(prefs.getBoolean(KEY_NP_SLEEP, true))
     val showSleepTimerButton: StateFlow<Boolean> = _showSleepTimerButton.asStateFlow()
+
+    private val _playerStyle = MutableStateFlow(
+        runCatching { PlayerStyle.valueOf(prefs.getString(KEY_PLAYER_STYLE, null) ?: "STANDARD") }
+            .getOrDefault(PlayerStyle.STANDARD),
+    )
+    val playerStyle: StateFlow<PlayerStyle> = _playerStyle.asStateFlow()
+
+    private val _coverCornerRadius = MutableStateFlow(prefs.getInt(KEY_COVER_RADIUS, 24))
+    val coverCornerRadius: StateFlow<Int> = _coverCornerRadius.asStateFlow()
+
+    private val _playerBackground = MutableStateFlow(
+        runCatching { PlayerBackground.valueOf(prefs.getString(KEY_PLAYER_BACKGROUND, null) ?: "GRADIENT") }
+            .getOrDefault(PlayerBackground.GRADIENT),
+    )
+    val playerBackground: StateFlow<PlayerBackground> = _playerBackground.asStateFlow()
+
+    private val _animatedProgress = MutableStateFlow(prefs.getBoolean(KEY_ANIMATED_PROGRESS, false))
+    val animatedProgress: StateFlow<Boolean> = _animatedProgress.asStateFlow()
 
     private val _fitCover = MutableStateFlow(prefs.getBoolean(KEY_NP_FIT_COVER, false))
     val fitCover: StateFlow<Boolean> = _fitCover.asStateFlow()
@@ -253,6 +277,14 @@ class SettingsStore(context: Context) {
             ScreenOrientation.valueOf(prefs.getString(KEY_ORIENTATION, null) ?: "AUTO")
         }.getOrDefault(ScreenOrientation.AUTO)
         _gridSpacing.value = prefs.getInt(KEY_GRID_SPACING, 12)
+        _playerStyle.value = runCatching {
+            PlayerStyle.valueOf(prefs.getString(KEY_PLAYER_STYLE, null) ?: "STANDARD")
+        }.getOrDefault(PlayerStyle.STANDARD)
+        _coverCornerRadius.value = prefs.getInt(KEY_COVER_RADIUS, 24)
+        _playerBackground.value = runCatching {
+            PlayerBackground.valueOf(prefs.getString(KEY_PLAYER_BACKGROUND, null) ?: "GRADIENT")
+        }.getOrDefault(PlayerBackground.GRADIENT)
+        _animatedProgress.value = prefs.getBoolean(KEY_ANIMATED_PROGRESS, false)
     }
 
     fun setWifiOnlyDownloads(value: Boolean) {
@@ -330,6 +362,26 @@ class SettingsStore(context: Context) {
         _showSleepTimerButton.value = value
     }
 
+    fun setPlayerStyle(value: PlayerStyle) {
+        prefs.edit().putString(KEY_PLAYER_STYLE, value.name).apply()
+        _playerStyle.value = value
+    }
+
+    fun setCoverCornerRadius(value: Int) {
+        prefs.edit().putInt(KEY_COVER_RADIUS, value).apply()
+        _coverCornerRadius.value = value
+    }
+
+    fun setPlayerBackground(value: PlayerBackground) {
+        prefs.edit().putString(KEY_PLAYER_BACKGROUND, value.name).apply()
+        _playerBackground.value = value
+    }
+
+    fun setAnimatedProgress(value: Boolean) {
+        prefs.edit().putBoolean(KEY_ANIMATED_PROGRESS, value).apply()
+        _animatedProgress.value = value
+    }
+
     fun setFitCover(value: Boolean) {
         prefs.edit().putBoolean(KEY_NP_FIT_COVER, value).apply()
         _fitCover.value = value
@@ -367,6 +419,10 @@ class SettingsStore(context: Context) {
         private const val KEY_NP_QUEUE = "np_queue"
         private const val KEY_NP_DSP = "np_dsp"
         private const val KEY_NP_SLEEP = "np_sleep"
+        private const val KEY_PLAYER_STYLE = "player_style"
+        private const val KEY_COVER_RADIUS = "cover_radius"
+        private const val KEY_PLAYER_BACKGROUND = "player_background"
+        private const val KEY_ANIMATED_PROGRESS = "animated_progress"
         private const val KEY_NP_FIT_COVER = "np_fit_cover"
         private const val KEY_NP_COMPACT = "np_compact"
 

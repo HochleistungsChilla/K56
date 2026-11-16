@@ -1,6 +1,7 @@
 package app.k56.player.ui.screens
 
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -56,15 +57,19 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 import app.k56.player.R
+import app.k56.player.data.PlayerBackground
+import app.k56.player.data.PlayerStyle
 import androidx.media3.common.Player
 import androidx.media3.session.MediaController
 import app.k56.player.ui.components.Artwork
@@ -73,6 +78,10 @@ import app.k56.player.ui.components.ScreenHeader
 import app.k56.player.ui.components.SectionHeader
 import app.k56.player.ui.formatDuration
 import app.k56.player.ui.rememberPlaybackUiState
+import androidx.core.graphics.drawable.toBitmap
+import coil.imageLoader
+import coil.request.ImageRequest
+import coil.request.SuccessResult
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -89,6 +98,10 @@ fun PlayerScreen(
     showQueue: Boolean = true,
     showDsp: Boolean = true,
     showSleepTimer: Boolean = true,
+    playerStyle: PlayerStyle = PlayerStyle.STANDARD,
+    coverCornerRadius: Int = 24,
+    playerBackground: PlayerBackground = PlayerBackground.GRADIENT,
+    animatedProgress: Boolean = false,
     onToggleFavorite: (String, Boolean) -> Unit = { _, _ -> },
     onMoveQueueItem: (Int, Int) -> Unit = { _, _ -> },
     onRemoveQueueItem: (Int) -> Unit = {},
@@ -101,6 +114,35 @@ fun PlayerScreen(
         onDispose { view.keepScreenOn = previous }
     }
     val state = rememberPlaybackUiState(controller)
+
+    val context = LocalContext.current
+    var albumColor by remember { mutableStateOf<Color?>(null) }
+    LaunchedEffect(state.artworkUri, playerBackground) {
+        albumColor = null
+        if (playerBackground != PlayerBackground.ALBUM_COLOR) return@LaunchedEffect
+        val url = state.artworkUri ?: return@LaunchedEffect
+        albumColor = runCatching {
+            val request = ImageRequest.Builder(context)
+                .data(url)
+                .size(8, 8)
+                .allowHardware(false)
+                .build()
+            val result = context.imageLoader.execute(request)
+            (result as? SuccessResult)?.drawable?.toBitmap()?.let { bitmap ->
+                var r = 0; var g = 0; var b = 0; var n = 0
+                for (x in 0 until bitmap.width) {
+                    for (y in 0 until bitmap.height) {
+                        val px = bitmap.getPixel(x, y)
+                        r += (px shr 16) and 0xFF
+                        g += (px shr 8) and 0xFF
+                        b += px and 0xFF
+                        n++
+                    }
+                }
+                if (n > 0) Color(r / n, g / n, b / n) else null
+            }
+        }.getOrNull()
+    }
 
     if (!state.hasItem) {
         Column(Modifier.fillMaxSize()) {
@@ -130,7 +172,36 @@ fun PlayerScreen(
         }
     }
     val durationMs = state.durationMs.coerceAtLeast(1L)
-    val sliderPosition = dragPosition ?: state.positionMs.coerceIn(0L, durationMs).toFloat()
+    val animatedPosition by animateFloatAsState(
+        targetValue = state.positionMs.coerceIn(0L, durationMs).toFloat(),
+        animationSpec = tween(durationMillis = 400),
+        label = "progress",
+    )
+    val sliderPosition = dragPosition
+        ?: if (animatedProgress) animatedPosition
+        else state.positionMs.coerceIn(0L, durationMs).toFloat()
+
+    val playerBg: Modifier = when (playerBackground) {
+        PlayerBackground.SOLID -> Modifier.background(MaterialTheme.colorScheme.background)
+        PlayerBackground.ALBUM_COLOR -> {
+            val c = albumColor
+            if (c != null) {
+                Modifier.background(
+                    Brush.verticalGradient(listOf(c.copy(alpha = 0.9f), MaterialTheme.colorScheme.background)),
+                )
+            } else {
+                Modifier.background(MaterialTheme.colorScheme.background)
+            }
+        }
+        else -> Modifier.background(
+            Brush.verticalGradient(
+                listOf(
+                    MaterialTheme.colorScheme.surfaceContainerHigh,
+                    MaterialTheme.colorScheme.background,
+                ),
+            ),
+        )
+    }
 
     Column(
         modifier = Modifier
@@ -152,14 +223,7 @@ fun PlayerScreen(
                     },
                 )
             }
-            .background(
-                Brush.verticalGradient(
-                    listOf(
-                        MaterialTheme.colorScheme.surfaceContainerHigh,
-                        MaterialTheme.colorScheme.background,
-                    ),
-                ),
-            )
+            .then(playerBg)
             .padding(horizontal = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -238,10 +302,14 @@ fun PlayerScreen(
         ) {
             Artwork(
                 url = state.artworkUri,
-                modifier = Modifier
-                    .fillMaxWidth(0.92f)
-                    .aspectRatio(1f),
-                shape = RoundedCornerShape(24.dp),
+                modifier = if (playerStyle == PlayerStyle.LARGE_COVER) {
+                    Modifier.fillMaxSize()
+                } else {
+                    Modifier
+                        .fillMaxWidth(0.92f)
+                        .aspectRatio(1f)
+                },
+                shape = RoundedCornerShape(coverCornerRadius.dp),
                 contentScale = if (fitCover) ContentScale.Fit else ContentScale.Crop,
             )
         }
