@@ -55,7 +55,9 @@
     <string name="library_tab_artists">Artists</string>
     <string name="library_tab_tracks">Tracks</string>
     <string name="library_tab_favorites">Favorites</string>
+    <string name="library_tab_genres">Genres</string>
     <string name="library_empty_favorites">No favorites yet. Tap the heart on a track.</string>
+    <string name="genre_empty">No genres found on this server.</string>
 
     <!-- album / artist -->
     <string name="album_title">Album</string>

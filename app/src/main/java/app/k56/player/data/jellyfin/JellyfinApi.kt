@@ -40,6 +40,9 @@ interface JellyfinApi {
     @GET("Artists")
     suspend fun artists(@QueryMap query: Map<String, String>): QueryResultDto
 
+    @GET("Genres")
+    suspend fun genres(@QueryMap query: Map<String, String>): QueryResultDto
+
     @POST("Sessions/Playing")
     suspend fun reportPlaybackStart(@Body body: PlaybackReportDto)
 

@@ -1,6 +1,7 @@
 package app.k56.player.ui.screens
 
 import android.content.Context
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,16 +13,19 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Shuffle
 import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.Icons
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -66,7 +70,9 @@ import app.k56.player.ui.components.AlbumCard
 import app.k56.player.ui.components.ArtistCard
 import app.k56.player.ui.components.ErrorState
 import app.k56.player.ui.components.EmptyState
+import app.k56.player.ui.components.HorizontalAlbumRow
 import app.k56.player.ui.components.LoadingState
+import app.k56.player.ui.components.SectionHeader
 import app.k56.player.ui.components.TrackRow
 import app.k56.player.ui.userMessage
 import kotlinx.coroutines.async
@@ -88,6 +94,14 @@ class LibraryViewModel(
         private set
     var favorites by mutableStateOf<List<Track>>(emptyList())
         private set
+    var genres by mutableStateOf<List<String>>(emptyList())
+        private set
+    var selectedGenre by mutableStateOf<String?>(null)
+        private set
+    var genreAlbums by mutableStateOf<List<Album>>(emptyList())
+        private set
+    var genreTracks by mutableStateOf<List<Track>>(emptyList())
+        private set
     var loading by mutableStateOf(true)
         private set
     var error by mutableStateOf<String?>(null)
@@ -95,6 +109,26 @@ class LibraryViewModel(
 
     init {
         load()
+    }
+
+    fun openGenre(name: String) {
+        selectedGenre = name
+        genreAlbums = emptyList()
+        genreTracks = emptyList()
+        viewModelScope.launch {
+            try {
+                genreAlbums = repository.genreAlbums(name)
+                genreTracks = repository.genreTracks(name)
+            } catch (e: Exception) {
+                error = e.userMessage(appContext)
+            }
+        }
+    }
+
+    fun closeGenre() {
+        selectedGenre = null
+        genreAlbums = emptyList()
+        genreTracks = emptyList()
     }
 
     /** Toggle a track's favourite flag on the server and update the local list. */
@@ -174,10 +208,12 @@ class LibraryViewModel(
                     val artistsJob = async { repository.artists(libraryId, limit = 300) }
                     val songsJob = async { repository.songs(libraryId, limit = 600) }
                     val favoritesJob = async { repository.favoriteTracks() }
+                    val genresJob = async { repository.genres(libraryId) }
                     albums = albumsJob.await()
                     artists = artistsJob.await()
                     songs = songsJob.await()
                     favorites = favoritesJob.await()
+                    genres = genresJob.await()
                 }
             } catch (e: Exception) {
                 error = e.userMessage(appContext)
@@ -278,6 +314,7 @@ fun LibraryScreen(
                 stringResource(R.string.library_tab_artists),
                 stringResource(R.string.library_tab_tracks),
                 stringResource(R.string.library_tab_favorites),
+                stringResource(R.string.library_tab_genres),
             ).forEachIndexed { index, label ->
                 Tab(
                     selected = tab == index,
@@ -287,7 +324,7 @@ fun LibraryScreen(
             }
         }
 
-        if (showItemCount && !vm.loading) {
+        if (showItemCount && !vm.loading && tab <= 3) {
             Text(
                 text = when (tab) {
                     0 -> context.resources.getQuantityString(R.plurals.plural_albums, vm.albums.size, vm.albums.size)
@@ -424,7 +461,7 @@ fun LibraryScreen(
                 }
             }
 
-            else -> {
+            tab == 3 -> {
                 val favorites = vm.favorites
                     .filter { !onlyOffline || it.id in downloadedIds }
                     .let { list ->
@@ -547,6 +584,14 @@ fun LibraryScreen(
                         }
                     }
                 }
+            }
+
+            tab == 4 -> {
+                GenreContent(
+                    vm = vm,
+                    onOpenAlbum = onOpenAlbum,
+                    onPlay = onPlay,
+                )
             }
         }
         } // Column
@@ -672,3 +717,80 @@ private fun SelectionAction(
 }
 
 private val ARTICLE_PREFIX = Regex("""^(the|a|an|die|der|das|le|la|les|el|los|il)\s+""")
+
+@Composable
+private fun GenreContent(
+    vm: LibraryViewModel,
+    onOpenAlbum: (String) -> Unit,
+    onPlay: (List<Track>, Int) -> Unit,
+) {
+    val genre = vm.selectedGenre
+    if (genre == null) {
+        if (vm.genres.isEmpty()) {
+            EmptyState(
+                title = stringResource(R.string.library_tab_genres),
+                subtitle = stringResource(R.string.genre_empty),
+                modifier = Modifier.fillMaxWidth(),
+            )
+            return
+        }
+        LazyColumn(
+            modifier = Modifier.fillMaxWidth(),
+            contentPadding = PaddingValues(vertical = 8.dp),
+        ) {
+            items(vm.genres, key = { it }) { name ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { vm.openGenre(name) }
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = name,
+                        style = MaterialTheme.typography.titleMedium,
+                    )
+                }
+            }
+        }
+        return
+    }
+
+    Column(Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 4.dp, end = 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            IconButton(onClick = vm::closeGenre) {
+                Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = stringResource(R.string.common_back))
+            }
+            Text(genre, style = MaterialTheme.typography.titleLarge)
+        }
+        LazyColumn(
+            modifier = Modifier.fillMaxWidth(),
+            contentPadding = PaddingValues(bottom = 20.dp),
+        ) {
+            if (vm.genreAlbums.isNotEmpty()) {
+                item { SectionHeader(stringResource(R.string.library_tab_albums)) }
+                item {
+                    HorizontalAlbumRow(
+                        albums = vm.genreAlbums,
+                        onOpenAlbum = onOpenAlbum,
+                    )
+                }
+            }
+            if (vm.genreTracks.isNotEmpty()) {
+                item { SectionHeader(stringResource(R.string.library_tab_tracks)) }
+                itemsIndexed(vm.genreTracks, key = { _, track -> track.id }) { index, track ->
+                    TrackRow(
+                        track = track,
+                        onClick = { onPlay(vm.genreTracks, index) },
+                        showArtwork = true,
+                    )
+                }
+            }
+        }
+    }
+}

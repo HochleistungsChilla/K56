@@ -87,6 +87,15 @@ interface MediaRepository {
     /** Albums the artist appears on but does not head as album artist. */
     suspend fun artistAppearsOn(artistId: String, limit: Int = 50): List<Album> = emptyList()
 
+    /** Distinct genre names present in the library. */
+    suspend fun genres(parentId: String? = null): List<String> = emptyList()
+
+    /** Albums tagged with one genre. */
+    suspend fun genreAlbums(genre: String): List<Album> = emptyList()
+
+    /** Tracks tagged with one genre. */
+    suspend fun genreTracks(genre: String): List<Track> = emptyList()
+
     /**
      * Every favourite track the server knows, independent of how many songs the
      * library list happens to load. Backends without a filter fall back to

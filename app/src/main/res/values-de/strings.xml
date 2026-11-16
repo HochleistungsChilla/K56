@@ -49,7 +49,9 @@
     <string name="library_tab_artists">Interpreten</string>
     <string name="library_tab_tracks">Titel</string>
     <string name="library_tab_favorites">Favoriten</string>
+    <string name="library_tab_genres">Genres</string>
     <string name="library_empty_favorites">Noch keine Favoriten. Tippe auf das Herz bei einem Titel.</string>
+    <string name="genre_empty">Keine Genres auf diesem Server gefunden.</string>
 
     <string name="album_title">Album</string>
     <string name="artist_title">Interpret</string>

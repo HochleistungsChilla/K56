@@ -387,6 +387,48 @@ class JellyfinRepository(
             .filter { it.id !in ownIds }
     }
 
+    override suspend fun genres(parentId: String?): List<String> {
+        val current = requireSession()
+        val query = buildMap {
+            put("userId", current.userId)
+            put("Recursive", "true")
+            put("IncludeItemTypes", "Audio")
+            put("SortBy", "SortName")
+            parentId?.takeIf { it.isNotBlank() }?.let { put("ParentId", it) }
+        }
+        return ensureApi().genres(query).Items.orEmpty()
+            .mapNotNull { it.Name?.takeIf { name -> name.isNotBlank() } }
+            .distinct()
+    }
+
+    override suspend fun genreAlbums(genre: String): List<Album> = ensureApi()
+        .items(
+            itemQuery(
+                includeTypes = "MusicAlbum",
+                recursive = true,
+                sortBy = "SortName",
+                sortOrder = "Ascending",
+                limit = 500,
+                genres = genre,
+            ),
+        )
+        .Items.orEmpty()
+        .map { it.toAlbum() }
+
+    override suspend fun genreTracks(genre: String): List<Track> = ensureApi()
+        .items(
+            itemQuery(
+                includeTypes = "Audio",
+                recursive = true,
+                sortBy = "SortName",
+                sortOrder = "Ascending",
+                limit = 500,
+                genres = genre,
+            ),
+        )
+        .Items.orEmpty()
+        .map { it.toTrack() }
+
     override suspend fun songs(parentId: String?, limit: Int): List<Track> = ensureApi()
         .items(
             itemQuery(
@@ -595,6 +637,7 @@ class JellyfinRepository(
         albumArtistIds: String? = null,
         artistIds: String? = null,
         isPlayed: Boolean? = null,
+        genres: String? = null,
     ): Map<String, String> = buildMap {
         parentId?.takeIf { it.isNotBlank() }?.let { put("ParentId", it) }
         includeTypes?.let { put("IncludeItemTypes", it) }
@@ -608,6 +651,7 @@ class JellyfinRepository(
         albumArtistIds?.let { put("AlbumArtistIds", it) }
         artistIds?.let { put("ArtistIds", it) }
         isPlayed?.let { put("IsPlayed", it.toString()) }
+        genres?.let { put("Genres", it) }
         put("Fields", ITEM_FIELDS)
         put("ImageTypeLimit", "1")
         put("EnableImageTypes", "Primary")
