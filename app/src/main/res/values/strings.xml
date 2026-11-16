@@ -285,6 +285,7 @@
     <string name="action_add_queue">Add to queue</string>
     <string name="action_add_playlist">Add to playlist</string>
     <string name="action_remove_playlist">Remove from playlist</string>
+    <string name="action_open">Open</string>
 
     <string name="selection_count">%1$d selected</string>
     <string name="selection_all">All</string>

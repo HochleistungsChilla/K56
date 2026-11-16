@@ -344,6 +344,8 @@ fun LibraryScreen(
     var sortMode by rememberSaveable { mutableIntStateOf(0) }
     var onlyOffline by rememberSaveable { mutableStateOf(false) }
     var addToPlaylistTrack by remember { mutableStateOf<Track?>(null) }
+    var contextAlbum by remember { mutableStateOf<Album?>(null) }
+    var contextArtist by remember { mutableStateOf<Artist?>(null) }
     val selectedTracks = remember { mutableStateListOf<String>() }
     val selectedAlbums = remember { mutableStateListOf<String>() }
     val selectedArtists = remember { mutableStateListOf<String>() }
@@ -374,6 +376,19 @@ fun LibraryScreen(
         selectedTracks.clear()
         selectedAlbums.clear()
         selectedArtists.clear()
+    }
+
+    suspend fun resolveAlbum(albumId: String): List<Track> =
+        runCatching { repository.albumDetails(albumId) }.getOrNull()?.tracks ?: emptyList()
+
+    suspend fun resolveArtist(artistId: String): List<Track> {
+        val details = runCatching { repository.artistDetails(artistId) }.getOrNull() ?: return emptyList()
+        val out = LinkedHashMap<String, Track>()
+        for (album in details.albums.take(25)) {
+            runCatching { repository.albumDetails(album.id) }.getOrNull()
+                ?.tracks?.forEach { out[it.id] = it }
+        }
+        return out.values.toList()
     }
     val scope = rememberCoroutineScope()
     val offline by offlineStore.tracks.collectAsState()
@@ -478,22 +493,68 @@ fun LibraryScreen(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 items(vm.albums, key = { it.id }) { album ->
-                    AlbumCard(
-                        album = album,
-                        onClick = {
-                            if (selectionMode) {
-                                if (!selectedAlbums.remove(album.id)) selectedAlbums.add(album.id)
-                            } else {
-                                onOpenAlbum(album.id)
-                            }
-                        },
-                        onLongClick = {
-                            if (!selectedAlbums.remove(album.id)) selectedAlbums.add(album.id)
-                        },
-                        selected = album.id in selectedAlbums,
-                        isFavorite = album.isFavorite,
-                        onToggleFavorite = { vm.toggleAlbumFavorite(album) },
-                    )
+                    Box {
+                        AlbumCard(
+                            album = album,
+                            onClick = {
+                                if (selectionMode) {
+                                    if (!selectedAlbums.remove(album.id)) selectedAlbums.add(album.id)
+                                } else {
+                                    onOpenAlbum(album.id)
+                                }
+                            },
+                            onLongClick = { contextAlbum = album },
+                            selected = album.id in selectedAlbums,
+                            isFavorite = album.isFavorite,
+                            onToggleFavorite = { vm.toggleAlbumFavorite(album) },
+                        )
+                        DropdownMenu(
+                            expanded = contextAlbum?.id == album.id,
+                            onDismissRequest = { contextAlbum = null },
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.common_play)) },
+                                onClick = {
+                                    scope.launch {
+                                        val tracks = resolveAlbum(album.id)
+                                        if (tracks.isNotEmpty()) onPlay(tracks, 0)
+                                    }
+                                    contextAlbum = null
+                                },
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.player_shuffle)) },
+                                onClick = {
+                                    scope.launch {
+                                        val tracks = resolveAlbum(album.id).shuffled()
+                                        if (tracks.isNotEmpty()) onPlay(tracks, 0)
+                                    }
+                                    contextAlbum = null
+                                },
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.action_add_queue)) },
+                                onClick = {
+                                    scope.launch { resolveAlbum(album.id).forEach { onAddToQueue(it) } }
+                                    contextAlbum = null
+                                },
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.offline_download)) },
+                                onClick = {
+                                    scope.launch { resolveAlbum(album.id).forEach { downloadOne(it) } }
+                                    contextAlbum = null
+                                },
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.action_open)) },
+                                onClick = {
+                                    onOpenAlbum(album.id)
+                                    contextAlbum = null
+                                },
+                            )
+                        }
+                    }
                 }
             }
 
@@ -507,20 +568,66 @@ fun LibraryScreen(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 items(vm.artists, key = { it.id }) { artist ->
-                    ArtistCard(
-                        artist = artist,
-                        onClick = {
-                            if (selectionMode) {
-                                if (!selectedArtists.remove(artist.id)) selectedArtists.add(artist.id)
-                            } else {
-                                onOpenArtist(artist.id)
-                            }
-                        },
-                        onLongClick = {
-                            if (!selectedArtists.remove(artist.id)) selectedArtists.add(artist.id)
-                        },
-                        selected = artist.id in selectedArtists,
-                    )
+                    Box {
+                        ArtistCard(
+                            artist = artist,
+                            onClick = {
+                                if (selectionMode) {
+                                    if (!selectedArtists.remove(artist.id)) selectedArtists.add(artist.id)
+                                } else {
+                                    onOpenArtist(artist.id)
+                                }
+                            },
+                            onLongClick = { contextArtist = artist },
+                            selected = artist.id in selectedArtists,
+                        )
+                        DropdownMenu(
+                            expanded = contextArtist?.id == artist.id,
+                            onDismissRequest = { contextArtist = null },
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.common_play)) },
+                                onClick = {
+                                    scope.launch {
+                                        val tracks = resolveArtist(artist.id)
+                                        if (tracks.isNotEmpty()) onPlay(tracks, 0)
+                                    }
+                                    contextArtist = null
+                                },
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.player_shuffle)) },
+                                onClick = {
+                                    scope.launch {
+                                        val tracks = resolveArtist(artist.id).shuffled()
+                                        if (tracks.isNotEmpty()) onPlay(tracks, 0)
+                                    }
+                                    contextArtist = null
+                                },
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.action_add_queue)) },
+                                onClick = {
+                                    scope.launch { resolveArtist(artist.id).forEach { onAddToQueue(it) } }
+                                    contextArtist = null
+                                },
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.offline_download)) },
+                                onClick = {
+                                    scope.launch { resolveArtist(artist.id).forEach { downloadOne(it) } }
+                                    contextArtist = null
+                                },
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.action_open)) },
+                                onClick = {
+                                    onOpenArtist(artist.id)
+                                    contextArtist = null
+                                },
+                            )
+                        }
+                    }
                 }
             }
 

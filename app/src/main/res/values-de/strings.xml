@@ -275,6 +275,7 @@
     <string name="action_add_queue">In Warteschlange</string>
     <string name="action_add_playlist">Zur Playlist hinzufügen</string>
     <string name="action_remove_playlist">Aus Playlist entfernen</string>
+    <string name="action_open">Öffnen</string>
 
     <string name="selection_count">%1$d ausgewählt</string>
     <string name="selection_all">Alle</string>
