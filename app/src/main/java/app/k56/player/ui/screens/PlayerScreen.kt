@@ -26,6 +26,9 @@ import androidx.compose.material.icons.rounded.RepeatOne
 import androidx.compose.material.icons.rounded.Shuffle
 import androidx.compose.material.icons.rounded.SkipNext
 import androidx.compose.material.icons.rounded.SkipPrevious
+import androidx.compose.material.icons.rounded.Timer
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
@@ -35,6 +38,7 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -46,6 +50,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.delay
 import app.k56.player.R
 import androidx.media3.common.Player
 import androidx.media3.session.MediaController
@@ -75,6 +80,16 @@ fun PlayerScreen(controller: MediaController?, onBack: () -> Unit) {
 
     var dragPosition by remember { mutableStateOf<Float?>(null) }
     var showQueue by remember { mutableStateOf(false) }
+    var sleepMinutes by remember { mutableStateOf(0) }
+    var timerMenu by remember { mutableStateOf(false) }
+
+    LaunchedEffect(sleepMinutes) {
+        if (sleepMinutes > 0) {
+            delay(sleepMinutes * 60_000L)
+            controller?.pause()
+            sleepMinutes = 0
+        }
+    }
     val durationMs = state.durationMs.coerceAtLeast(1L)
     val sliderPosition = dragPosition ?: state.positionMs.coerceIn(0L, durationMs).toFloat()
 
@@ -108,6 +123,32 @@ fun PlayerScreen(controller: MediaController?, onBack: () -> Unit) {
                 modifier = Modifier.weight(1f),
                 textAlign = TextAlign.Center,
             )
+            Box {
+                IconButton(onClick = { timerMenu = true }) {
+                    Icon(
+                        Icons.Rounded.Timer,
+                        contentDescription = stringResource(R.string.player_sleep_timer),
+                        tint = if (sleepMinutes > 0) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                DropdownMenu(expanded = timerMenu, onDismissRequest = { timerMenu = false }) {
+                    listOf(0, 15, 30, 45, 60).forEach { minutes ->
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    if (minutes == 0) stringResource(R.string.player_sleep_off)
+                                    else "$minutes min",
+                                )
+                            },
+                            onClick = {
+                                sleepMinutes = minutes
+                                timerMenu = false
+                            },
+                        )
+                    }
+                }
+            }
             IconButton(onClick = { showQueue = true }) {
                 Icon(
                     Icons.Rounded.QueueMusic,
