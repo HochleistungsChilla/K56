@@ -59,6 +59,7 @@ import app.k56.player.core.net.NetworkTransport
 import app.k56.player.data.MediaRepository
 import app.k56.player.data.SettingsStore
 import app.k56.player.data.offline.OfflineStore
+import app.k56.player.data.offline.DownloadRequest
 import app.k56.player.ui.appViewModel
 import app.k56.player.ui.components.ArtistCard
 import app.k56.player.ui.components.EmptyState
@@ -164,20 +165,23 @@ fun HomeScreen(
     val net by repository.networkStatus.collectAsStateWithLifecycle()
     val onWifi = net.transport == NetworkTransport.WIFI || net.transport == NetworkTransport.ETHERNET
     val wifiOnlyDownloads = settingsStore.wifiOnlyDownloads.value
-    val downloadOne: (Track) -> Unit = { track ->
+    fun enqueueTracks(tracks: List<Track>) {
         scope.launch {
             if (wifiOnlyDownloads && !onWifi) {
                 Toast.makeText(context, R.string.download_wifi_only, Toast.LENGTH_SHORT).show()
                 return@launch
             }
-            try {
-                val source = repository.downloadSource(track)
-                offlineStore.download(track, source.url, repository.playbackHeaders())
-            } catch (e: Exception) {
-                Toast.makeText(context, e.userMessage(context), Toast.LENGTH_LONG).show()
+            val requests = tracks.mapNotNull { track ->
+                if (offlineStore.isDownloaded(track.id)) return@mapNotNull null
+                val source = runCatching { repository.downloadSource(track) }.getOrNull()
+                    ?: return@mapNotNull null
+                DownloadRequest(track, source.url, repository.playbackHeaders())
             }
+            if (requests.isNotEmpty()) offlineStore.enqueue(requests)
         }
     }
+
+    val downloadOne: (Track) -> Unit = { track -> enqueueTracks(listOf(track)) }
 
     val selectedAlbums = remember { mutableStateListOf<String>() }
     val selectedArtists = remember { mutableStateListOf<String>() }
@@ -393,7 +397,7 @@ fun HomeScreen(
                     scope.launch {
                         val list = resolveSelection()
                         clearSelection()
-                        list.forEach { downloadOne(it) }
+                        enqueueTracks(list)
                     }
                 },
                 onCancel = { clearSelection() },

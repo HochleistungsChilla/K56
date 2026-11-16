@@ -38,7 +38,7 @@ class AppContainer(context: Context) {
     val nowPlayingStore = NowPlayingStore(appContext)
     val networkMonitor = NetworkMonitor(appContext)
     val repository: MediaRepository = RepositoryRouter(appContext, sessionStore, settingsStore, networkMonitor)
-    val offlineStore = OfflineStore(appContext, settingsStore)
+    val offlineStore = OfflineStore(appContext, settingsStore, networkMonitor)
     val favoriteCache = FavoriteCache(repository, offlineStore, settingsStore, networkMonitor)
     val libraryDb = LibraryDb.get(appContext)
     val librarySync = LibrarySync(repository, libraryDb)

@@ -3,12 +3,20 @@ package app.k56.player.data.offline
 import android.content.Context
 import android.net.Uri
 import app.k56.player.core.model.Track
+import app.k56.player.core.net.NetworkMonitor
+import app.k56.player.core.net.NetworkTransport
 import app.k56.player.data.DownloadFormat
 import app.k56.player.data.DownloadQuality
 import app.k56.player.data.SettingsStore
 import app.k56.player.data.StorageLocation
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.withContext
@@ -56,12 +64,33 @@ data class OfflineTrack(
     fun uri(context: Context): Uri = Uri.fromFile(file(context))
 }
 
+/** A queued download: the track plus the resolved source to fetch. */
+data class DownloadRequest(
+    val track: Track,
+    val url: String,
+    val headers: Map<String, String> = emptyMap(),
+)
+
+/** Aggregate state of the whole download queue, for a single progress line. */
+data class DownloadQueueState(
+    val total: Int = 0,
+    val done: Int = 0,
+    val active: Int = 0,
+    val failed: Int = 0,
+) {
+    val running: Boolean get() = total > 0 && done + failed < total
+}
+
 /**
  * Downloads tracks into app storage and keeps an index of what is on disk.
  * Each entry remembers where it was written, so switching between internal
  * storage and the SD card never orphans existing files.
  */
-class OfflineStore(context: Context, private val settingsStore: SettingsStore) {
+class OfflineStore(
+    context: Context,
+    private val settingsStore: SettingsStore,
+    private val networkMonitor: NetworkMonitor,
+) {
 
     private val appContext = context.applicationContext
     private val prefs = appContext.getSharedPreferences("k56_offline", Context.MODE_PRIVATE)
@@ -79,6 +108,16 @@ class OfflineStore(context: Context, private val settingsStore: SettingsStore) {
     val streamed: StateFlow<Set<String>> = _streamed.asStateFlow()
 
     private val cancelled = ConcurrentHashMap.newKeySet<String>()
+
+    private val _queue = MutableStateFlow(DownloadQueueState())
+    val queue: StateFlow<DownloadQueueState> = _queue.asStateFlow()
+
+    private val downloadScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    @Volatile private var queueVersion = 0
+
+    init {
+        downloadScope.launch { cleanupParts() }
+    }
 
     fun isDownloaded(id: String): Boolean = _tracks.value.any { it.id == id }
 
@@ -103,6 +142,76 @@ class OfflineStore(context: Context, private val settingsStore: SettingsStore) {
 
     fun cancel(id: String) {
         cancelled += id
+    }
+
+    /** Queues a batch; up to [concurrentDownloads] run at once, the rest wait. */
+    fun enqueue(requests: List<DownloadRequest>) {
+        val pending = requests.filter { !isDownloaded(it.track.id) }
+        if (pending.isEmpty()) return
+        val version = ++queueVersion
+        val permits = settingsStore.concurrentDownloads.value.coerceIn(1, 5)
+        val semaphore = Semaphore(permits)
+        _queue.value = DownloadQueueState(total = pending.size)
+        pending.forEach { request ->
+            downloadScope.launch {
+                semaphore.withPermit {
+                    if (version != queueVersion) return@withPermit
+                    waitForWifiAllowed(version)
+                    if (version != queueVersion) return@withPermit
+                    _queue.value = _queue.value.copy(active = _queue.value.active + 1)
+                    val result = downloadWithRetry(request)
+                    _queue.value = _queue.value.copy(
+                        active = _queue.value.active - 1,
+                        done = _queue.value.done + if (result != null) 1 else 0,
+                        failed = _queue.value.failed + if (result == null) 1 else 0,
+                    )
+                }
+            }
+        }
+    }
+
+    /** Stops queued and in-flight downloads. */
+    fun cancelAll() {
+        queueVersion++
+        _active.value.toList().forEach { cancelled += it }
+        _queue.value = DownloadQueueState()
+    }
+
+    /** One attempt plus a single retry, so a transient error does not fail the batch. */
+    private suspend fun downloadWithRetry(request: DownloadRequest): OfflineTrack? {
+        val first = try {
+            download(request.track, request.url, request.headers)
+        } catch (_: Exception) {
+            null
+        }
+        if (first != null) return first
+        if (request.track.id in cancelled) return null
+        return try {
+            download(request.track, request.url, request.headers)
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    /** Waits until downloads are allowed: on Wi-Fi/Ethernet, or the rule is off. */
+    private suspend fun waitForWifiAllowed(version: Int) {
+        if (!settingsStore.wifiOnlyDownloads.value) return
+        while (version == queueVersion) {
+            val transport = networkMonitor.status.value.transport
+            if (transport == NetworkTransport.WIFI || transport == NetworkTransport.ETHERNET) return
+            delay(500)
+        }
+    }
+
+    /** Removes left-over `.part` files from a previous run. */
+    private fun cleanupParts() {
+        listOf(StorageLocation.INTERNAL, StorageLocation.EXTERNAL).forEach { location ->
+            runCatching {
+                directoryFor(appContext, location).listFiles()
+                    ?.filter { it.name.endsWith(".part") }
+                    ?.forEach { it.delete() }
+            }
+        }
     }
 
     /** Bytes used in one storage location, for the settings summary. */

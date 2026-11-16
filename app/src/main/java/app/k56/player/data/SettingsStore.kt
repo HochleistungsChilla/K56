@@ -89,6 +89,10 @@ class SettingsStore(context: Context) {
     private val _wifiOnlyDownloads = MutableStateFlow(prefs.getBoolean(KEY_WIFI_ONLY, true))
     val wifiOnlyDownloads: StateFlow<Boolean> = _wifiOnlyDownloads.asStateFlow()
 
+    /** Number of downloads that run at the same time (1–5). */
+    private val _concurrentDownloads = MutableStateFlow(prefs.getInt(KEY_CONCURRENT_DOWNLOADS, 3).coerceIn(1, 5))
+    val concurrentDownloads: StateFlow<Int> = _concurrentDownloads.asStateFlow()
+
     /** Download every favorited track automatically so it is available offline. */
     private val _autoCacheFavorites = MutableStateFlow(prefs.getBoolean(KEY_AUTO_CACHE_FAVORITES, false))
     val autoCacheFavorites: StateFlow<Boolean> = _autoCacheFavorites.asStateFlow()
@@ -278,6 +282,7 @@ class SettingsStore(context: Context) {
         _showTrackSubtitle.value = prefs.getBoolean(KEY_SHOW_SUBTITLE, true)
         _showItemCount.value = prefs.getBoolean(KEY_SHOW_ITEM_COUNT, false)
         _wifiOnlyDownloads.value = prefs.getBoolean(KEY_WIFI_ONLY, true)
+        _concurrentDownloads.value = prefs.getInt(KEY_CONCURRENT_DOWNLOADS, 3).coerceIn(1, 5)
         _autoCacheFavorites.value = prefs.getBoolean(KEY_AUTO_CACHE_FAVORITES, false)
         _ignoreArticles.value = prefs.getBoolean(KEY_IGNORE_ARTICLES, true)
         _homeSections.value = (prefs.getString(KEY_HOME_SECTIONS, null) ?: DEFAULT_HOME_SECTIONS)
@@ -309,6 +314,12 @@ class SettingsStore(context: Context) {
     fun setWifiOnlyDownloads(value: Boolean) {
         prefs.edit().putBoolean(KEY_WIFI_ONLY, value).apply()
         _wifiOnlyDownloads.value = value
+    }
+
+    fun setConcurrentDownloads(value: Int) {
+        val clamped = value.coerceIn(1, 5)
+        prefs.edit().putInt(KEY_CONCURRENT_DOWNLOADS, clamped).apply()
+        _concurrentDownloads.value = clamped
     }
 
     fun setAutoCacheFavorites(value: Boolean) {
@@ -448,6 +459,7 @@ class SettingsStore(context: Context) {
         private const val KEY_COLUMNS = "library_columns"
         private const val KEY_HOME_SECTIONS = "home_sections"
         private const val KEY_WIFI_ONLY = "wifi_only_downloads"
+        private const val KEY_CONCURRENT_DOWNLOADS = "concurrent_downloads"
         private const val KEY_AUTO_CACHE_FAVORITES = "auto_cache_favorites"
         private const val KEY_IGNORE_ARTICLES = "ignore_articles"
         private const val KEY_DOWNLOAD_QUALITY = "download_quality"

@@ -78,6 +78,7 @@ import app.k56.player.core.net.NetworkTransport
 import app.k56.player.data.MediaRepository
 import app.k56.player.data.SettingsStore
 import app.k56.player.data.offline.OfflineStore
+import app.k56.player.data.offline.DownloadRequest
 import app.k56.player.data.library.LibraryDb
 import app.k56.player.ui.appViewModel
 import app.k56.player.ui.components.AlbumCard
@@ -334,45 +335,70 @@ class LibraryViewModel(
     }
 
     fun load() {
-        loading = true
         error = null
+        // The on-device index makes the library open instantly; the server is
+        // only asked for the light things (favorites, playlists, counts).
+        val hasIndex = !libraryDb.isEmpty()
+        if (hasIndex) {
+            readFromIndex()
+            loading = false
+        } else {
+            loading = true
+        }
+
         viewModelScope.launch {
             try {
                 coroutineScope {
                     val libraryId = repository.defaultLibraryId()
-                    val albumsJob = async { repository.albums(libraryId, limit = -1) }
-                    val artistsJob = async { repository.artists(libraryId, limit = -1) }
-                    val songsJob = async { repository.songs(libraryId, limit = -1) }
                     val favoritesJob = async { repository.favoriteTracks(-1) }
-                    val genresJob = async { repository.genres(libraryId) }
                     val playlistsJob = async { repository.playlists() }
                     val countsJob = async { repository.libraryCounts(libraryId) }
-                    albums = albumsJob.await()
-                    artists = artistsJob.await()
-                    songs = songsJob.await()
                     favorites = favoritesJob.await()
-                    genres = genresJob.await()
                     playlists = playlistsJob.await()
-                    counts = countsJob.await()
-                    offlineCopy = false
+                    val serverCounts = countsJob.await()
+                    if (serverCounts.songs > 0) counts = serverCounts
                 }
+                if (!hasIndex) {
+                    // First run without an index: one full live load.
+                    coroutineScope {
+                        val libraryId = repository.defaultLibraryId()
+                        val albumsJob = async { repository.albums(libraryId, limit = -1) }
+                        val artistsJob = async { repository.artists(libraryId, limit = -1) }
+                        val songsJob = async { repository.songs(libraryId, limit = -1) }
+                        val genresJob = async { repository.genres(libraryId) }
+                        albums = albumsJob.await()
+                        artists = artistsJob.await()
+                        songs = songsJob.await()
+                        genres = genresJob.await()
+                    }
+                }
+                offlineCopy = false
             } catch (e: Exception) {
-                val cachedSongs = libraryDb.allTracks()
-                if (cachedSongs.isNotEmpty()) {
-                    albums = libraryDb.allAlbums()
-                    artists = libraryDb.allArtists()
-                    songs = cachedSongs
-                    genres = libraryDb.allGenres()
-                    counts = libraryDb.counts()
-                    offlineCopy = true
-                    error = null
+                if (!hasIndex) {
+                    val cachedSongs = libraryDb.allTracks()
+                    if (cachedSongs.isNotEmpty()) {
+                        readFromIndex()
+                        offlineCopy = true
+                    } else {
+                        error = e.userMessage(appContext)
+                    }
                 } else {
-                    error = e.userMessage(appContext)
+                    // Index is there — stay on it, no error noise.
+                    offlineCopy = true
                 }
             } finally {
                 loading = false
             }
         }
+    }
+
+    /** Fills every list from the SQLite index. Cheap enough for the main thread. */
+    fun readFromIndex() {
+        albums = libraryDb.allAlbums()
+        artists = libraryDb.allArtists()
+        songs = libraryDb.allTracks()
+        genres = libraryDb.allGenres()
+        counts = libraryDb.counts()
     }
 }
 
@@ -451,6 +477,7 @@ fun LibraryScreen(
     val scope = rememberCoroutineScope()
     val offline by offlineStore.tracks.collectAsState()
     val downloads by offlineStore.progress.collectAsState()
+    val downloadQueue by offlineStore.queue.collectAsState()
     val downloadedIds = remember(offline) { offline.map { it.id }.toSet() }
     val streamed by offlineStore.streamed.collectAsState()
     val cachedIds = remember(streamed, downloadedIds) { streamed - downloadedIds }
@@ -465,21 +492,25 @@ fun LibraryScreen(
         return if (ignoreArticles) lower.replace(ARTICLE_PREFIX, "") else lower
     }
 
-    // One track, on demand from a row.
-    val downloadOne: (Track) -> Unit = { track ->
+    // Resolve sources, then hand the whole batch to the concurrent queue.
+    fun enqueueTracks(tracks: List<Track>) {
         scope.launch {
             if (wifiOnlyDownloads && !onWifi) {
                 Toast.makeText(context, R.string.download_wifi_only, Toast.LENGTH_SHORT).show()
                 return@launch
             }
-            try {
-                val source = repository.downloadSource(track)
-                offlineStore.download(track, source.url, repository.playbackHeaders())
-            } catch (e: Exception) {
-                Toast.makeText(context, e.userMessage(context), Toast.LENGTH_LONG).show()
+            val requests = tracks.mapNotNull { track ->
+                if (offlineStore.isDownloaded(track.id)) return@mapNotNull null
+                val source = runCatching { repository.downloadSource(track) }.getOrNull()
+                    ?: return@mapNotNull null
+                DownloadRequest(track, source.url, repository.playbackHeaders())
             }
+            if (requests.isNotEmpty()) offlineStore.enqueue(requests)
         }
     }
+
+    // One track, on demand from a row.
+    val downloadOne: (Track) -> Unit = { track -> enqueueTracks(listOf(track)) }
 
     Box(Modifier.fillMaxSize()) {
     Column(Modifier.fillMaxSize()) {
@@ -899,20 +930,28 @@ fun LibraryScreen(
                             }
                             if (missing > 0) {
                                 Button(
-                                    onClick = {
-                                        scope.launch {
-                                            favorites.filter { it.id !in downloadedIds }.forEach { track ->
-                                                try {
-                                                    val source = repository.downloadSource(track)
-                                                    offlineStore.download(track, source.url, repository.playbackHeaders())
-                                                } catch (_: Exception) {
-                                                    // keep going; a single bad file must not stop the batch
-                                                }
-                                            }
-                                        }
-                                    },
+                                    onClick = { enqueueTracks(favorites.filter { it.id !in downloadedIds }) },
                                 ) {
                                     Text(stringResource(R.string.offline_download_all, missing))
+                                }
+                            }
+                            if (downloadQueue.running) {
+                                Spacer(Modifier.height(8.dp))
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        stringResource(
+                                            R.string.download_queue_progress,
+                                            downloadQueue.done,
+                                            downloadQueue.total,
+                                            downloadQueue.active,
+                                        ),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.weight(1f),
+                                    )
+                                    TextButton(onClick = { offlineStore.cancelAll() }) {
+                                        Text(stringResource(R.string.download_queue_cancel))
+                                    }
                                 }
                             }
                         }
@@ -1003,8 +1042,9 @@ fun LibraryScreen(
                 },
                 onDownload = {
                     vm.runAction {
-                        resolveSelection().forEach { downloadOne(it) }
+                        val list = resolveSelection()
                         clearSelection()
+                        enqueueTracks(list)
                     }
                 },
                 onDelete = {

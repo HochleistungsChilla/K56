@@ -121,6 +121,7 @@ fun SettingsScreen(
     val gridSpacing by settingsStore.gridSpacing.collectAsStateWithLifecycle()
     val libraryColumns by settingsStore.libraryColumns.collectAsStateWithLifecycle()
     val wifiOnlyDownloads by settingsStore.wifiOnlyDownloads.collectAsStateWithLifecycle()
+    val concurrentDownloads by settingsStore.concurrentDownloads.collectAsStateWithLifecycle()
     val autoCacheFavorites by settingsStore.autoCacheFavorites.collectAsStateWithLifecycle()
     val saveNowPlaying by settingsStore.saveNowPlaying.collectAsStateWithLifecycle()
     val ignoreArticles by settingsStore.ignoreArticles.collectAsStateWithLifecycle()
@@ -549,6 +550,24 @@ fun SettingsScreen(
                         onCheckedChange = { settingsStore.setWifiOnlyDownloads(it) },
                     )
                 }
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    stringResource(R.string.concurrent_downloads_title),
+                    style = MaterialTheme.typography.titleMedium,
+                )
+                Row(
+                    modifier = Modifier.horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    (1..5).forEach { n ->
+                        FilterChip(
+                            selected = concurrentDownloads == n,
+                            onClick = { settingsStore.setConcurrentDownloads(n) },
+                            label = { Text("$n") },
+                        )
+                    }
+                }
+                Spacer(Modifier.height(8.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
                         Text(stringResource(R.string.auto_cache_favorites_title), style = MaterialTheme.typography.titleMedium)

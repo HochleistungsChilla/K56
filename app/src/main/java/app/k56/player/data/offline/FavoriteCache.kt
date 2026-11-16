@@ -32,9 +32,13 @@ class FavoriteCache(
     suspend fun sync() {
         if (!allowed()) return
         val favorites = runCatching { repository.favoriteTracks() }.getOrDefault(emptyList())
-        for (track in favorites) {
-            cache(track)
+        val requests = favorites.mapNotNull { track ->
+            if (offlineStore.isDownloaded(track.id)) return@mapNotNull null
+            val source = runCatching { repository.downloadSource(track) }.getOrNull()
+                ?: return@mapNotNull null
+            DownloadRequest(track, source.url, repository.playbackHeaders())
         }
+        if (requests.isNotEmpty()) offlineStore.enqueue(requests)
     }
 
     /** Downloads one track, honoring the same guards. */
