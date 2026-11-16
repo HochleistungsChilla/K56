@@ -1,5 +1,7 @@
 package app.k56.player.ui.screens
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -48,6 +50,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -95,6 +99,9 @@ fun PlayerScreen(
     var showQueue by remember { mutableStateOf(false) }
     var sleepMinutes by remember { mutableStateOf(0) }
     var timerMenu by remember { mutableStateOf(false) }
+    var dragOffset by remember { mutableStateOf(0f) }
+    var dragging by remember { mutableStateOf(false) }
+    val settle by animateFloatAsState(targetValue = dragOffset, label = "player-swipe")
 
     LaunchedEffect(sleepMinutes) {
         if (sleepMinutes > 0) {
@@ -109,6 +116,23 @@ fun PlayerScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .graphicsLayer { translationY = if (dragging) dragOffset else settle }
+            .pointerInput(Unit) {
+                detectVerticalDragGestures(
+                    onDragStart = { dragging = true },
+                    onDragEnd = {
+                        dragging = false
+                        if (dragOffset > 260f) onBack() else dragOffset = 0f
+                    },
+                    onDragCancel = {
+                        dragging = false
+                        dragOffset = 0f
+                    },
+                    onVerticalDrag = { _, delta ->
+                        dragOffset = (dragOffset + delta).coerceAtLeast(0f)
+                    },
+                )
+            }
             .background(
                 Brush.verticalGradient(
                     listOf(
