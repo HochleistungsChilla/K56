@@ -371,23 +371,19 @@ class JellyfinRepository(
         .Items.orEmpty()
         .map { it.toTrack() }
 
-    override suspend fun artistAppearsOn(artistId: String, limit: Int): List<Album> {
-        val ownIds = albumsByArtist(artistId, 200).map { it.id }.toSet()
-        return ensureApi()
-            .items(
-                itemQuery(
-                    includeTypes = "MusicAlbum",
-                    recursive = true,
-                    sortBy = "ProductionYear,SortName",
-                    sortOrder = "Ascending",
-                    artistIds = artistId,
-                    limit = limit,
-                ),
-            )
-            .Items.orEmpty()
-            .map { it.toAlbum() }
-            .filter { it.id !in ownIds }
-    }
+    override suspend fun artistAppearsOn(artistId: String, limit: Int): List<Album> = ensureApi()
+        .items(
+            itemQuery(
+                includeTypes = "MusicAlbum",
+                recursive = true,
+                sortBy = "ProductionYear,SortName",
+                sortOrder = "Ascending",
+                contributingArtistIds = artistId,
+                limit = limit,
+            ),
+        )
+        .Items.orEmpty()
+        .map { it.toAlbum() }
 
     override suspend fun genres(parentId: String?): List<String> {
         val current = requireSession()
@@ -703,6 +699,7 @@ class JellyfinRepository(
         artistIds: String? = null,
         isPlayed: Boolean? = null,
         genres: String? = null,
+        contributingArtistIds: String? = null,
     ): Map<String, String> = buildMap {
         parentId?.takeIf { it.isNotBlank() }?.let { put("ParentId", it) }
         includeTypes?.let { put("IncludeItemTypes", it) }
@@ -717,6 +714,7 @@ class JellyfinRepository(
         artistIds?.let { put("ArtistIds", it) }
         isPlayed?.let { put("IsPlayed", it.toString()) }
         genres?.let { put("Genres", it) }
+        contributingArtistIds?.let { put("ContributingArtistIds", it) }
         put("Fields", ITEM_FIELDS)
         put("ImageTypeLimit", "1")
         put("EnableImageTypes", "Primary")

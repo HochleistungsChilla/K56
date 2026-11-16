@@ -19,6 +19,7 @@ import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
 import app.k56.player.K56App
 import app.k56.player.core.model.PlaybackSource
+import app.k56.player.core.net.NetworkTransport
 import app.k56.player.dsp.DspProcessor
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -165,7 +166,7 @@ class PlaybackService : MediaSessionService() {
                     .toSet()
                 val fresh = repository.instantMix(seeds, 25)
                     .filter { it.id !in existing }
-                    .take(12)
+                    .take(if (frugalLookahead()) 2 else 12)
                 if (fresh.isEmpty()) {
                     autoplayExhausted = true
                     return@launch
@@ -204,6 +205,11 @@ class PlaybackService : MediaSessionService() {
             }
         }
     }
+
+    /** Frugal mode on mobile data: keep the lookahead to one or two titles. */
+    private fun frugalLookahead(): Boolean =
+        appContainer.settingsStore.frugalMode.value &&
+            appContainer.repository.networkStatus.value.transport == NetworkTransport.CELLULAR
 
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? = mediaSession
 

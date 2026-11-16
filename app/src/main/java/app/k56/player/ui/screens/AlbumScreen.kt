@@ -92,6 +92,7 @@ class AlbumViewModel(
                 details = loaded.first
                 moreFromArtist = loaded.second
                     .filter { it.id != loaded.first.album.id }
+                    .take(12)
             } catch (e: Exception) {
                 error = e.userMessage(appContext)
             } finally {
