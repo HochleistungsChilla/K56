@@ -110,6 +110,7 @@ fun AlbumCard(
     onToggleFavorite: (() -> Unit)? = null,
     offlineCount: Int? = null,
     trackCount: Int? = null,
+    onMenu: (() -> Unit)? = null,
 ) {
     Column(
         modifier = modifier
@@ -149,17 +150,38 @@ fun AlbumCard(
                         .padding(6.dp),
                 )
             }
-            if (onToggleFavorite != null) {
-                IconButton(
-                    onClick = onToggleFavorite,
+            if (onToggleFavorite != null || onMenu != null) {
+                Row(
                     modifier = Modifier.align(Alignment.TopEnd),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Icon(
-                        imageVector = if (isFavorite) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
-                        contentDescription = null,
-                        tint = if (isFavorite) MaterialTheme.colorScheme.primary
-                        else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.75f),
-                    )
+                    if (onToggleFavorite != null) {
+                        IconButton(onClick = onToggleFavorite) {
+                            Icon(
+                                imageVector = if (isFavorite) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
+                                contentDescription = null,
+                                tint = if (isFavorite) MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.75f),
+                            )
+                        }
+                    }
+                    if (onMenu != null) {
+                        Box(
+                            modifier = Modifier
+                                .padding(end = 4.dp)
+                                .size(24.dp)
+                                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.6f), CircleShape)
+                                .clickable(onClick = onMenu),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.MoreVert,
+                                contentDescription = stringResource(R.string.action_more),
+                                tint = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.size(16.dp),
+                            )
+                        }
+                    }
                 }
             }
             OfflineCoverageBadge(
@@ -194,6 +216,7 @@ fun ArtistCard(
     onLongClick: (() -> Unit)? = null,
     selected: Boolean = false,
     offlineCount: Int? = null,
+    onMenu: (() -> Unit)? = null,
 ) {
     Column(
         modifier = modifier
@@ -248,6 +271,24 @@ fun ArtistCard(
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(12.dp),
+                    )
+                }
+            }
+            if (onMenu != null) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(4.dp)
+                        .size(24.dp)
+                        .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.6f), CircleShape)
+                        .clickable(onClick = onMenu),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.MoreVert,
+                        contentDescription = stringResource(R.string.action_more),
+                        tint = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.size(16.dp),
                     )
                 }
             }

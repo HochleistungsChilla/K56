@@ -36,6 +36,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
@@ -62,6 +63,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import android.widget.Toast
 import kotlinx.coroutines.launch
@@ -349,6 +351,7 @@ fun LibraryScreen(
     repository: MediaRepository,
     offlineStore: OfflineStore,
     settingsStore: SettingsStore,
+    librarySync: app.k56.player.data.library.LibrarySync,
     onOpenAlbum: (String) -> Unit,
     onOpenArtist: (String) -> Unit,
     onPlay: (List<Track>, Int) -> Unit,
@@ -363,6 +366,7 @@ fun LibraryScreen(
     gridSpacing: Int = 12,
 ) {
     val context = LocalContext.current
+    val syncState by librarySync.state.collectAsStateWithLifecycle()
     val vm = appViewModel { LibraryViewModel(repository, context.applicationContext, offlineStore, settingsStore) }
     var tab by rememberSaveable { mutableIntStateOf(0) }
     var sortMode by rememberSaveable { mutableIntStateOf(0) }
@@ -493,6 +497,42 @@ fun LibraryScreen(
             )
         }
 
+        if (syncState.running) {
+            Text(
+                text = stringResource(
+                    R.string.library_syncing,
+                    syncState.loaded,
+                    syncState.total,
+                ),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 2.dp),
+            )
+            LinearProgressIndicator(
+                progress = {
+                    if (syncState.total > 0) {
+                        syncState.loaded.toFloat() / syncState.total
+                    } else {
+                        0f
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .height(2.dp),
+            )
+        } else if (syncState.error != null) {
+            Text(
+                text = stringResource(R.string.library_sync_failed),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.error,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { scope.launch { librarySync.sync(force = true) } }
+                    .padding(horizontal = 16.dp, vertical = 2.dp),
+            )
+        }
+
         if (!vm.loading && vm.offlineCopy) {
             val lastSync = remember(vm.indexLastSync) {
                 if (vm.indexLastSync > 0) {
@@ -566,17 +606,27 @@ fun LibraryScreen(
                                     onOpenAlbum(album.id)
                                 }
                             },
-                            onLongClick = { contextAlbum = album },
+                            onLongClick = {
+                                if (!selectedAlbums.remove(album.id)) selectedAlbums.add(album.id)
+                            },
                             selected = album.id in selectedAlbums,
                             isFavorite = album.isFavorite,
                             onToggleFavorite = { vm.toggleAlbumFavorite(album) },
                             offlineCount = albumOfflineCount[album.id],
                             trackCount = album.trackCount,
+                            onMenu = { contextAlbum = album },
                         )
                         DropdownMenu(
                             expanded = contextAlbum?.id == album.id,
                             onDismissRequest = { contextAlbum = null },
                         ) {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.action_select)) },
+                                onClick = {
+                                    if (!selectedAlbums.remove(album.id)) selectedAlbums.add(album.id)
+                                    contextAlbum = null
+                                },
+                            )
                             DropdownMenuItem(
                                 text = { Text(stringResource(R.string.common_play)) },
                                 onClick = {
@@ -643,13 +693,23 @@ fun LibraryScreen(
                                     onOpenArtist(artist.id)
                                 }
                             },
-                            onLongClick = { contextArtist = artist },
+                            onLongClick = {
+                                if (!selectedArtists.remove(artist.id)) selectedArtists.add(artist.id)
+                            },
                             selected = artist.id in selectedArtists,
+                            onMenu = { contextArtist = artist },
                         )
                         DropdownMenu(
                             expanded = contextArtist?.id == artist.id,
                             onDismissRequest = { contextArtist = null },
                         ) {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.action_select)) },
+                                onClick = {
+                                    if (!selectedArtists.remove(artist.id)) selectedArtists.add(artist.id)
+                                    contextArtist = null
+                                },
+                            )
                             DropdownMenuItem(
                                 text = { Text(stringResource(R.string.common_play)) },
                                 onClick = {

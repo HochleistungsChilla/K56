@@ -286,6 +286,7 @@
     <string name="action_add_playlist">Add to playlist</string>
     <string name="action_remove_playlist">Remove from playlist</string>
     <string name="action_open">Open</string>
+    <string name="action_select">Select</string>
 
     <string name="selection_count">%1$d selected</string>
     <string name="selection_all">All</string>
@@ -365,6 +366,8 @@
     <string name="home_random_songs">Random titles</string>
     <string name="library_loaded_count">%1$d of %2$d loaded</string>
     <string name="library_offline_copy">Offline — device copy from %1$s</string>
+    <string name="library_syncing">Syncing … %1$d / %2$d</string>
+    <string name="library_sync_failed">Sync failed — tap to retry</string>
     <string name="sync_title">Library sync</string>
     <string name="sync_status">%1$d of %2$d tracks on device</string>
     <string name="sync_last">Last synced: %1$s</string>

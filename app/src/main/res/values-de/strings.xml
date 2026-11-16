@@ -276,6 +276,7 @@
     <string name="action_add_playlist">Zur Playlist hinzufügen</string>
     <string name="action_remove_playlist">Aus Playlist entfernen</string>
     <string name="action_open">Öffnen</string>
+    <string name="action_select">Auswählen</string>
 
     <string name="selection_count">%1$d ausgewählt</string>
     <string name="selection_all">Alle</string>
@@ -355,6 +356,8 @@
     <string name="home_random_songs">Zufällige Titel</string>
     <string name="library_loaded_count">%1$d von %2$d geladen</string>
     <string name="library_offline_copy">Offline — Kopie am Gerät, Stand %1$s</string>
+    <string name="library_syncing">Synchronisiere … %1$d / %2$d</string>
+    <string name="library_sync_failed">Sync fehlgeschlagen — tippen zum Wiederholen</string>
     <string name="sync_title">Bibliotheks-Sync</string>
     <string name="sync_status">%1$d von %2$d Titeln am Gerät</string>
     <string name="sync_last">Zuletzt synchronisiert: %1$s</string>
