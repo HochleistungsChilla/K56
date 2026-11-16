@@ -258,4 +258,11 @@
     <string name="display_numbers_body">Show the position in front of each title.</string>
     <string name="display_columns">Library columns</string>
     <string name="display_columns_auto">Auto</string>
+
+    <string name="download_wifi_only">Downloads only run on Wi-Fi. Change it in settings.</string>
+
+    <string name="wifi_only_title">Downloads only on Wi-Fi</string>
+    <string name="wifi_only_body">Protects mobile data; downloads wait for a WLAN.</string>
+    <string name="articles_title">Ignore articles when sorting</string>
+    <string name="articles_body">The/Die are sorted under the first real word.</string>
 </resources>

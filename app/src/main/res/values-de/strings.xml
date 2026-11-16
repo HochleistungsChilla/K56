@@ -248,4 +248,11 @@
     <string name="display_numbers_body">Position vor jedem Titel anzeigen.</string>
     <string name="display_columns">Spalten in der Bibliothek</string>
     <string name="display_columns_auto">Auto</string>
+
+    <string name="download_wifi_only">Downloads laufen nur im WLAN. Einstellung ändern.</string>
+
+    <string name="wifi_only_title">Downloads nur im WLAN</string>
+    <string name="wifi_only_body">Schont mobiles Datenvolumen; Downloads warten auf WLAN.</string>
+    <string name="articles_title">Artikel beim Sortieren ignorieren</string>
+    <string name="articles_body">The/Die werden unter dem ersten echten Wort einsortiert.</string>
 </resources>

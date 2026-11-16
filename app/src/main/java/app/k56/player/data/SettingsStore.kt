@@ -57,6 +57,12 @@ class SettingsStore(context: Context) {
     private val _showTrackNumbers = MutableStateFlow(prefs.getBoolean(KEY_TRACK_NUMBERS, true))
     val showTrackNumbers: StateFlow<Boolean> = _showTrackNumbers.asStateFlow()
 
+    private val _wifiOnlyDownloads = MutableStateFlow(prefs.getBoolean(KEY_WIFI_ONLY, true))
+    val wifiOnlyDownloads: StateFlow<Boolean> = _wifiOnlyDownloads.asStateFlow()
+
+    private val _ignoreArticles = MutableStateFlow(prefs.getBoolean(KEY_IGNORE_ARTICLES, true))
+    val ignoreArticles: StateFlow<Boolean> = _ignoreArticles.asStateFlow()
+
     private val _libraryColumns = MutableStateFlow(prefs.getInt(KEY_COLUMNS, 0))
     val libraryColumns: StateFlow<Int> = _libraryColumns.asStateFlow()
 
@@ -103,6 +109,16 @@ class SettingsStore(context: Context) {
         _showTrackNumbers.value = value
     }
 
+    fun setWifiOnlyDownloads(value: Boolean) {
+        prefs.edit().putBoolean(KEY_WIFI_ONLY, value).apply()
+        _wifiOnlyDownloads.value = value
+    }
+
+    fun setIgnoreArticles(value: Boolean) {
+        prefs.edit().putBoolean(KEY_IGNORE_ARTICLES, value).apply()
+        _ignoreArticles.value = value
+    }
+
     fun setLibraryColumns(value: Int) {
         prefs.edit().putInt(KEY_COLUMNS, value).apply()
         _libraryColumns.value = value
@@ -127,6 +143,8 @@ class SettingsStore(context: Context) {
         private const val KEY_KEEP_SCREEN_ON = "keep_screen_on"
         private const val KEY_TRACK_NUMBERS = "track_numbers"
         private const val KEY_COLUMNS = "library_columns"
+        private const val KEY_WIFI_ONLY = "wifi_only_downloads"
+        private const val KEY_IGNORE_ARTICLES = "ignore_articles"
         private const val KEY_DOWNLOAD_QUALITY = "download_quality"
         private const val KEY_DOWNLOAD_FORMAT = "download_format"
 

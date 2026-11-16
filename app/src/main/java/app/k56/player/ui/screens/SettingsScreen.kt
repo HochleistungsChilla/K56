@@ -71,6 +71,8 @@ fun SettingsScreen(
     val keepScreenOn by settingsStore.keepScreenOn.collectAsStateWithLifecycle()
     val showTrackNumbers by settingsStore.showTrackNumbers.collectAsStateWithLifecycle()
     val libraryColumns by settingsStore.libraryColumns.collectAsStateWithLifecycle()
+    val wifiOnlyDownloads by settingsStore.wifiOnlyDownloads.collectAsStateWithLifecycle()
+    val ignoreArticles by settingsStore.ignoreArticles.collectAsStateWithLifecycle()
     val downloadQuality by settingsStore.downloadQuality.collectAsStateWithLifecycle()
     val downloadFormat by settingsStore.downloadFormat.collectAsStateWithLifecycle()
     val hasSdCard = remember { SettingsStore.externalRoot(context) != null }
@@ -281,6 +283,21 @@ fun SettingsScreen(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+                Spacer(Modifier.height(8.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text(stringResource(R.string.wifi_only_title), style = MaterialTheme.typography.titleMedium)
+                        Text(
+                            stringResource(R.string.wifi_only_body),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    Switch(
+                        checked = wifiOnlyDownloads,
+                        onCheckedChange = { settingsStore.setWifiOnlyDownloads(it) },
+                    )
+                }
                 Spacer(Modifier.height(10.dp))
                 OutlinedButton(onClick = onOpenCache, modifier = Modifier.fillMaxWidth()) {
                     Text(stringResource(R.string.cache_manager_title))
@@ -484,6 +501,31 @@ fun SettingsScreen(
                             },
                         )
                     }
+                }
+            }
+        }
+
+        Spacer(Modifier.height(14.dp))
+
+        Surface(
+            color = MaterialTheme.colorScheme.surfaceContainer,
+            shape = RoundedCornerShape(20.dp),
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Column(Modifier.padding(16.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text(stringResource(R.string.articles_title), style = MaterialTheme.typography.titleMedium)
+                        Text(
+                            stringResource(R.string.articles_body),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    Switch(
+                        checked = ignoreArticles,
+                        onCheckedChange = { settingsStore.setIgnoreArticles(it) },
+                    )
                 }
             }
         }

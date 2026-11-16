@@ -178,6 +178,8 @@ fun LibraryScreen(
     onAddToQueue: (Track) -> Unit = {},
     showTrackNumbers: Boolean = true,
     columns: Int = 0,
+    wifiOnlyDownloads: Boolean = false,
+    ignoreArticles: Boolean = true,
 ) {
     val context = LocalContext.current
     val vm = appViewModel { LibraryViewModel(repository, context.applicationContext) }
@@ -219,10 +221,21 @@ fun LibraryScreen(
     val offline by offlineStore.tracks.collectAsState()
     val downloads by offlineStore.progress.collectAsState()
     val downloadedIds = remember(offline) { offline.map { it.id }.toSet() }
+    val net by repository.networkStatus.collectAsState()
+    val onWifi = net.transport == app.k56.player.core.net.NetworkTransport.WIFI ||
+        net.transport == app.k56.player.core.net.NetworkTransport.ETHERNET
+    fun sortKey(value: String?): String {
+        val lower = (value ?: "").lowercase()
+        return if (ignoreArticles) lower.replace(ARTICLE_PREFIX, "") else lower
+    }
 
     // One track, on demand from a row.
     val downloadOne: (Track) -> Unit = { track ->
         scope.launch {
+            if (wifiOnlyDownloads && !onWifi) {
+                Toast.makeText(context, R.string.download_wifi_only, Toast.LENGTH_SHORT).show()
+                return@launch
+            }
             try {
                 val source = repository.downloadSource(track)
                 offlineStore.download(track, source.url, repository.playbackHeaders())
@@ -341,8 +354,8 @@ fun LibraryScreen(
                 val songs = vm.songs
                     .filter { !onlyOffline || it.id in downloadedIds }
                     .let { list ->
-                        if (sortMode == 0) list.sortedBy { it.title.lowercase() }
-                        else list.sortedBy { (it.artistName ?: "").lowercase() }
+                        if (sortMode == 0) list.sortedBy { sortKey(it.title) }
+                        else list.sortedBy { sortKey(it.artistName) }
                     }
                 LazyColumn(
                 modifier = Modifier
@@ -375,8 +388,8 @@ fun LibraryScreen(
                 val favorites = vm.favorites
                     .filter { !onlyOffline || it.id in downloadedIds }
                     .let { list ->
-                        if (sortMode == 0) list.sortedBy { it.title.lowercase() }
-                        else list.sortedBy { (it.artistName ?: "").lowercase() }
+                        if (sortMode == 0) list.sortedBy { sortKey(it.title) }
+                        else list.sortedBy { sortKey(it.artistName) }
                     }
                 if (favorites.isEmpty()) {
                     EmptyState(
@@ -616,3 +629,5 @@ private fun SelectionAction(
         Text(label, style = MaterialTheme.typography.labelSmall)
     }
 }
+
+private val ARTICLE_PREFIX = Regex("""^(the|a|an|die|der|das|le|la|les|el|los|il)\s+""")

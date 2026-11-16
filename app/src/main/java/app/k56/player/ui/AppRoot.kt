@@ -78,6 +78,8 @@ private fun MainShell(container: AppContainer) {
     val keepScreenOn by container.settingsStore.keepScreenOn.collectAsStateWithLifecycle()
     val showTrackNumbers by container.settingsStore.showTrackNumbers.collectAsStateWithLifecycle()
     val libraryColumns by container.settingsStore.libraryColumns.collectAsStateWithLifecycle()
+    val wifiOnlyDownloads by container.settingsStore.wifiOnlyDownloads.collectAsStateWithLifecycle()
+    val ignoreArticles by container.settingsStore.ignoreArticles.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
 
     val playTracks: (List<Track>, Int) -> Unit = { tracks, index ->
@@ -204,6 +206,8 @@ private fun MainShell(container: AppContainer) {
                     onAddToQueue = addToQueue,
                     showTrackNumbers = showTrackNumbers,
                     columns = libraryColumns,
+                    wifiOnlyDownloads = wifiOnlyDownloads,
+                    ignoreArticles = ignoreArticles,
                 )
             }
             composable("cache") {
