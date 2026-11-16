@@ -11,6 +11,8 @@
     <string name="common_hide">Verbergen</string>
     <string name="common_back">Zurück</string>
     <string name="common_soon">%1$s · bald</string>
+    <string name="common_add">Hinzufügen</string>
+    <string name="common_save">Speichern</string>
 
     <string name="nav_home">Start</string>
     <string name="nav_library">Bibliothek</string>
@@ -50,8 +52,15 @@
     <string name="library_tab_tracks">Titel</string>
     <string name="library_tab_favorites">Favoriten</string>
     <string name="library_tab_genres">Genres</string>
+    <string name="library_tab_playlists">Playlists</string>
     <string name="library_empty_favorites">Noch keine Favoriten. Tippe auf das Herz bei einem Titel.</string>
     <string name="genre_empty">Keine Genres auf diesem Server gefunden.</string>
+    <string name="playlist_new">Neue Playlist</string>
+    <string name="playlist_rename">Umbenennen</string>
+    <string name="playlist_delete">Löschen</string>
+    <string name="playlist_name">Playlist-Name</string>
+    <string name="playlist_empty">Noch keine Playlists.</string>
+    <string name="playlist_offline_hint">Playlists benötigen eine Verbindung zum Server.</string>
 
     <string name="album_title">Album</string>
     <string name="artist_title">Interpret</string>
@@ -262,6 +271,8 @@
     <string name="action_more">Mehr</string>
     <string name="action_play_next">Als Nächstes</string>
     <string name="action_add_queue">In Warteschlange</string>
+    <string name="action_add_playlist">Zur Playlist hinzufügen</string>
+    <string name="action_remove_playlist">Aus Playlist entfernen</string>
 
     <string name="selection_count">%1$d ausgewählt</string>
     <string name="selection_all">Alle</string>

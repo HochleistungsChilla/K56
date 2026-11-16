@@ -43,6 +43,35 @@ interface JellyfinApi {
     @GET("Genres")
     suspend fun genres(@QueryMap query: Map<String, String>): QueryResultDto
 
+    @POST("Playlists")
+    suspend fun createPlaylist(
+        @Query("name") name: String,
+        @Query("ids") ids: String?,
+        @Query("userId") userId: String,
+    ): PlaylistCreationResultDto
+
+    @POST("Playlists/{playlistId}")
+    suspend fun updatePlaylist(
+        @Path("playlistId") playlistId: String,
+        @Query("name") name: String,
+    )
+
+    @DELETE("Playlists/{playlistId}")
+    suspend fun deletePlaylist(@Path("playlistId") playlistId: String)
+
+    @POST("Playlists/{playlistId}/Items")
+    suspend fun addPlaylistItems(
+        @Path("playlistId") playlistId: String,
+        @Query("ids") ids: String,
+        @Query("userId") userId: String,
+    )
+
+    @DELETE("Playlists/{playlistId}/Items")
+    suspend fun removePlaylistItems(
+        @Path("playlistId") playlistId: String,
+        @Query("ids") ids: String,
+    )
+
     @POST("Sessions/Playing")
     suspend fun reportPlaybackStart(@Body body: PlaybackReportDto)
 

@@ -26,18 +26,24 @@ import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Shuffle
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.Icons
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -51,7 +57,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -60,6 +68,7 @@ import kotlinx.coroutines.launch
 import app.k56.player.R
 import app.k56.player.core.model.Album
 import app.k56.player.core.model.Artist
+import app.k56.player.core.model.Playlist
 import app.k56.player.core.model.Track
 import app.k56.player.core.net.NetworkTransport
 import app.k56.player.data.MediaRepository
@@ -102,6 +111,12 @@ class LibraryViewModel(
         private set
     var genreTracks by mutableStateOf<List<Track>>(emptyList())
         private set
+    var playlists by mutableStateOf<List<Playlist>>(emptyList())
+        private set
+    var selectedPlaylist by mutableStateOf<Playlist?>(null)
+        private set
+    var playlistTracks by mutableStateOf<List<Track>>(emptyList())
+        private set
     var loading by mutableStateOf(true)
         private set
     var error by mutableStateOf<String?>(null)
@@ -129,6 +144,85 @@ class LibraryViewModel(
         selectedGenre = null
         genreAlbums = emptyList()
         genreTracks = emptyList()
+    }
+
+    fun refreshPlaylists() {
+        viewModelScope.launch {
+            runCatching { repository.playlists() }.onSuccess { playlists = it }
+        }
+    }
+
+    fun openPlaylist(playlist: Playlist) {
+        selectedPlaylist = playlist
+        playlistTracks = emptyList()
+        viewModelScope.launch {
+            try {
+                playlistTracks = repository.playlistTracks(playlist.id)
+            } catch (e: Exception) {
+                error = e.userMessage(appContext)
+            }
+        }
+    }
+
+    fun closePlaylist() {
+        selectedPlaylist = null
+        playlistTracks = emptyList()
+    }
+
+    fun createPlaylist(name: String, itemIds: List<String>, onDone: (Boolean) -> Unit) {
+        viewModelScope.launch {
+            try {
+                val created = repository.createPlaylist(name, itemIds)
+                if (created != null) {
+                    playlists = (playlists + created).sortedBy { it.name.lowercase() }
+                }
+                onDone(created != null)
+            } catch (e: Exception) {
+                error = e.userMessage(appContext)
+                onDone(false)
+            }
+        }
+    }
+
+    fun renamePlaylist(playlistId: String, name: String) {
+        viewModelScope.launch {
+            if (repository.renamePlaylist(playlistId, name)) {
+                playlists = playlists.map { if (it.id == playlistId) it.copy(name = name) else it }
+                selectedPlaylist?.let { if (it.id == playlistId) selectedPlaylist = it.copy(name = name) }
+            }
+        }
+    }
+
+    fun deletePlaylist(playlistId: String) {
+        viewModelScope.launch {
+            if (repository.deletePlaylist(playlistId)) {
+                playlists = playlists.filterNot { it.id == playlistId }
+                if (selectedPlaylist?.id == playlistId) closePlaylist()
+            }
+        }
+    }
+
+    fun addToPlaylist(playlistId: String, itemIds: List<String>) {
+        viewModelScope.launch {
+            runCatching { repository.addToPlaylist(playlistId, itemIds) }
+            playlists = playlists.map { p ->
+                if (p.id == playlistId) p.copy(trackCount = (p.trackCount ?: 0) + itemIds.size) else p
+            }
+        }
+    }
+
+    fun removeFromPlaylist(track: Track) {
+        val playlist = selectedPlaylist ?: return
+        playlistTracks = playlistTracks.filterNot { it.id == track.id }
+        viewModelScope.launch {
+            if (repository.removeFromPlaylist(playlist.id, listOf(track.id))) {
+                playlists = playlists.map { p ->
+                    if (p.id == playlist.id) p.copy(trackCount = ((p.trackCount ?: 1) - 1).coerceAtLeast(0)) else p
+                }
+            } else {
+                playlistTracks = (playlistTracks + track).sortedBy { it.title.lowercase() }
+            }
+        }
     }
 
     /** Toggle a track's favourite flag on the server and update the local list. */
@@ -209,11 +303,13 @@ class LibraryViewModel(
                     val songsJob = async { repository.songs(libraryId, limit = 600) }
                     val favoritesJob = async { repository.favoriteTracks() }
                     val genresJob = async { repository.genres(libraryId) }
+                    val playlistsJob = async { repository.playlists() }
                     albums = albumsJob.await()
                     artists = artistsJob.await()
                     songs = songsJob.await()
                     favorites = favoritesJob.await()
                     genres = genresJob.await()
+                    playlists = playlistsJob.await()
                 }
             } catch (e: Exception) {
                 error = e.userMessage(appContext)
@@ -247,6 +343,7 @@ fun LibraryScreen(
     var tab by rememberSaveable { mutableIntStateOf(0) }
     var sortMode by rememberSaveable { mutableIntStateOf(0) }
     var onlyOffline by rememberSaveable { mutableStateOf(false) }
+    var addToPlaylistTrack by remember { mutableStateOf<Track?>(null) }
     val selectedTracks = remember { mutableStateListOf<String>() }
     val selectedAlbums = remember { mutableStateListOf<String>() }
     val selectedArtists = remember { mutableStateListOf<String>() }
@@ -315,6 +412,7 @@ fun LibraryScreen(
                 stringResource(R.string.library_tab_tracks),
                 stringResource(R.string.library_tab_favorites),
                 stringResource(R.string.library_tab_genres),
+                stringResource(R.string.library_tab_playlists),
             ).forEachIndexed { index, label ->
                 Tab(
                     selected = tab == index,
@@ -456,6 +554,7 @@ fun LibraryScreen(
                             onDownload = if (track.id in downloadedIds) null else { { downloadOne(track) } },
                             onPlayNext = { onPlayNext(track) },
                             onAddToQueue = { onAddToQueue(track) },
+                            onAddToPlaylist = { addToPlaylistTrack = track },
                         )
                     }
                 }
@@ -579,6 +678,7 @@ fun LibraryScreen(
                                     },
                                     onPlayNext = { onPlayNext(track) },
                                     onAddToQueue = { onAddToQueue(track) },
+                                    onAddToPlaylist = { addToPlaylistTrack = track },
                                 )
                             }
                         }
@@ -591,6 +691,15 @@ fun LibraryScreen(
                     vm = vm,
                     onOpenAlbum = onOpenAlbum,
                     onPlay = onPlay,
+                )
+            }
+
+            tab == 5 -> {
+                PlaylistContent(
+                    vm = vm,
+                    onPlay = onPlay,
+                    onPlayNext = onPlayNext,
+                    onAddToQueue = onAddToQueue,
                 )
             }
         }
@@ -652,6 +761,23 @@ fun LibraryScreen(
                     }
                 },
                 onCancel = { clearSelection() },
+            )
+        }
+
+        val playlistTarget = addToPlaylistTrack
+        if (playlistTarget != null) {
+            PlaylistPickerDialog(
+                playlists = vm.playlists,
+                onPick = { playlist ->
+                    vm.addToPlaylist(playlist.id, listOf(playlistTarget.id))
+                    addToPlaylistTrack = null
+                },
+                onCreateNew = { name ->
+                    vm.createPlaylist(name, listOf(playlistTarget.id)) { ok ->
+                        if (ok) addToPlaylistTrack = null
+                    }
+                },
+                onDismiss = { addToPlaylistTrack = null },
             )
         }
     }
@@ -793,4 +919,299 @@ private fun GenreContent(
             }
         }
     }
+}
+
+@Composable
+private fun PlaylistContent(
+    vm: LibraryViewModel,
+    onPlay: (List<Track>, Int) -> Unit,
+    onPlayNext: (Track) -> Unit,
+    onAddToQueue: (Track) -> Unit,
+) {
+    val playlist = vm.selectedPlaylist
+    var showCreate by remember { mutableStateOf(false) }
+    var renameTarget by remember { mutableStateOf<Playlist?>(null) }
+    var deleteTarget by remember { mutableStateOf<Playlist?>(null) }
+
+    if (playlist == null) {
+        Column(Modifier.fillMaxWidth()) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = stringResource(R.string.playlist_offline_hint),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.weight(1f),
+                )
+                Button(onClick = { showCreate = true }) {
+                    Icon(Icons.Rounded.Add, contentDescription = null)
+                    Spacer(Modifier.width(4.dp))
+                    Text(stringResource(R.string.playlist_new))
+                }
+            }
+            if (vm.playlists.isEmpty()) {
+                EmptyState(
+                    title = stringResource(R.string.library_tab_playlists),
+                    subtitle = stringResource(R.string.playlist_empty),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                )
+            } else {
+                LazyColumn(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth(),
+                    contentPadding = PaddingValues(bottom = 20.dp),
+                ) {
+                    items(vm.playlists, key = { it.id }) { p ->
+                        PlaylistRow(
+                            playlist = p,
+                            onClick = { vm.openPlaylist(p) },
+                            onRename = { renameTarget = p },
+                            onDelete = { deleteTarget = p },
+                        )
+                    }
+                }
+            }
+        }
+    } else {
+        Column(Modifier.fillMaxWidth()) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 4.dp, end = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                IconButton(onClick = vm::closePlaylist) {
+                    Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = stringResource(R.string.common_back))
+                }
+                Text(
+                    text = playlist.name,
+                    style = MaterialTheme.typography.titleLarge,
+                    modifier = Modifier.weight(1f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                IconButton(
+                    onClick = { if (vm.playlistTracks.isNotEmpty()) onPlay(vm.playlistTracks, 0) },
+                ) {
+                    Icon(Icons.Rounded.PlayArrow, contentDescription = stringResource(R.string.common_play))
+                }
+                Box {
+                    var menuOpen by remember { mutableStateOf(false) }
+                    IconButton(onClick = { menuOpen = true }) {
+                        Icon(Icons.Rounded.MoreVert, contentDescription = stringResource(R.string.action_more))
+                    }
+                    DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.playlist_rename)) },
+                            onClick = { menuOpen = false; renameTarget = playlist },
+                        )
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.playlist_delete)) },
+                            onClick = { menuOpen = false; deleteTarget = playlist },
+                        )
+                    }
+                }
+            }
+            if (vm.playlistTracks.isEmpty()) {
+                EmptyState(
+                    title = stringResource(R.string.library_tab_playlists),
+                    subtitle = stringResource(R.string.playlist_empty),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                )
+            } else {
+                LazyColumn(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth(),
+                    contentPadding = PaddingValues(bottom = 20.dp),
+                ) {
+                    itemsIndexed(vm.playlistTracks, key = { _, track -> track.id }) { index, track ->
+                        TrackRow(
+                            track = track,
+                            onClick = { onPlay(vm.playlistTracks, index) },
+                            showArtwork = true,
+                            onPlayNext = { onPlayNext(track) },
+                            onAddToQueue = { onAddToQueue(track) },
+                            onRemoveFromPlaylist = { vm.removeFromPlaylist(track) },
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    if (showCreate) {
+        PlaylistNameDialog(
+            title = stringResource(R.string.playlist_new),
+            initial = "",
+            onConfirm = { name -> vm.createPlaylist(name, emptyList()) { showCreate = false } },
+            onDismiss = { showCreate = false },
+        )
+    }
+    renameTarget?.let { p ->
+        PlaylistNameDialog(
+            title = stringResource(R.string.playlist_rename),
+            initial = p.name,
+            onConfirm = { name -> vm.renamePlaylist(p.id, name); renameTarget = null },
+            onDismiss = { renameTarget = null },
+        )
+    }
+    deleteTarget?.let { p ->
+        AlertDialog(
+            onDismissRequest = { deleteTarget = null },
+            title = { Text(stringResource(R.string.playlist_delete)) },
+            text = { Text(p.name) },
+            confirmButton = {
+                TextButton(onClick = { vm.deletePlaylist(p.id); deleteTarget = null }) {
+                    Text(stringResource(R.string.playlist_delete))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { deleteTarget = null }) { Text(stringResource(R.string.common_cancel)) }
+            },
+        )
+    }
+}
+
+@Composable
+private fun PlaylistRow(
+    playlist: Playlist,
+    onClick: () -> Unit,
+    onRename: () -> Unit,
+    onDelete: () -> Unit,
+) {
+    var menuOpen by remember { mutableStateOf(false) }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(
+                text = playlist.name,
+                style = MaterialTheme.typography.titleMedium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            val count = playlist.trackCount
+            if (count != null) {
+                Text(
+                    text = pluralStringResource(R.plurals.plural_tracks, count, count),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+        Box {
+            IconButton(onClick = { menuOpen = true }) {
+                Icon(Icons.Rounded.MoreVert, contentDescription = stringResource(R.string.action_more))
+            }
+            DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.playlist_rename)) },
+                    onClick = { menuOpen = false; onRename() },
+                )
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.playlist_delete)) },
+                    onClick = { menuOpen = false; onDelete() },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun PlaylistNameDialog(
+    title: String,
+    initial: String,
+    onConfirm: (String) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var name by remember { mutableStateOf(initial) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(title) },
+        text = {
+            OutlinedTextField(
+                value = name,
+                onValueChange = { name = it },
+                label = { Text(stringResource(R.string.playlist_name)) },
+                singleLine = true,
+            )
+        },
+        confirmButton = {
+            TextButton(enabled = name.isNotBlank(), onClick = { onConfirm(name.trim()) }) {
+                Text(stringResource(R.string.common_save))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) }
+        },
+    )
+}
+
+@Composable
+private fun PlaylistPickerDialog(
+    playlists: List<Playlist>,
+    onPick: (Playlist) -> Unit,
+    onCreateNew: (String) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var creating by remember { mutableStateOf(false) }
+    var name by remember { mutableStateOf("") }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.action_add_playlist)) },
+        text = {
+            if (creating) {
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text(stringResource(R.string.playlist_name)) },
+                    singleLine = true,
+                )
+            } else if (playlists.isEmpty()) {
+                Text(stringResource(R.string.playlist_empty))
+            } else {
+                Column {
+                    playlists.forEach { p ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onPick(p) }
+                                .padding(vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(p.name, style = MaterialTheme.typography.titleMedium)
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            if (creating) {
+                TextButton(enabled = name.isNotBlank(), onClick = { onCreateNew(name.trim()) }) {
+                    Text(stringResource(R.string.common_save))
+                }
+            } else {
+                TextButton(onClick = { creating = true }) { Text(stringResource(R.string.playlist_new)) }
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = { if (creating) { creating = false } else onDismiss() }) {
+                Text(stringResource(R.string.common_cancel))
+            }
+        },
+    )
 }

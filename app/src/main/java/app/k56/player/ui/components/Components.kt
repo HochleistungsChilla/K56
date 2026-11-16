@@ -211,6 +211,8 @@ fun TrackRow(
     onDownload: (() -> Unit)? = null,
     onPlayNext: (() -> Unit)? = null,
     onAddToQueue: (() -> Unit)? = null,
+    onAddToPlaylist: (() -> Unit)? = null,
+    onRemoveFromPlaylist: (() -> Unit)? = null,
     onLongClick: (() -> Unit)? = null,
     selected: Boolean = false,
 ) {
@@ -304,7 +306,7 @@ fun TrackRow(
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        if (onPlayNext != null || onAddToQueue != null) {
+        if (onPlayNext != null || onAddToQueue != null || onAddToPlaylist != null || onRemoveFromPlaylist != null) {
             Box {
                 IconButton(onClick = { menuOpen = true }) {
                     Icon(
@@ -332,12 +334,30 @@ fun TrackRow(
                             },
                         )
                     }
+                    onAddToPlaylist?.let {
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.action_add_playlist)) },
+                            onClick = {
+                                menuOpen = false
+                                it()
+                            },
+                        )
+                    }
                     if (onDownload != null && !isDownloaded) {
                         DropdownMenuItem(
                             text = { Text(stringResource(R.string.offline_download)) },
                             onClick = {
                                 menuOpen = false
                                 onDownload()
+                            },
+                        )
+                    }
+                    onRemoveFromPlaylist?.let {
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.action_remove_playlist)) },
+                            onClick = {
+                                menuOpen = false
+                                it()
                             },
                         )
                     }

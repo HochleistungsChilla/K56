@@ -116,3 +116,8 @@ data class QuickConnectResultDto(
 data class QuickConnectAuthDto(
     val Secret: String,
 )
+
+@Serializable
+data class PlaylistCreationResultDto(
+    val Id: String = "",
+)

@@ -13,6 +13,8 @@
     <string name="common_hide">Hide</string>
     <string name="common_back">Back</string>
     <string name="common_soon">%1$s · soon</string>
+    <string name="common_add">Add</string>
+    <string name="common_save">Save</string>
 
     <!-- navigation -->
     <string name="nav_home">Home</string>
@@ -56,8 +58,15 @@
     <string name="library_tab_tracks">Tracks</string>
     <string name="library_tab_favorites">Favorites</string>
     <string name="library_tab_genres">Genres</string>
+    <string name="library_tab_playlists">Playlists</string>
     <string name="library_empty_favorites">No favorites yet. Tap the heart on a track.</string>
     <string name="genre_empty">No genres found on this server.</string>
+    <string name="playlist_new">New playlist</string>
+    <string name="playlist_rename">Rename</string>
+    <string name="playlist_delete">Delete</string>
+    <string name="playlist_name">Playlist name</string>
+    <string name="playlist_empty">No playlists yet.</string>
+    <string name="playlist_offline_hint">Playlists require the server to be reachable.</string>
 
     <!-- album / artist -->
     <string name="album_title">Album</string>
@@ -272,6 +281,8 @@
     <string name="action_more">More</string>
     <string name="action_play_next">Play next</string>
     <string name="action_add_queue">Add to queue</string>
+    <string name="action_add_playlist">Add to playlist</string>
+    <string name="action_remove_playlist">Remove from playlist</string>
 
     <string name="selection_count">%1$d selected</string>
     <string name="selection_all">All</string>

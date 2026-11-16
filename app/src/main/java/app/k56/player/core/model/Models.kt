@@ -112,6 +112,13 @@ data class ArtistDetails(
     val appearsOn: List<Album> = emptyList(),
 )
 
+data class Playlist(
+    val id: String,
+    val name: String,
+    val trackCount: Int? = null,
+    val imageUrl: String? = null,
+)
+
 data class SearchResults(
     val albums: List<Album> = emptyList(),
     val artists: List<Artist> = emptyList(),

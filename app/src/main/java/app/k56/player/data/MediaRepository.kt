@@ -8,6 +8,7 @@ import app.k56.player.core.model.BackendKind
 import app.k56.player.core.model.DiscoveredServer
 import app.k56.player.core.model.LibraryView
 import app.k56.player.core.model.PlaybackSource
+import app.k56.player.core.model.Playlist
 import app.k56.player.core.model.SearchResults
 import app.k56.player.core.model.Session
 import app.k56.player.core.model.Track
@@ -95,6 +96,15 @@ interface MediaRepository {
 
     /** Tracks tagged with one genre. */
     suspend fun genreTracks(genre: String): List<Track> = emptyList()
+
+    /** Server-side playlists, newest first is up to the backend. */
+    suspend fun playlists(): List<Playlist> = emptyList()
+    suspend fun playlistTracks(playlistId: String): List<Track> = emptyList()
+    suspend fun createPlaylist(name: String, itemIds: List<String> = emptyList()): Playlist? = null
+    suspend fun renamePlaylist(playlistId: String, name: String): Boolean = false
+    suspend fun deletePlaylist(playlistId: String): Boolean = false
+    suspend fun addToPlaylist(playlistId: String, itemIds: List<String>): Boolean = false
+    suspend fun removeFromPlaylist(playlistId: String, itemIds: List<String>): Boolean = false
 
     /**
      * Every favourite track the server knows, independent of how many songs the

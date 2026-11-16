@@ -10,6 +10,7 @@ import app.k56.player.core.model.BackendKind
 import app.k56.player.core.model.DiscoveredServer
 import app.k56.player.core.model.LibraryView
 import app.k56.player.core.model.PlaybackSource
+import app.k56.player.core.model.Playlist
 import app.k56.player.core.model.SearchResults
 import app.k56.player.core.model.Session
 import app.k56.player.core.model.Track
@@ -429,6 +430,64 @@ class JellyfinRepository(
         .Items.orEmpty()
         .map { it.toTrack() }
 
+    // ------------------------------------------------------------ playlists
+
+    override suspend fun playlists(): List<Playlist> = ensureApi()
+        .items(
+            itemQuery(
+                includeTypes = "Playlist",
+                recursive = true,
+                sortBy = "SortName",
+                sortOrder = "Ascending",
+                limit = 300,
+            ),
+        )
+        .Items.orEmpty()
+        .map { it.toPlaylist() }
+
+    override suspend fun playlistTracks(playlistId: String): List<Track> = ensureApi()
+        .items(
+            itemQuery(
+                parentId = playlistId,
+                includeTypes = "Audio",
+                recursive = false,
+                sortBy = "SortName",
+                sortOrder = "Ascending",
+                limit = 2000,
+            ),
+        )
+        .Items.orEmpty()
+        .map { it.toTrack() }
+
+    override suspend fun createPlaylist(name: String, itemIds: List<String>): Playlist? {
+        val current = requireSession()
+        val ids = itemIds.takeIf { it.isNotEmpty() }?.joinToString(",")
+        val created = ensureApi().createPlaylist(name.trim(), ids, current.userId)
+        if (created.Id.isBlank()) return null
+        return Playlist(id = created.Id, name = name.trim(), trackCount = itemIds.size)
+    }
+
+    override suspend fun renamePlaylist(playlistId: String, name: String): Boolean =
+        runCatching { ensureApi().updatePlaylist(playlistId, name.trim()) }.isSuccess
+
+    override suspend fun deletePlaylist(playlistId: String): Boolean =
+        runCatching { ensureApi().deletePlaylist(playlistId) }.isSuccess
+
+    override suspend fun addToPlaylist(playlistId: String, itemIds: List<String>): Boolean {
+        if (itemIds.isEmpty()) return false
+        val current = requireSession()
+        return runCatching {
+            ensureApi().addPlaylistItems(playlistId, itemIds.joinToString(","), current.userId)
+        }.isSuccess
+    }
+
+    override suspend fun removeFromPlaylist(playlistId: String, itemIds: List<String>): Boolean {
+        if (itemIds.isEmpty()) return false
+        return runCatching {
+            ensureApi().removePlaylistItems(playlistId, itemIds.joinToString(","))
+        }.isSuccess
+    }
+
     override suspend fun songs(parentId: String?, limit: Int): List<Track> = ensureApi()
         .items(
             itemQuery(
@@ -721,6 +780,13 @@ class JellyfinRepository(
             played = UserData?.Played == true,
         )
     }
+
+    private fun BaseItemDto.toPlaylist(): Playlist = Playlist(
+        id = Id,
+        name = Name ?: "Unbenannte Playlist",
+        trackCount = ChildCount,
+        imageUrl = absoluteImageUrl(Id, ImageTags?.get("Primary")),
+    )
 
     private companion object {
         const val TICKS_PER_MILLISECOND = 10_000L
