@@ -25,6 +25,7 @@ import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.Shuffle
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material.icons.rounded.KeyboardArrowUp
@@ -312,6 +313,9 @@ fun HomeScreen(
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
+                    IconButton(onClick = { vm.load() }) {
+                        Icon(Icons.Rounded.Refresh, contentDescription = stringResource(R.string.action_refresh))
+                    }
                     IconButton(onClick = { editOpen = true }) {
                         Icon(Icons.Rounded.Edit, contentDescription = stringResource(R.string.home_edit))
                     }
@@ -325,6 +329,10 @@ fun HomeScreen(
                         .padding(horizontal = 16.dp, vertical = 8.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
+                    AssistChip(
+                        onClick = { onPlay(vm.songs.shuffled(), 0) },
+                        label = { Text(stringResource(R.string.home_shuffle)) },
+                    )
                     AssistChip(
                         onClick = { onPlay(vm.titleMix(), 0) },
                         label = { Text(stringResource(R.string.mix_titles)) },
