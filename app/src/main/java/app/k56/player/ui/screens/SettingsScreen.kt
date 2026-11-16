@@ -15,6 +15,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Logout
+import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.OutlinedTextField
@@ -43,13 +44,15 @@ import app.k56.player.BuildConfig
 import app.k56.player.core.model.BackendKind
 import app.k56.player.core.net.NetworkTransport
 import app.k56.player.data.MediaRepository
+import app.k56.player.data.offline.OfflineStore
 import kotlinx.coroutines.launch
 import app.k56.player.ui.theme.ThemeController
 import app.k56.player.ui.theme.ThemeMode
 
 @Composable
-fun SettingsScreen(repository: MediaRepository) {
+fun SettingsScreen(repository: MediaRepository, offlineStore: OfflineStore) {
     val session by repository.sessionFlow.collectAsStateWithLifecycle()
+    val offlineTracks by offlineStore.tracks.collectAsStateWithLifecycle()
     val forceTranscode by repository.forceTranscode.collectAsStateWithLifecycle()
     val preferExternal by repository.preferExternal.collectAsStateWithLifecycle()
     val networkStatus by repository.networkStatus.collectAsStateWithLifecycle()
@@ -111,6 +114,38 @@ fun SettingsScreen(repository: MediaRepository) {
                     Icon(Icons.Rounded.Edit, contentDescription = null)
                     Spacer(Modifier.width(8.dp))
                     Text(stringResource(R.string.settings_edit_connection))
+                }
+            }
+        }
+
+        Surface(
+            color = MaterialTheme.colorScheme.surfaceContainer,
+            shape = RoundedCornerShape(20.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 14.dp),
+        ) {
+            Column(Modifier.padding(16.dp)) {
+                Text(stringResource(R.string.offline_section), style = MaterialTheme.typography.titleLarge)
+                Spacer(Modifier.height(8.dp))
+                InfoRow(stringResource(R.string.offline_tracks), offlineTracks.size.toString())
+                InfoRow("Speicher", formatBytes(offlineTracks.sumOf { it.bytes }))
+                if (offlineTracks.isEmpty()) {
+                    Text(
+                        stringResource(R.string.offline_empty),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                } else {
+                    Spacer(Modifier.height(10.dp))
+                    OutlinedButton(
+                        onClick = { offlineTracks.map { it.id }.forEach(offlineStore::delete) },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Icon(Icons.Rounded.DeleteOutline, contentDescription = null)
+                        Spacer(Modifier.width(8.dp))
+                        Text(stringResource(R.string.offline_clear))
+                    }
                 }
             }
         }
@@ -270,6 +305,12 @@ fun SettingsScreen(repository: MediaRepository) {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
+}
+
+private fun formatBytes(bytes: Long): String {
+    if (bytes <= 0L) return "0 MB"
+    val mb = bytes / 1048576.0
+    return if (mb >= 1024.0) String.format("%.1f GB", mb / 1024.0) else String.format("%.1f MB", mb)
 }
 
 @Composable

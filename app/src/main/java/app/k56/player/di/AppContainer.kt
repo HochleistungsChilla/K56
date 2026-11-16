@@ -6,6 +6,7 @@ import app.k56.player.data.MediaRepository
 import app.k56.player.data.RepositoryRouter
 import app.k56.player.data.SessionStore
 import app.k56.player.data.SettingsStore
+import app.k56.player.data.offline.OfflineStore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -22,6 +23,7 @@ class AppContainer(context: Context) {
     val settingsStore = SettingsStore(appContext)
     val networkMonitor = NetworkMonitor(appContext)
     val repository: MediaRepository = RepositoryRouter(appContext, sessionStore, settingsStore, networkMonitor)
+    val offlineStore = OfflineStore(appContext)
 
     /** Outlives services; used for best-effort playback reporting. */
     val appScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)

@@ -132,4 +132,12 @@
     <string name="err_username_missing">Benutzername fehlt.</string>
     <string name="err_no_discovery">Kein Jellyfin-Server im Netzwerk gefunden. Adresse manuell eingeben.</string>
     <string name="err_no_media_permission">Ohne Medienzugriff kann K56 keine lokale Musik lesen.</string>
+
+    <string name="offline_download">Herunterladen</string>
+    <string name="offline_download_all">%1$d herunterladen</string>
+    <string name="offline_favorites_status">%1$d von %2$d offline verfügbar</string>
+    <string name="offline_section">Offline</string>
+    <string name="offline_tracks">Titel auf diesem Gerät</string>
+    <string name="offline_clear">Alle Downloads löschen</string>
+    <string name="offline_empty">Noch keine Downloads. In Favoriten Titel herunterladen.</string>
 </resources>

@@ -21,6 +21,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.FavoriteBorder
+import androidx.compose.material.icons.rounded.CloudDownload
+import androidx.compose.material.icons.rounded.DownloadDone
+import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.MusicNote
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
@@ -158,6 +161,11 @@ fun TrackRow(
     showArtwork: Boolean = true,
     isFavorite: Boolean = false,
     onToggleFavorite: (() -> Unit)? = null,
+    /** true: file is on disk and plays without a server. */
+    isDownloaded: Boolean = false,
+    /** 0f..1f while a transfer runs, null otherwise. */
+    downloadProgress: Float? = null,
+    onDownload: (() -> Unit)? = null,
 ) {
     Row(
         modifier = modifier
@@ -203,6 +211,30 @@ fun TrackRow(
             )
         }
         Spacer(Modifier.width(12.dp))
+        if (downloadProgress != null) {
+            CircularProgressIndicator(
+                progress = { downloadProgress },
+                modifier = Modifier.size(22.dp),
+                strokeWidth = 2.dp,
+            )
+            Spacer(Modifier.width(8.dp))
+        } else if (isDownloaded) {
+            Icon(
+                imageVector = Icons.Rounded.DownloadDone,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(20.dp),
+            )
+            Spacer(Modifier.width(8.dp))
+        } else if (onDownload != null) {
+            IconButton(onClick = onDownload) {
+                Icon(
+                    imageVector = Icons.Rounded.Download,
+                    contentDescription = stringResource(R.string.offline_download),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
         if (onToggleFavorite != null) {
             IconButton(onClick = onToggleFavorite) {
                 Icon(

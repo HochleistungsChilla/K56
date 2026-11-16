@@ -6,31 +6,44 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.material3.Button
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import android.widget.Toast
+import kotlinx.coroutines.launch
 import app.k56.player.R
 import app.k56.player.core.model.Album
 import app.k56.player.core.model.Artist
 import app.k56.player.core.model.Track
 import app.k56.player.data.MediaRepository
+import app.k56.player.data.offline.OfflineStore
 import app.k56.player.ui.appViewModel
 import app.k56.player.ui.components.AlbumCard
 import app.k56.player.ui.components.ArtistCard
@@ -107,6 +120,7 @@ class LibraryViewModel(
 @Composable
 fun LibraryScreen(
     repository: MediaRepository,
+    offlineStore: OfflineStore,
     onOpenAlbum: (String) -> Unit,
     onOpenArtist: (String) -> Unit,
     onPlay: (List<Track>, Int) -> Unit,
@@ -114,6 +128,22 @@ fun LibraryScreen(
     val context = LocalContext.current
     val vm = appViewModel { LibraryViewModel(repository, context.applicationContext) }
     var tab by rememberSaveable { mutableIntStateOf(0) }
+    val scope = rememberCoroutineScope()
+    val offline by offlineStore.tracks.collectAsState()
+    val downloads by offlineStore.progress.collectAsState()
+    val downloadedIds = remember(offline) { offline.map { it.id }.toSet() }
+
+    // One track, on demand from a row.
+    val downloadOne: (Track) -> Unit = { track ->
+        scope.launch {
+            try {
+                val source = repository.downloadSource(track)
+                offlineStore.download(track, source.url, repository.playbackHeaders())
+            } catch (e: Exception) {
+                Toast.makeText(context, e.userMessage(context), Toast.LENGTH_LONG).show()
+            }
+        }
+    }
 
     Column(Modifier.fillMaxSize()) {
         TabRow(selectedTabIndex = tab) {
@@ -178,6 +208,9 @@ fun LibraryScreen(
                         index = index + 1,
                         isFavorite = track.isFavorite,
                         onToggleFavorite = { vm.toggleTrackFavorite(track) },
+                        isDownloaded = track.id in downloadedIds,
+                        downloadProgress = downloads[track.id],
+                        onDownload = { downloadOne(track) },
                     )
                 }
             }
@@ -191,20 +224,63 @@ fun LibraryScreen(
                         modifier = Modifier.weight(1f),
                     )
                 } else {
-                    LazyColumn(
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxWidth(),
-                        contentPadding = PaddingValues(bottom = 20.dp),
-                    ) {
-                        itemsIndexed(favorites, key = { _, track -> track.id }) { index, track ->
-                            TrackRow(
-                                track = track,
-                                onClick = { onPlay(favorites, index) },
-                                index = index + 1,
-                                isFavorite = true,
-                                onToggleFavorite = { vm.toggleTrackFavorite(track) },
+                    val missing = favorites.count { it.id !in downloadedIds }
+                    Column(Modifier.weight(1f)) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                text = stringResource(
+                                    R.string.offline_favorites_status,
+                                    downloadedIds.count { id -> favorites.any { it.id == id } },
+                                    favorites.size,
+                                ),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.weight(1f),
                             )
+                            if (missing > 0) {
+                                Button(
+                                    onClick = {
+                                        scope.launch {
+                                            favorites.filter { it.id !in downloadedIds }.forEach { track ->
+                                                try {
+                                                    val source = repository.downloadSource(track)
+                                                    offlineStore.download(track, source.url, repository.playbackHeaders())
+                                                } catch (_: Exception) {
+                                                    // keep going; a single bad file must not stop the batch
+                                                }
+                                            }
+                                        }
+                                    },
+                                ) {
+                                    Text(stringResource(R.string.offline_download_all, missing))
+                                }
+                            }
+                        }
+                        LazyColumn(
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxWidth(),
+                            contentPadding = PaddingValues(bottom = 20.dp),
+                        ) {
+                            itemsIndexed(favorites, key = { _, track -> track.id }) { index, track ->
+                                TrackRow(
+                                    track = track,
+                                    onClick = { onPlay(favorites, index) },
+                                    index = index + 1,
+                                    isFavorite = true,
+                                    onToggleFavorite = { vm.toggleTrackFavorite(track) },
+                                    isDownloaded = track.id in downloadedIds,
+                                    downloadProgress = downloads[track.id],
+                                    onDownload = if (track.id in downloadedIds) null else {
+                                        { downloadOne(track) }
+                                    },
+                                )
+                            }
                         }
                     }
                 }

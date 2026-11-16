@@ -28,6 +28,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import app.k56.player.core.model.PlaybackSource
 import app.k56.player.core.model.Track
 import app.k56.player.R
 import app.k56.player.data.MediaRepository
@@ -78,6 +79,14 @@ private fun MainShell(container: AppContainer) {
         if (active != null && tracks.isNotEmpty()) {
             scope.launch {
                 val items = tracks.mapNotNull { track ->
+                    val offline = container.offlineStore.find(track.id)
+                    if (offline != null) {
+                        // Already on disk: no server round-trip, works without a network.
+                        return@mapNotNull PlaybackQueue.mediaItem(
+                            track,
+                            PlaybackSource(url = offline.uri(context).toString(), mimeType = null, transcoded = false),
+                        )
+                    }
                     val source = try {
                         repository.playbackSource(track)
                     } catch (_: Exception) {
@@ -149,6 +158,7 @@ private fun MainShell(container: AppContainer) {
             composable("library") {
                 LibraryScreen(
                     repository = repository,
+                    offlineStore = container.offlineStore,
                     onOpenAlbum = { navController.navigate("album/$it") },
                     onOpenArtist = { navController.navigate("artist/$it") },
                     onPlay = playTracks,
@@ -163,7 +173,7 @@ private fun MainShell(container: AppContainer) {
                 )
             }
             composable("settings") {
-                SettingsScreen(repository)
+                SettingsScreen(repository, container.offlineStore)
             }
             composable(
                 route = "album/{albumId}",

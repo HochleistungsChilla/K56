@@ -148,6 +148,8 @@ class RepositoryRouter(
 
     override suspend fun playbackSource(track: Track): PlaybackSource = delegate().playbackSource(track)
 
+    override suspend fun downloadSource(track: Track): PlaybackSource = delegate().downloadSource(track)
+
     override fun playbackHeaders(): Map<String, String> =
         delegateOrNull()?.playbackHeaders().orEmpty()
 

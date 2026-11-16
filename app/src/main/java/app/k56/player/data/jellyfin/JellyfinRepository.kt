@@ -404,6 +404,16 @@ class JellyfinRepository(
         }
     }
 
+    /** Always the untouched original file, so the download is not a live HLS session. */
+    override suspend fun downloadSource(track: Track): PlaybackSource {
+        val current = session ?: throw NotAuthenticatedException()
+        val base = baseUrl().ifBlank { current.serverUrl }
+        val url = "${base}Audio/${track.id}/stream" +
+            "?static=true&MediaSourceId=${track.id}" +
+            "&DeviceId=${current.deviceId}&api_key=${current.token}"
+        return PlaybackSource(url = url, mimeType = null, transcoded = false)
+    }
+
     override suspend fun reportPlaybackStart(itemId: String, playSessionId: String, positionTicks: Long) {
         ensureApi().reportPlaybackStart(
             PlaybackReportDto(

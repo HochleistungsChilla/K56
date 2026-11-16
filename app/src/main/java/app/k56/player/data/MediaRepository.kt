@@ -76,6 +76,13 @@ interface MediaRepository {
 
     suspend fun playbackSource(track: Track): PlaybackSource
 
+    /**
+     * A URL suitable for storing on disk: always the original file, never a
+     * live transcoding session. Backends that cannot offer this fall back to
+     * [playbackSource].
+     */
+    suspend fun downloadSource(track: Track): PlaybackSource = playbackSource(track)
+
     /** Extra HTTP headers required by the active backend (e.g. WebDAV basic auth). */
     fun playbackHeaders(): Map<String, String> = emptyMap()
 
