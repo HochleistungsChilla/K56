@@ -354,4 +354,5 @@
     <string name="home_random_artists">Zufällige Interpreten</string>
     <string name="home_random_songs">Zufällige Titel</string>
     <string name="library_loaded_count">%1$d von %2$d geladen</string>
+    <string name="library_offline_copy">Offline — Kopie am Gerät, Stand %1$s</string>
 </resources>

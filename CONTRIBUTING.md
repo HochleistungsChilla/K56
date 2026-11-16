@@ -1,9 +1,9 @@
 # Contributing
 
-K56 is a cleanroom project. Ideas, protocols and public API documentation are
-fair game; **other people's code, assets and trademarks are not**. By
-contributing you confirm that your work is your own or comes from a source that
-permits it.
+K56 is an independent project, inspired by Symfonium, YouTube Music and
+ViPER4Android/JamesDSP. Ideas, protocols and public API documentation are fair
+game; **other people's code, assets and trademarks are not**. By contributing
+you confirm that your work is your own or comes from a source that permits it.
 
 ## Building
 

@@ -75,6 +75,7 @@ import app.k56.player.core.net.NetworkTransport
 import app.k56.player.data.MediaRepository
 import app.k56.player.data.SettingsStore
 import app.k56.player.data.offline.OfflineStore
+import app.k56.player.data.library.LibraryDb
 import app.k56.player.ui.appViewModel
 import app.k56.player.ui.components.AlbumCard
 import app.k56.player.ui.components.ArtistCard
@@ -124,6 +125,12 @@ class LibraryViewModel(
         private set
     var error by mutableStateOf<String?>(null)
         private set
+    /** True when the lists come from the on-device copy instead of the server. */
+    var offlineCopy by mutableStateOf(false)
+        private set
+
+    private val libraryDb = LibraryDb.get(appContext)
+    val indexLastSync: Long get() = libraryDb.lastSync()
 
     init {
         load()
@@ -315,9 +322,21 @@ class LibraryViewModel(
                     genres = genresJob.await()
                     playlists = playlistsJob.await()
                     counts = countsJob.await()
+                    offlineCopy = false
                 }
             } catch (e: Exception) {
-                error = e.userMessage(appContext)
+                val cachedSongs = libraryDb.allTracks()
+                if (cachedSongs.isNotEmpty()) {
+                    albums = libraryDb.allAlbums()
+                    artists = libraryDb.allArtists()
+                    songs = cachedSongs
+                    genres = libraryDb.allGenres()
+                    counts = libraryDb.counts()
+                    offlineCopy = true
+                    error = null
+                } else {
+                    error = e.userMessage(appContext)
+                }
             } finally {
                 loading = false
             }
@@ -466,6 +485,27 @@ fun LibraryScreen(
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+            )
+        }
+
+        if (!vm.loading && vm.offlineCopy) {
+            val lastSync = remember(vm.indexLastSync) {
+                if (vm.indexLastSync > 0) {
+                    java.text.DateFormat
+                        .getDateTimeInstance(
+                            java.text.DateFormat.SHORT,
+                            java.text.DateFormat.SHORT,
+                        )
+                        .format(java.util.Date(vm.indexLastSync))
+                } else {
+                    "—"
+                }
+            }
+            Text(
+                text = stringResource(R.string.library_offline_copy, lastSync),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 2.dp),
             )
         }
 

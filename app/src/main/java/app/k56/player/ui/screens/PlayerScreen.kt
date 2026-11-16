@@ -19,10 +19,12 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.FavoriteBorder
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
+import androidx.compose.material.icons.rounded.KeyboardArrowUp
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.QueueMusic
@@ -41,6 +43,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.Surface
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -362,14 +365,66 @@ fun PlayerScreen(
 
         Spacer(Modifier.height(10.dp))
 
-        if (showQueue) {
-            OutlinedButton(
-                onClick = { showQueue = true },
-                modifier = Modifier.fillMaxWidth(),
+        val queueCount = controller?.mediaItemCount ?: 0
+        if (queueCount > 0) {
+            val nextIndex = (controller?.currentMediaItemIndex ?: -1) + 1
+            val nextTitle = if (nextIndex in 0 until queueCount) {
+                controller?.getMediaItemAt(nextIndex)?.mediaMetadata?.title?.toString().orEmpty()
+            } else {
+                ""
+            }
+            var dragAccum by remember { mutableStateOf(0f) }
+            Surface(
+                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                shape = RoundedCornerShape(topStart = 14.dp, topEnd = 14.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .pointerInput(queueCount, nextTitle) {
+                        detectVerticalDragGestures(
+                            onDragStart = { dragAccum = 0f },
+                            onVerticalDrag = { _, delta ->
+                                dragAccum += delta
+                                if (dragAccum < -44f) {
+                                    showQueue = true
+                                    dragAccum = 0f
+                                }
+                            },
+                        )
+                    }
+                    .clickable { showQueue = true },
             ) {
-                Icon(Icons.Rounded.QueueMusic, contentDescription = null)
-                Spacer(Modifier.width(8.dp))
-                Text(stringResource(R.string.player_queue_count, controller?.mediaItemCount ?: 0))
+                Row(
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.QueueMusic,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(18.dp),
+                    )
+                    Spacer(Modifier.width(10.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            text = stringResource(R.string.player_queue_up_next),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Text(
+                            text = nextTitle.ifBlank {
+                                stringResource(R.string.player_queue_count, queueCount)
+                            },
+                            style = MaterialTheme.typography.bodyMedium,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                    Icon(
+                        imageVector = Icons.Rounded.KeyboardArrowUp,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
 
             Spacer(Modifier.height(6.dp))
@@ -457,7 +512,14 @@ fun PlayerScreen(
         ModalBottomSheet(onDismissRequest = { showQueue = false }) {
             val count = controller?.mediaItemCount ?: 0
             val currentIndex = controller?.currentMediaItemIndex ?: -1
+            val listState = rememberLazyListState()
+            LaunchedEffect(currentIndex, count) {
+                if (currentIndex >= 0) {
+                    listState.scrollToItem((currentIndex + 1).coerceAtMost(count))
+                }
+            }
             LazyColumn(
+                state = listState,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 24.dp),
@@ -466,12 +528,42 @@ fun PlayerScreen(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(end = 16.dp),
+                            .padding(start = 20.dp, end = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        SectionHeader(stringResource(R.string.player_queue), modifier = Modifier.weight(1f))
+                        Column(Modifier.weight(1f)) {
+                            Text(
+                                text = stringResource(R.string.player_queue),
+                                style = MaterialTheme.typography.titleMedium,
+                            )
+                            Text(
+                                text = stringResource(R.string.player_queue_count, count),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        IconButton(onClick = {
+                            controller?.shuffleModeEnabled =
+                                !(controller?.shuffleModeEnabled ?: false)
+                        }) {
+                            Icon(
+                                imageVector = Icons.Rounded.Shuffle,
+                                contentDescription = stringResource(R.string.player_shuffle),
+                                tint = if (controller?.shuffleModeEnabled == true) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                                },
+                            )
+                        }
                         TextButton(onClick = { onClearQueue(); showQueue = false }, enabled = count > 0) {
                             Text(stringResource(R.string.queue_clear))
+                        }
+                        IconButton(onClick = { showQueue = false }) {
+                            Icon(
+                                imageVector = Icons.Rounded.KeyboardArrowDown,
+                                contentDescription = stringResource(R.string.player_queue),
+                            )
                         }
                     }
                 }
@@ -480,6 +572,13 @@ fun PlayerScreen(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
+                            .background(
+                                if (index == currentIndex) {
+                                    MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.30f)
+                                } else {
+                                    Color.Transparent
+                                },
+                            )
                             .clickable {
                                 controller?.seekTo(index, 0L)
                                 showQueue = false
@@ -512,6 +611,13 @@ fun PlayerScreen(
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                             )
+                            if (index == currentIndex) {
+                                Text(
+                                    text = stringResource(R.string.player_queue_now_playing),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.primary,
+                                )
+                            }
                         }
                         IconButton(
                             onClick = { onMoveQueueItem(index, index - 1) },

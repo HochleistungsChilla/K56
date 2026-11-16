@@ -3,9 +3,12 @@
 [![Android](https://github.com/HochleistungsChilla/K56/actions/workflows/android.yml/badge.svg)](https://github.com/HochleistungsChilla/K56/actions/workflows/android.yml)
 [![License: GPL-3.0-or-later](https://img.shields.io/badge/license-GPL--3.0--orlater-blue.svg)](LICENSE)
 
-An open-source Android music player built as a **cleanroom implementation**
-with a multi-backend architecture. No code, artwork or trademarks from
-Symfonium were used.
+An open-source Android music player with a multi-backend architecture.
+
+K56 is an **independent implementation**. Its interface and feature set are
+inspired by [Symfonium](https://symfonium.app), YouTube Music and
+ViPER4Android/JamesDSP. No code, artwork or trademarks were taken from those
+projects.
 
 **Status:** 0.1.0 — a working multi-server client with library, search,
 background playback and LAN/WAN routing.
@@ -126,9 +129,13 @@ strings in code.
 
 ## Legal
 
-K56 is an independent reimplementation of publicly documented interfaces. The
-process is documented in [docs/CLEANROOM.md](docs/CLEANROOM.md). “Symfonium”
-is a trademark of its respective owner; this project is not affiliated with it.
+K56 is an independent project. Interfaces and protocols are implemented from
+public documentation; the interface and feature set are inspired by Symfonium,
+YouTube Music and ViPER4Android/JamesDSP. No source code, assets or marks were
+copied. The working method is documented in
+[docs/CLEANROOM.md](docs/CLEANROOM.md). “Symfonium”, “YouTube Music”,
+“ViPER4Android” and “JamesDSP” are trademarks of their respective owners; this
+project is not affiliated with any of them.
 
 ## Contributing
 

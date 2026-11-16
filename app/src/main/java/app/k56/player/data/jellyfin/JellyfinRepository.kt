@@ -558,6 +558,25 @@ class JellyfinRepository(
             .map { it.toTrack() }
     }
 
+    override suspend fun songsPage(
+        parentId: String?,
+        startIndex: Int,
+        limit: Int,
+    ): List<Track> = ensureApi()
+        .items(
+            itemQuery(
+                parentId = parentId,
+                includeTypes = "Audio",
+                recursive = true,
+                sortBy = "SortName",
+                sortOrder = "Ascending",
+                limit = limit,
+                startIndex = startIndex,
+            ),
+        )
+        .Items.orEmpty()
+        .map { it.toTrack() }
+
     override suspend fun instantMix(seedIds: List<String>, limit: Int): List<Track> {
         if (seedIds.isEmpty()) return emptyList()
         val api = ensureApi()

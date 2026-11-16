@@ -77,6 +77,13 @@ interface MediaRepository {
     suspend fun songs(parentId: String?, limit: Int = 500): List<Track>
 
     /**
+     * One page of tracks, used by the offline library sync. Backends without
+     * offset support answer only the first page, so the index stops there.
+     */
+    suspend fun songsPage(parentId: String?, startIndex: Int, limit: Int): List<Track> =
+        if (startIndex == 0) songs(parentId, limit) else emptyList()
+
+    /**
      * Other albums by the same album artist. Backends without an artist filter
      * fall back to filtering the full album list locally.
      */

@@ -1,7 +1,8 @@
-# Cleanroom process
+# Independent implementation — working method
 
-Goal: a functionally comparable music player built **without taking over source
-code, resources or protected marks**.
+Goal: a functionally comparable music player, built **without taking over
+source code, resources or protected marks**. The interface and feature set are
+inspired by Symfonium, YouTube Music and ViPER4Android/JamesDSP.
 
 ## Separation
 

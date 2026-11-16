@@ -151,6 +151,13 @@ private fun MainShell(container: AppContainer) {
         if (autoCacheFavorites) container.favoriteCache.sync()
     }
 
+    // Refresh the offline library copy when it is missing or a day old.
+    LaunchedEffect(Unit) {
+        runCatching {
+            if (container.librarySync.isStale()) container.librarySync.sync()
+        }
+    }
+
     val playTracks: (List<Track>, Int) -> Unit = { tracks, index ->
         val active = controller
         if (active != null && tracks.isNotEmpty()) {
