@@ -24,18 +24,25 @@ import androidx.compose.material.icons.rounded.FavoriteBorder
 import androidx.compose.material.icons.rounded.CloudDownload
 import androidx.compose.material.icons.rounded.DownloadDone
 import androidx.compose.material.icons.rounded.Download
+import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.MusicNote
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.SkipNext
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -166,7 +173,10 @@ fun TrackRow(
     /** 0f..1f while a transfer runs, null otherwise. */
     downloadProgress: Float? = null,
     onDownload: (() -> Unit)? = null,
+    onPlayNext: (() -> Unit)? = null,
+    onAddToQueue: (() -> Unit)? = null,
 ) {
+    var menuOpen by remember { mutableStateOf(false) }
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -250,6 +260,46 @@ fun TrackRow(
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+        if (onPlayNext != null || onAddToQueue != null) {
+            Box {
+                IconButton(onClick = { menuOpen = true }) {
+                    Icon(
+                        Icons.Rounded.MoreVert,
+                        contentDescription = stringResource(R.string.action_more),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                    onPlayNext?.let {
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.action_play_next)) },
+                            onClick = {
+                                menuOpen = false
+                                it()
+                            },
+                        )
+                    }
+                    onAddToQueue?.let {
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.action_add_queue)) },
+                            onClick = {
+                                menuOpen = false
+                                it()
+                            },
+                        )
+                    }
+                    if (onDownload != null && !isDownloaded) {
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.offline_download)) },
+                            onClick = {
+                                menuOpen = false
+                                onDownload()
+                            },
+                        )
+                    }
+                }
+            }
+        }
     }
 }
 

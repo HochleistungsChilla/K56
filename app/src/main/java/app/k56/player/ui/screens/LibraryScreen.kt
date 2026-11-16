@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.Button
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Tab
@@ -144,10 +145,14 @@ fun LibraryScreen(
     onOpenAlbum: (String) -> Unit,
     onOpenArtist: (String) -> Unit,
     onPlay: (List<Track>, Int) -> Unit,
+    onPlayNext: (Track) -> Unit = {},
+    onAddToQueue: (Track) -> Unit = {},
 ) {
     val context = LocalContext.current
     val vm = appViewModel { LibraryViewModel(repository, context.applicationContext) }
     var tab by rememberSaveable { mutableIntStateOf(0) }
+    var sortMode by rememberSaveable { mutableIntStateOf(0) }
+    var onlyOffline by rememberSaveable { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val offline by offlineStore.tracks.collectAsState()
     val downloads by offlineStore.progress.collectAsState()
@@ -177,6 +182,32 @@ fun LibraryScreen(
                     selected = tab == index,
                     onClick = { tab = index },
                     text = { Text(label) },
+                )
+            }
+        }
+
+        if (tab >= 2) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 6.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                FilterChip(
+                    selected = sortMode == 0,
+                    onClick = { sortMode = 0 },
+                    label = { Text(stringResource(R.string.sort_title)) },
+                )
+                FilterChip(
+                    selected = sortMode == 1,
+                    onClick = { sortMode = 1 },
+                    label = { Text(stringResource(R.string.sort_artist)) },
+                )
+                FilterChip(
+                    selected = onlyOffline,
+                    onClick = { onlyOffline = !onlyOffline },
+                    label = { Text(stringResource(R.string.filter_offline)) },
                 )
             }
         }
@@ -215,28 +246,43 @@ fun LibraryScreen(
                 }
             }
 
-            tab == 2 -> LazyColumn(
+            tab == 2 -> run {
+                val songs = vm.songs
+                    .filter { !onlyOffline || it.id in downloadedIds }
+                    .let { list ->
+                        if (sortMode == 0) list.sortedBy { it.title.lowercase() }
+                        else list.sortedBy { (it.artistName ?: "").lowercase() }
+                    }
+                LazyColumn(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth(),
                 contentPadding = PaddingValues(bottom = 20.dp),
             ) {
-                itemsIndexed(vm.songs, key = { _, track -> track.id }) { index, track ->
-                    TrackRow(
-                        track = track,
-                        onClick = { onPlay(vm.songs, index) },
-                        index = index + 1,
-                        isFavorite = track.isFavorite,
-                        onToggleFavorite = { vm.toggleTrackFavorite(track) },
-                        isDownloaded = track.id in downloadedIds,
-                        downloadProgress = downloads[track.id],
-                        onDownload = { downloadOne(track) },
-                    )
+                    itemsIndexed(songs, key = { _, track -> track.id }) { index, track ->
+                        TrackRow(
+                            track = track,
+                            onClick = { onPlay(songs, index) },
+                            index = index + 1,
+                            isFavorite = track.isFavorite,
+                            onToggleFavorite = { vm.toggleTrackFavorite(track) },
+                            isDownloaded = track.id in downloadedIds,
+                            downloadProgress = downloads[track.id],
+                            onDownload = if (track.id in downloadedIds) null else { { downloadOne(track) } },
+                            onPlayNext = { onPlayNext(track) },
+                            onAddToQueue = { onAddToQueue(track) },
+                        )
+                    }
                 }
             }
 
             else -> {
                 val favorites = vm.favorites
+                    .filter { !onlyOffline || it.id in downloadedIds }
+                    .let { list ->
+                        if (sortMode == 0) list.sortedBy { it.title.lowercase() }
+                        else list.sortedBy { (it.artistName ?: "").lowercase() }
+                    }
                 if (favorites.isEmpty()) {
                     EmptyState(
                         title = stringResource(R.string.library_tab_favorites),
@@ -320,6 +366,8 @@ fun LibraryScreen(
                                     onDownload = if (track.id in downloadedIds) null else {
                                         { downloadOne(track) }
                                     },
+                                    onPlayNext = { onPlayNext(track) },
+                                    onAddToQueue = { onAddToQueue(track) },
                                 )
                             }
                         }

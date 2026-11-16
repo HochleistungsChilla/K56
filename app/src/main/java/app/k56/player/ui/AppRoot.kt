@@ -28,6 +28,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import androidx.media3.common.MediaItem
 import app.k56.player.core.model.PlaybackSource
 import app.k56.player.core.model.Track
 import app.k56.player.R
@@ -106,6 +107,38 @@ private fun MainShell(container: AppContainer) {
         }
     }
 
+    suspend fun resolveItem(track: Track): MediaItem? {
+        val offline = container.offlineStore.find(track.id)
+        if (offline != null) {
+            return PlaybackQueue.mediaItem(
+                track,
+                PlaybackSource(url = offline.uri(context).toString(), mimeType = null, transcoded = false),
+            )
+        }
+        val source = runCatching { repository.playbackSource(track) }.getOrNull() ?: return null
+        return PlaybackQueue.mediaItem(track, source)
+    }
+
+    val playNext: (Track) -> Unit = { track ->
+        val active = controller
+        if (active != null) {
+            scope.launch {
+                resolveItem(track)?.let { item ->
+                    val index = (active.currentMediaItemIndex + 1)
+                        .coerceAtMost(active.mediaItemCount.coerceAtLeast(0))
+                    active.addMediaItem(index, item)
+                }
+            }
+        }
+    }
+
+    val addToQueue: (Track) -> Unit = { track ->
+        val active = controller
+        if (active != null) {
+            scope.launch { resolveItem(track)?.let { active.addMediaItem(it) } }
+        }
+    }
+
     Scaffold(
         bottomBar = {
             if (showBars) {
@@ -164,6 +197,8 @@ private fun MainShell(container: AppContainer) {
                     onOpenAlbum = { navController.navigate("album/$it") },
                     onOpenArtist = { navController.navigate("artist/$it") },
                     onPlay = playTracks,
+                    onPlayNext = playNext,
+                    onAddToQueue = addToQueue,
                 )
             }
             composable("cache") {

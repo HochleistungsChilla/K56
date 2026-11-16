@@ -237,4 +237,11 @@
 
     <string name="autoplay_title">Endless autoplay</string>
     <string name="autoplay_body">Keeps going with similar tracks in the same direction — not random.</string>
+
+    <string name="sort_title">Title</string>
+    <string name="sort_artist">Artist</string>
+    <string name="filter_offline">Only downloads</string>
+    <string name="action_more">More</string>
+    <string name="action_play_next">Play next</string>
+    <string name="action_add_queue">Add to queue</string>
 </resources>
