@@ -72,6 +72,13 @@ interface MediaRepository {
     suspend fun songs(parentId: String?, limit: Int = 500): List<Track>
 
     /**
+     * Other albums by the same album artist. Backends without an artist filter
+     * fall back to filtering the full album list locally.
+     */
+    suspend fun albumsByArtist(artistId: String, limit: Int = 100): List<Album> =
+        albums(null, limit = 2000).filter { it.artistId == artistId }.take(limit)
+
+    /**
      * Every favourite track the server knows, independent of how many songs the
      * library list happens to load. Backends without a filter fall back to
      * filtering [songs].

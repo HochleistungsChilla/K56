@@ -72,6 +72,8 @@ data class Album(
     val imageUrl: String?,
     val trackCount: Int?,
     val isFavorite: Boolean = false,
+    val overview: String? = null,
+    val genres: List<String> = emptyList(),
 )
 
 data class Artist(

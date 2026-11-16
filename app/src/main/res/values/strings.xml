@@ -60,6 +60,8 @@
     <!-- album / artist -->
     <string name="album_title">Album</string>
     <string name="artist_title">Artist</string>
+    <string name="album_about">About</string>
+    <string name="album_more_from_artist">More from artist</string>
 
     <!-- search -->
     <string name="search_hint">Tracks, albums, artists</string>

@@ -397,6 +397,7 @@ private fun MainShell(container: AppContainer) {
                     albumId = entry.arguments?.getString("albumId").orEmpty(),
                     onBack = { navController.popBackStack() },
                     onOpenArtist = { navController.navigate("artist/$it") },
+                    onOpenAlbum = { navController.navigate("album/$it") },
                     onPlay = playTracks,
                 )
             }

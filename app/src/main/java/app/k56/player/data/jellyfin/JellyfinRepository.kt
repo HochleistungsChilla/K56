@@ -318,6 +318,20 @@ class JellyfinRepository(
         return AlbumDetails(album.toAlbum(), tracks)
     }
 
+    override suspend fun albumsByArtist(artistId: String, limit: Int): List<Album> = ensureApi()
+        .items(
+            itemQuery(
+                includeTypes = "MusicAlbum",
+                recursive = true,
+                sortBy = "ProductionYear,SortName",
+                sortOrder = "Ascending",
+                albumArtistIds = artistId,
+                limit = limit,
+            ),
+        )
+        .Items.orEmpty()
+        .map { it.toAlbum() }
+
     override suspend fun artistDetails(artistId: String): ArtistDetails {
         val current = requireSession()
         val api = ensureApi()
@@ -595,6 +609,8 @@ class JellyfinRepository(
         imageUrl = absoluteImageUrl(Id, ImageTags?.get("Primary")),
         trackCount = ChildCount,
         isFavorite = UserData?.IsFavorite == true,
+        overview = Overview?.takeIf { it.isNotBlank() },
+        genres = Genres.orEmpty(),
     )
 
     private fun BaseItemDto.toArtist(): Artist = Artist(

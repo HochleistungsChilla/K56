@@ -53,6 +53,8 @@
 
     <string name="album_title">Album</string>
     <string name="artist_title">Interpret</string>
+    <string name="album_about">Über dieses Album</string>
+    <string name="album_more_from_artist">Mehr vom Interpreten</string>
 
     <string name="search_hint">Titel, Alben, Interpreten</string>
     <string name="search_no_results">Keine Treffer für „%1$s“.</string>

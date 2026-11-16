@@ -2,6 +2,7 @@ package app.k56.player.ui.screens
 
 import android.content.Context
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
@@ -12,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -19,6 +21,7 @@ import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -35,16 +38,21 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.k56.player.R
+import app.k56.player.core.model.Album
 import app.k56.player.core.model.AlbumDetails
 import app.k56.player.core.model.Track
 import app.k56.player.data.MediaRepository
 import app.k56.player.ui.appViewModel
 import app.k56.player.ui.components.Artwork
 import app.k56.player.ui.components.ErrorState
+import app.k56.player.ui.components.HorizontalAlbumRow
 import app.k56.player.ui.components.LoadingState
 import app.k56.player.ui.components.ScreenHeader
+import app.k56.player.ui.components.SectionHeader
 import app.k56.player.ui.components.TrackRow
 import app.k56.player.ui.userMessage
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
 class AlbumViewModel(
@@ -54,6 +62,8 @@ class AlbumViewModel(
 ) : ViewModel() {
 
     var details by mutableStateOf<AlbumDetails?>(null)
+        private set
+    var moreFromArtist by mutableStateOf<List<Album>>(emptyList())
         private set
     var loading by mutableStateOf(true)
         private set
@@ -69,7 +79,16 @@ class AlbumViewModel(
         error = null
         viewModelScope.launch {
             try {
-                details = repository.albumDetails(albumId)
+                val loaded = coroutineScope {
+                    val detailsDeferred = async { repository.albumDetails(albumId) }
+                    val artistId = runCatching { detailsDeferred.await() }
+                        .getOrNull()?.album?.artistId
+                    val moreDeferred = artistId?.let { async { repository.albumsByArtist(it) } }
+                    detailsDeferred.await() to (moreDeferred?.await() ?: emptyList())
+                }
+                details = loaded.first
+                moreFromArtist = loaded.second
+                    .filter { it.id != loaded.first.album.id }
             } catch (e: Exception) {
                 error = e.userMessage(appContext)
             } finally {
@@ -85,6 +104,7 @@ fun AlbumScreen(
     albumId: String,
     onBack: () -> Unit,
     onOpenArtist: (String) -> Unit,
+    onOpenAlbum: (String) -> Unit,
     onPlay: (List<Track>, Int) -> Unit,
 ) {
     val context = LocalContext.current
@@ -115,12 +135,73 @@ fun AlbumScreen(
                         },
                     )
                 }
+                val overview = details.album.overview
+                val genres = details.album.genres
+                if (!overview.isNullOrBlank() || genres.isNotEmpty()) {
+                    item {
+                        AboutSection(
+                            overview = overview?.takeIf { it.isNotBlank() },
+                            genres = genres,
+                        )
+                    }
+                }
                 itemsIndexed(details.tracks, key = { _, track -> track.id }) { index, track ->
                     TrackRow(
                         track = track,
                         onClick = { onPlay(details.tracks, index) },
                         index = index + 1,
                     )
+                }
+                if (vm.moreFromArtist.isNotEmpty()) {
+                    item {
+                        Spacer(Modifier.height(8.dp))
+                        SectionHeader(stringResource(R.string.album_more_from_artist))
+                        HorizontalAlbumRow(
+                            albums = vm.moreFromArtist,
+                            onOpenAlbum = onOpenAlbum,
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun AboutSection(
+    overview: String?,
+    genres: List<String>,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 24.dp, vertical = 8.dp),
+    ) {
+        SectionHeader(stringResource(R.string.album_about))
+        if (!overview.isNullOrBlank()) {
+            Text(
+                text = overview,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        if (genres.isNotEmpty()) {
+            Spacer(Modifier.height(8.dp))
+            androidx.compose.foundation.lazy.LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                items(genres.size, key = { genres[it] }) { index ->
+                    Surface(
+                        shape = RoundedCornerShape(16.dp),
+                        color = MaterialTheme.colorScheme.secondaryContainer,
+                    ) {
+                        Text(
+                            text = genres[index],
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                        )
+                    }
                 }
             }
         }
