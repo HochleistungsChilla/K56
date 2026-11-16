@@ -266,6 +266,11 @@
     <string name="display_subtitle_body">Zeigt Interpret und Album unter jedem Titel.</string>
     <string name="display_item_count">Anzahl anzeigen</string>
     <string name="display_item_count_body">Zeigt die Anzahl der Einträge in jeder Liste.</string>
+    <string name="orientation_title">Bildschirm-Ausrichtung</string>
+    <string name="orientation_auto">Auto</string>
+    <string name="orientation_portrait">Hochformat</string>
+    <string name="orientation_landscape">Querformat</string>
+    <string name="grid_spacing_title">Rasterabstand</string>
 
     <string name="np_options_title">Jetzt läuft</string>
     <string name="np_hide_favorite">Favorit-Button zeigen</string>

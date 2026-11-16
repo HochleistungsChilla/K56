@@ -46,6 +46,7 @@ import app.k56.player.core.net.NetworkTransport
 import app.k56.player.data.MediaRepository
 import app.k56.player.data.DownloadFormat
 import app.k56.player.data.DownloadQuality
+import app.k56.player.data.ScreenOrientation
 import app.k56.player.data.SettingsStore
 import app.k56.player.data.StorageLocation
 import app.k56.player.data.offline.OfflineStore
@@ -77,6 +78,8 @@ fun SettingsScreen(
     val showTrackNumbers by settingsStore.showTrackNumbers.collectAsStateWithLifecycle()
     val showTrackSubtitle by settingsStore.showTrackSubtitle.collectAsStateWithLifecycle()
     val showItemCount by settingsStore.showItemCount.collectAsStateWithLifecycle()
+    val screenOrientation by settingsStore.screenOrientation.collectAsStateWithLifecycle()
+    val gridSpacing by settingsStore.gridSpacing.collectAsStateWithLifecycle()
     val libraryColumns by settingsStore.libraryColumns.collectAsStateWithLifecycle()
     val wifiOnlyDownloads by settingsStore.wifiOnlyDownloads.collectAsStateWithLifecycle()
     val autoCacheFavorites by settingsStore.autoCacheFavorites.collectAsStateWithLifecycle()
@@ -604,6 +607,30 @@ fun SettingsScreen(
                         )
                     }
                 }
+                Spacer(Modifier.height(10.dp))
+                Text(stringResource(R.string.orientation_title), style = MaterialTheme.typography.titleMedium)
+                Spacer(Modifier.height(4.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    ScreenOrientation.entries.forEach { entry ->
+                        FilterChip(
+                            selected = screenOrientation == entry,
+                            onClick = { settingsStore.setScreenOrientation(entry) },
+                            label = { Text(stringResource(orientationLabel(entry))) },
+                        )
+                    }
+                }
+                Spacer(Modifier.height(10.dp))
+                Text(stringResource(R.string.grid_spacing_title), style = MaterialTheme.typography.titleMedium)
+                Spacer(Modifier.height(4.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf(4, 8, 12, 16).forEach { value ->
+                        FilterChip(
+                            selected = gridSpacing == value,
+                            onClick = { settingsStore.setGridSpacing(value) },
+                            label = { Text("$value dp") },
+                        )
+                    }
+                }
             }
         }
 
@@ -853,6 +880,12 @@ private fun themeLabel(mode: ThemeMode): Int = when (mode) {
     ThemeMode.Light -> R.string.theme_light
     ThemeMode.Dark -> R.string.theme_dark
     ThemeMode.Matrix -> R.string.theme_matrix
+}
+
+private fun orientationLabel(mode: ScreenOrientation): Int = when (mode) {
+    ScreenOrientation.AUTO -> R.string.orientation_auto
+    ScreenOrientation.PORTRAIT -> R.string.orientation_portrait
+    ScreenOrientation.LANDSCAPE -> R.string.orientation_landscape
 }
 
 @Composable

@@ -21,6 +21,9 @@ enum class DownloadQuality(val kbps: Int) {
 /** Container used when a download is transcoded. */
 enum class DownloadFormat { AAC, MP3 }
 
+/** Locked screen orientation. */
+enum class ScreenOrientation { AUTO, PORTRAIT, LANDSCAPE }
+
 class SettingsStore(context: Context) {
 
     private val appContext = context.applicationContext
@@ -64,6 +67,17 @@ class SettingsStore(context: Context) {
     /** Show the item count of each media list. */
     private val _showItemCount = MutableStateFlow(prefs.getBoolean(KEY_SHOW_ITEM_COUNT, false))
     val showItemCount: StateFlow<Boolean> = _showItemCount.asStateFlow()
+
+    /** Locked screen orientation. */
+    private val _screenOrientation = MutableStateFlow(
+        runCatching { ScreenOrientation.valueOf(prefs.getString(KEY_ORIENTATION, null) ?: "AUTO") }
+            .getOrDefault(ScreenOrientation.AUTO),
+    )
+    val screenOrientation: StateFlow<ScreenOrientation> = _screenOrientation.asStateFlow()
+
+    /** Spacing between library grid columns, in dp. */
+    private val _gridSpacing = MutableStateFlow(prefs.getInt(KEY_GRID_SPACING, 12))
+    val gridSpacing: StateFlow<Int> = _gridSpacing.asStateFlow()
 
     private val _wifiOnlyDownloads = MutableStateFlow(prefs.getBoolean(KEY_WIFI_ONLY, true))
     val wifiOnlyDownloads: StateFlow<Boolean> = _wifiOnlyDownloads.asStateFlow()
@@ -157,6 +171,16 @@ class SettingsStore(context: Context) {
         _showItemCount.value = value
     }
 
+    fun setScreenOrientation(value: ScreenOrientation) {
+        prefs.edit().putString(KEY_ORIENTATION, value.name).apply()
+        _screenOrientation.value = value
+    }
+
+    fun setGridSpacing(value: Int) {
+        prefs.edit().putInt(KEY_GRID_SPACING, value).apply()
+        _gridSpacing.value = value
+    }
+
     fun setWifiOnlyDownloads(value: Boolean) {
         prefs.edit().putBoolean(KEY_WIFI_ONLY, value).apply()
         _wifiOnlyDownloads.value = value
@@ -228,6 +252,8 @@ class SettingsStore(context: Context) {
         private const val KEY_TRACK_NUMBERS = "track_numbers"
         private const val KEY_SHOW_SUBTITLE = "show_subtitle"
         private const val KEY_SHOW_ITEM_COUNT = "show_item_count"
+        private const val KEY_ORIENTATION = "screen_orientation"
+        private const val KEY_GRID_SPACING = "grid_spacing"
         private const val KEY_COLUMNS = "library_columns"
         private const val KEY_HOME_SECTIONS = "home_sections"
         private const val KEY_WIFI_ONLY = "wifi_only_downloads"

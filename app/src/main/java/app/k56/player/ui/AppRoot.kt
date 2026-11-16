@@ -34,6 +34,7 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import app.k56.player.core.model.PlaybackSource
 import app.k56.player.core.model.Track
+import app.k56.player.data.ScreenOrientation
 import app.k56.player.R
 import app.k56.player.data.MediaRepository
 import app.k56.player.di.AppContainer
@@ -89,7 +90,23 @@ private fun MainShell(container: AppContainer) {
     val fitCover by container.settingsStore.fitCover.collectAsStateWithLifecycle()
     val compactControls by container.settingsStore.compactControls.collectAsStateWithLifecycle()
     val autoCacheFavorites by container.settingsStore.autoCacheFavorites.collectAsStateWithLifecycle()
+    val screenOrientation by container.settingsStore.screenOrientation.collectAsStateWithLifecycle()
+    val gridSpacing by container.settingsStore.gridSpacing.collectAsStateWithLifecycle()
+    val activity = context as? android.app.Activity
     val scope = rememberCoroutineScope()
+
+    // Apply the locked screen orientation.
+    DisposableEffect(screenOrientation) {
+        val previous = activity?.requestedOrientation
+        activity?.requestedOrientation = when (screenOrientation) {
+            ScreenOrientation.PORTRAIT -> android.content.pm.ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+            ScreenOrientation.LANDSCAPE -> android.content.pm.ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+            ScreenOrientation.AUTO -> android.content.pm.ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+        }
+        onDispose {
+            activity?.requestedOrientation = previous ?: android.content.pm.ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+        }
+    }
 
     // The UI-side queue of Tracks, kept in sync with the controller so it can be
     // persisted and restored as "Save Now Playing state".
@@ -297,6 +314,7 @@ private fun MainShell(container: AppContainer) {
                     ignoreArticles = ignoreArticles,
                     showSubtitle = showTrackSubtitle,
                     showItemCount = showItemCount,
+                    gridSpacing = gridSpacing,
                 )
             }
             composable("cache") {

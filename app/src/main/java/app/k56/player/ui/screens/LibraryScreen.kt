@@ -204,6 +204,7 @@ fun LibraryScreen(
     ignoreArticles: Boolean = true,
     showSubtitle: Boolean = true,
     showItemCount: Boolean = false,
+    gridSpacing: Int = 12,
 ) {
     val context = LocalContext.current
     val vm = appViewModel { LibraryViewModel(repository, context.applicationContext, offlineStore, settingsStore) }
@@ -338,7 +339,7 @@ fun LibraryScreen(
                     .weight(1f)
                     .fillMaxWidth(),
                 contentPadding = PaddingValues(16.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(gridSpacing.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 items(vm.albums, key = { it.id }) { album ->
@@ -367,7 +368,7 @@ fun LibraryScreen(
                     .weight(1f)
                     .fillMaxWidth(),
                 contentPadding = PaddingValues(16.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(gridSpacing.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 items(vm.artists, key = { it.id }) { artist ->
