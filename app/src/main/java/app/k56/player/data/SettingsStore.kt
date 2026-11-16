@@ -50,6 +50,10 @@ class SettingsStore(context: Context) {
     )
     val downloadFormat: StateFlow<DownloadFormat> = _downloadFormat.asStateFlow()
 
+    /** Keep the queue going with similar tracks when it runs out. */
+    private val _autoplay = MutableStateFlow(prefs.getBoolean(KEY_AUTOPLAY, true))
+    val autoplay: StateFlow<Boolean> = _autoplay.asStateFlow()
+
     /** Cache cap in MiB: -1 unlimited, 0 disabled, otherwise LRU size. */
     private val _cacheLimitMb = MutableStateFlow(prefs.getInt(KEY_CACHE_LIMIT, 512))
     val cacheLimitMb: StateFlow<Int> = _cacheLimitMb.asStateFlow()
@@ -79,6 +83,11 @@ class SettingsStore(context: Context) {
         _downloadFormat.value = value
     }
 
+    fun setAutoplay(value: Boolean) {
+        prefs.edit().putBoolean(KEY_AUTOPLAY, value).apply()
+        _autoplay.value = value
+    }
+
     fun setCacheLimitMb(value: Int) {
         prefs.edit().putInt(KEY_CACHE_LIMIT, value).apply()
         _cacheLimitMb.value = value
@@ -89,6 +98,7 @@ class SettingsStore(context: Context) {
         private const val KEY_PREFER_EXTERNAL = "prefer_external"
         private const val KEY_STORAGE = "storage_location"
         private const val KEY_CACHE_LIMIT = "cache_limit_mb"
+        private const val KEY_AUTOPLAY = "autoplay"
         private const val KEY_DOWNLOAD_QUALITY = "download_quality"
         private const val KEY_DOWNLOAD_FORMAT = "download_format"
 

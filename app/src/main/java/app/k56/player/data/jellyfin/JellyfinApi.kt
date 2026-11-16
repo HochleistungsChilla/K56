@@ -28,6 +28,9 @@ interface JellyfinApi {
     @GET("Items")
     suspend fun items(@QueryMap query: Map<String, String>): QueryResultDto
 
+    @GET("Items/{itemId}/InstantMix")
+    suspend fun instantMix(@Path("itemId") itemId: String, @QueryMap query: Map<String, String>): QueryResultDto
+
     @GET("Items/{itemId}")
     suspend fun item(
         @Path("itemId") itemId: String,

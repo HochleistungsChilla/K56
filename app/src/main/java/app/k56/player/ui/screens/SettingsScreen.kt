@@ -67,6 +67,7 @@ fun SettingsScreen(
     val offlineTracks by offlineStore.tracks.collectAsStateWithLifecycle()
     val storageLocation by settingsStore.storageLocation.collectAsStateWithLifecycle()
     val cacheLimitMb by settingsStore.cacheLimitMb.collectAsStateWithLifecycle()
+    val autoplay by settingsStore.autoplay.collectAsStateWithLifecycle()
     val downloadQuality by settingsStore.downloadQuality.collectAsStateWithLifecycle()
     val downloadFormat by settingsStore.downloadFormat.collectAsStateWithLifecycle()
     val hasSdCard = remember { SettingsStore.externalRoot(context) != null }
@@ -395,6 +396,31 @@ fun SettingsScreen(
                     checked = forceTranscode,
                     onCheckedChange = { repository.setForceTranscode(it) },
                 )
+            }
+        }
+
+        Spacer(Modifier.height(14.dp))
+
+        Surface(
+            color = MaterialTheme.colorScheme.surfaceContainer,
+            shape = RoundedCornerShape(20.dp),
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Column(Modifier.padding(16.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text(stringResource(R.string.autoplay_title), style = MaterialTheme.typography.titleMedium)
+                        Text(
+                            stringResource(R.string.autoplay_body),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    Switch(
+                        checked = autoplay,
+                        onCheckedChange = { settingsStore.setAutoplay(it) },
+                    )
+                }
             }
         }
 

@@ -17,6 +17,7 @@ import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
 import app.k56.player.K56App
+import app.k56.player.core.model.PlaybackSource
 import app.k56.player.dsp.DspProcessor
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -45,6 +46,11 @@ class PlaybackService : MediaSessionService() {
 
     private var playSessionId: String = UUID.randomUUID().toString()
     private var currentItemId: String? = null
+
+    /** Last few tracks, used as seeds for the similarity-based continuation. */
+    private val recentIds = ArrayDeque<String>()
+    private var autoplayBusy = false
+    private var autoplayExhausted = false
 
     private val appContainer get() = (application as K56App).container
     private val repository get() = appContainer.repository
@@ -75,9 +81,14 @@ class PlaybackService : MediaSessionService() {
 
             override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
                 val id = mediaItem?.mediaId?.takeIf { it.isNotBlank() } ?: return
+                if (reason == Player.MEDIA_ITEM_TRANSITION_REASON_PLAYLIST_CHANGED) {
+                    autoplayExhausted = false
+                }
                 if (id != currentItemId) {
+                    rememberSeed(id)
                     currentItemId = id
                     reportStart(id)
+                    extendWithSimilar(autoStart = false)
                 }
             }
 
@@ -86,9 +97,79 @@ class PlaybackService : MediaSessionService() {
             }
 
             override fun onPlaybackStateChanged(playbackState: Int) {
-                if (playbackState == Player.STATE_ENDED) reportStopped()
+                if (playbackState == Player.STATE_ENDED) {
+                    reportStopped()
+                    // Queue ran dry: continue in the same direction instead of stopping.
+                    extendWithSimilar(autoStart = true)
+                }
             }
         })
+    }
+
+    private fun rememberSeed(id: String) {
+        recentIds.remove(id)
+        recentIds.addLast(id)
+        while (recentIds.size > 5) recentIds.removeFirst()
+    }
+
+    /**
+     * Appends tracks that continue the current direction. Jellyfin's InstantMix
+     * is seeded with the last few titles, so a Eurodance track leads to more
+     * Eurodance — no random picks, no shuffle.
+     */
+    private fun extendWithSimilar(autoStart: Boolean) {
+        if (!appContainer.settingsStore.autoplay.value) return
+        if (autoplayBusy || autoplayExhausted) return
+        if (recentIds.isEmpty()) return
+        if (!autoStart && player.mediaItemCount - player.currentMediaItemIndex > 2) return
+
+        autoplayBusy = true
+        val seeds = recentIds.toList().takeLast(3).reversed()
+        serviceScope.launch {
+            try {
+                val existing = (0 until player.mediaItemCount)
+                    .mapNotNull { player.getMediaItemAt(it).mediaId }
+                    .toSet()
+                val fresh = repository.instantMix(seeds, 25)
+                    .filter { it.id !in existing }
+                    .take(12)
+                if (fresh.isEmpty()) {
+                    autoplayExhausted = true
+                    return@launch
+                }
+                val items = fresh.mapNotNull { track ->
+                    val offline = appContainer.offlineStore.find(track.id)
+                    if (offline != null) {
+                        PlaybackQueue.mediaItem(
+                            track,
+                            PlaybackSource(
+                                url = offline.uri(this@PlaybackService).toString(),
+                                mimeType = null,
+                                transcoded = false,
+                            ),
+                        )
+                    } else {
+                        runCatching { repository.playbackSource(track) }.getOrNull()
+                            ?.let { PlaybackQueue.mediaItem(track, it) }
+                    }
+                }
+                if (items.isEmpty()) {
+                    autoplayExhausted = true
+                    return@launch
+                }
+                withContext(Dispatchers.Main) {
+                    player.addMediaItems(items)
+                    if (autoStart) {
+                        player.prepare()
+                        player.play()
+                    }
+                }
+            } catch (_: Exception) {
+                autoplayExhausted = true
+            } finally {
+                autoplayBusy = false
+            }
+        }
     }
 
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? = mediaSession

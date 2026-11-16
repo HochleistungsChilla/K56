@@ -224,4 +224,7 @@
     <string name="dsp_comp_summary">%1$d dB · %2$.1f:1</string>
     <string name="dsp_tube_summary">%1$d dB · %2$d %%</string>
     <string name="dsp_on">An</string>
+
+    <string name="autoplay_title">Endlos-Autoplay</string>
+    <string name="autoplay_body">Hängt ähnliche Titel in derselben Richtung an — kein Zufall.</string>
 </resources>

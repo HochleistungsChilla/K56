@@ -76,6 +76,22 @@ interface MediaRepository {
      * library list happens to load. Backends without a filter fall back to
      * filtering [songs].
      */
+    /**
+     * Tracks that continue the current direction from a few seed tracks —
+     * similarity based, never a plain shuffle. Backends without a recommender
+     * fall back to the same artist/album.
+     */
+    suspend fun instantMix(seedIds: List<String>, limit: Int = 25): List<Track> {
+        if (seedIds.isEmpty()) return emptyList()
+        val all = songs(null, 2000)
+        val seeds = all.filter { it.id in seedIds }
+        val artists = seeds.mapNotNull { it.artistName }.toSet()
+        val albums = seeds.mapNotNull { it.albumId }.toSet()
+        return all.filter { it.id !in seedIds && (it.albumId in albums || it.artistName in artists) }
+            .shuffled()
+            .take(limit)
+    }
+
     suspend fun favoriteTracks(limit: Int = 2000): List<Track> =
         songs(null, limit).filter { it.isFavorite }
     suspend fun search(term: String): SearchResults

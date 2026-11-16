@@ -350,6 +350,33 @@ class JellyfinRepository(
         .Items.orEmpty()
         .map { it.toTrack() }
 
+    override suspend fun instantMix(seedIds: List<String>, limit: Int): List<Track> {
+        if (seedIds.isEmpty()) return emptyList()
+        val api = ensureApi()
+        val current = session ?: throw NotAuthenticatedException()
+        val collected = LinkedHashMap<String, Track>()
+        // Ask per seed and merge: one seed already yields a coherent direction,
+        // several seeds average it out without the server having to support it.
+        for (seed in seedIds.take(3)) {
+            val result = runCatching {
+                api.instantMix(
+                    seed,
+                    mapOf(
+                        "userId" to current.userId,
+                        "limit" to (limit / seedIds.take(3).size).coerceAtLeast(8).toString(),
+                        "Fields" to ITEM_FIELDS,
+                        "EnableImageTypes" to "Primary",
+                        "ImageTypeLimit" to "1",
+                    ),
+                )
+            }.getOrNull() ?: continue
+            result.Items.orEmpty().forEach { dto ->
+                if (dto.Id.isNotBlank() && dto.Id !in seedIds) collected[dto.Id] = dto.toTrack()
+            }
+        }
+        return collected.values.take(limit)
+    }
+
     override suspend fun favoriteTracks(limit: Int): List<Track> = ensureApi()
         .items(
             itemQuery(
