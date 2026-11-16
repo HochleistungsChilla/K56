@@ -16,6 +16,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
@@ -30,6 +31,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import androidx.media3.common.MediaItem
+import androidx.media3.common.Player
 import app.k56.player.core.model.PlaybackSource
 import app.k56.player.core.model.Track
 import app.k56.player.R
@@ -89,6 +91,29 @@ private fun MainShell(container: AppContainer) {
     val autoCacheFavorites by container.settingsStore.autoCacheFavorites.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
 
+    // The UI-side queue of Tracks, kept in sync with the controller so it can be
+    // persisted and restored as "Save Now Playing state".
+    val queueTracks = remember { mutableStateListOf<Track>() }
+    val persistQueue: () -> Unit = {
+        container.nowPlayingStore.save(queueTracks.toList(), controller?.currentMediaItemIndex ?: 0)
+    }
+
+    // Keep the persisted active index fresh as playback moves through the queue.
+    DisposableEffect(controller) {
+        val active = controller
+        if (active != null) {
+            val listener = object : Player.Listener {
+                override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
+                    persistQueue()
+                }
+            }
+            active.addListener(listener)
+            onDispose { active.removeListener(listener) }
+        } else {
+            onDispose { }
+        }
+    }
+
     // Keep favorited tracks on disk whenever the option is enabled.
     LaunchedEffect(autoCacheFavorites) {
         if (autoCacheFavorites) container.favoriteCache.sync()
@@ -118,6 +143,9 @@ private fun MainShell(container: AppContainer) {
                     active.setMediaItems(items, index.coerceIn(0, items.lastIndex), 0L)
                     active.prepare()
                     active.play()
+                    queueTracks.clear()
+                    queueTracks.addAll(tracks)
+                    persistQueue()
                     navController.navigate("player")
                 }
             }
@@ -136,6 +164,25 @@ private fun MainShell(container: AppContainer) {
         return PlaybackQueue.mediaItem(track, source)
     }
 
+    // Restore the saved queue once the controller is ready (skip tracks the server no longer has).
+    LaunchedEffect(controller) {
+        val active = controller ?: return@LaunchedEffect
+        val saved = container.nowPlayingStore.read() ?: return@LaunchedEffect
+        val resolved = saved.tracks.mapNotNull { track -> resolveItem(track)?.let { track to it } }
+        if (resolved.isEmpty()) {
+            container.nowPlayingStore.clear()
+            return@LaunchedEffect
+        }
+        queueTracks.clear()
+        queueTracks.addAll(resolved.map { it.first })
+        active.setMediaItems(
+            resolved.map { it.second },
+            saved.index.coerceIn(0, resolved.lastIndex),
+            0L,
+        )
+        active.prepare()
+    }
+
     val playNext: (Track) -> Unit = { track ->
         val active = controller
         if (active != null) {
@@ -144,6 +191,8 @@ private fun MainShell(container: AppContainer) {
                     val index = (active.currentMediaItemIndex + 1)
                         .coerceAtMost(active.mediaItemCount.coerceAtLeast(0))
                     active.addMediaItem(index, item)
+                    queueTracks.add(index.coerceAtMost(queueTracks.size), track)
+                    persistQueue()
                 }
             }
         }
@@ -152,7 +201,13 @@ private fun MainShell(container: AppContainer) {
     val addToQueue: (Track) -> Unit = { track ->
         val active = controller
         if (active != null) {
-            scope.launch { resolveItem(track)?.let { active.addMediaItem(it) } }
+            scope.launch {
+                resolveItem(track)?.let {
+                    active.addMediaItem(it)
+                    queueTracks.add(track)
+                    persistQueue()
+                }
+            }
         }
     }
 
