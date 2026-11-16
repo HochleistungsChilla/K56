@@ -184,4 +184,16 @@
     <string name="dsp_ir_none">No kernel selected</string>
     <string name="dsp_imported">%1$d kernel(s) imported</string>
     <string name="dsp_import_failed">File could not be read as an impulse response.</string>
+
+    <string name="cache_manager_title">Cache manager</string>
+    <string name="cache_storage_title">Storage</string>
+    <string name="cache_free">Free</string>
+    <string name="cache_total_used">Used by K56</string>
+    <string name="cache_stream_title">Stream cache</string>
+    <string name="cache_stream_body">Recently played tracks kept for quick replays.</string>
+    <string name="cache_size">Size</string>
+    <string name="cache_entry_count">Entries</string>
+    <string name="cache_clear_stream">Clear stream cache</string>
+    <string name="cache_downloads_title">Downloads</string>
+    <string name="cache_delete_one">Delete download</string>
 </resources>

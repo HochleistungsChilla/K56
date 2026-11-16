@@ -6,6 +6,7 @@ import app.k56.player.data.MediaRepository
 import app.k56.player.data.RepositoryRouter
 import app.k56.player.data.SessionStore
 import app.k56.player.data.SettingsStore
+import app.k56.player.data.cache.MediaCache
 import app.k56.player.data.offline.OfflineStore
 import app.k56.player.dsp.DspState
 import app.k56.player.dsp.IrLibrary
@@ -31,6 +32,7 @@ class AppContainer(context: Context) {
     val repository: MediaRepository = RepositoryRouter(appContext, sessionStore, settingsStore, networkMonitor)
     val offlineStore = OfflineStore(appContext, settingsStore)
 
+    val mediaCache = MediaCache(appContext, settingsStore)
     val irLibrary = IrLibrary(appContext)
     val dspState = DspState(appContext).also { state ->
         // Restore the last kernel and pick up newly dropped .irs files.

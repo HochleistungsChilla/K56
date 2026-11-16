@@ -38,6 +38,7 @@ import app.k56.player.playback.PlaybackQueue
 import app.k56.player.ui.components.MiniPlayer
 import app.k56.player.ui.screens.AlbumScreen
 import app.k56.player.ui.screens.ArtistScreen
+import app.k56.player.ui.screens.CacheScreen
 import app.k56.player.ui.screens.DspScreen
 import app.k56.player.ui.screens.HomeScreen
 import app.k56.player.ui.screens.LibraryScreen
@@ -165,6 +166,14 @@ private fun MainShell(container: AppContainer) {
                     onPlay = playTracks,
                 )
             }
+            composable("cache") {
+                CacheScreen(
+                    offlineStore = container.offlineStore,
+                    mediaCache = container.mediaCache,
+                    settingsStore = container.settingsStore,
+                    onBack = { navController.popBackStack() },
+                )
+            }
             composable("dsp") {
                 DspScreen(
                     dsp = container.dspState,
@@ -186,6 +195,7 @@ private fun MainShell(container: AppContainer) {
                     offlineStore = container.offlineStore,
                     settingsStore = container.settingsStore,
                     onOpenDsp = { navController.navigate("dsp") },
+                    onOpenCache = { navController.navigate("cache") },
                 )
             }
             composable(

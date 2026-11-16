@@ -9,10 +9,6 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DataSource
 import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.datasource.cache.CacheDataSource
-import androidx.media3.datasource.cache.LeastRecentlyUsedCacheEvictor
-import androidx.media3.datasource.cache.NoOpCacheEvictor
-import androidx.media3.datasource.cache.SimpleCache
-import androidx.media3.database.StandaloneDatabaseProvider
 import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.audio.AudioSink
@@ -21,8 +17,6 @@ import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
 import app.k56.player.K56App
-import app.k56.player.data.SettingsStore
-import app.k56.player.data.StorageLocation
 import app.k56.player.dsp.DspProcessor
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -44,7 +38,6 @@ import java.util.UUID
 class PlaybackService : MediaSessionService() {
 
     private lateinit var player: ExoPlayer
-    private lateinit var mediaCache: SimpleCache
     private var mediaSession: MediaSession? = null
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -124,43 +117,17 @@ class PlaybackService : MediaSessionService() {
             .build()
     }
 
-    /** Upstream HTTP wrapped in a bounded on-disk cache (512 MiB, LRU). */
+    /** Upstream HTTP wrapped in the shared bounded cache (see MediaCache). */
     private fun buildCachedDataSourceFactory(): DataSource.Factory {
         val upstream = DefaultHttpDataSource.Factory()
             .setDefaultRequestProperties(repository.playbackHeaders())
             .setAllowCrossProtocolRedirects(true)
 
-        // 0 MiB means "no cache at all": hand back the plain network source.
-        val limitMb = appContainer.settingsStore.cacheLimitMb.value
-        if (limitMb == 0) return upstream
-
-        if (!::mediaCache.isInitialized) {
-            val evictor = if (limitMb < 0) {
-                NoOpCacheEvictor() // grow until the volume is full
-            } else {
-                LeastRecentlyUsedCacheEvictor(limitMb.toLong() * 1024L * 1024L)
-            }
-            mediaCache = SimpleCache(cacheDirectory(), evictor, StandaloneDatabaseProvider(this))
-        }
+        val cache = appContainer.mediaCache.get() ?: return upstream
         return CacheDataSource.Factory()
-            .setCache(mediaCache)
+            .setCache(cache)
             .setUpstreamDataSourceFactory(upstream)
             .setFlags(CacheDataSource.FLAG_IGNORE_CACHE_ON_ERROR)
-    }
-
-    /** Cache lives next to downloads: internal by default, SD when selected. */
-    private fun cacheDirectory(): File {
-        val location = appContainer.settingsStore.storageLocation.value
-        val base = if (location == StorageLocation.EXTERNAL) {
-            val root = SettingsStore.externalRoot(this)
-            val matching = root?.let { r ->
-                externalCacheDirs.firstOrNull { it != null && it.absolutePath.startsWith(r.absolutePath) }
-            }
-            matching ?: externalCacheDir ?: cacheDir
-        } else {
-            cacheDir
-        }
-        return File(base ?: cacheDir, "media_cache")
     }
 
     override fun onDestroy() {
@@ -170,7 +137,6 @@ class PlaybackService : MediaSessionService() {
         mediaSession?.release()
         mediaSession = null
         player.release()
-        if (::mediaCache.isInitialized) mediaCache.release()
         super.onDestroy()
     }
 

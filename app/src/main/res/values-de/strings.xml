@@ -174,4 +174,16 @@
     <string name="dsp_ir_none">Kein Kernel gewählt</string>
     <string name="dsp_imported">%1$d Kernel importiert</string>
     <string name="dsp_import_failed">Datei konnte nicht als Impulsantwort gelesen werden.</string>
+
+    <string name="cache_manager_title">Cache-Manager</string>
+    <string name="cache_storage_title">Speicher</string>
+    <string name="cache_free">Frei</string>
+    <string name="cache_total_used">Von K56 belegt</string>
+    <string name="cache_stream_title">Streaming-Cache</string>
+    <string name="cache_stream_body">Zuletzt gespielte Titel für schnelles Wiederhören.</string>
+    <string name="cache_size">Größe</string>
+    <string name="cache_entry_count">Einträge</string>
+    <string name="cache_clear_stream">Streaming-Cache leeren</string>
+    <string name="cache_downloads_title">Downloads</string>
+    <string name="cache_delete_one">Download löschen</string>
 </resources>

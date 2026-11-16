@@ -50,6 +50,7 @@ import app.k56.player.data.SettingsStore
 import app.k56.player.data.StorageLocation
 import app.k56.player.data.offline.OfflineStore
 import kotlinx.coroutines.launch
+import app.k56.player.ui.formatBytes
 import app.k56.player.ui.theme.ThemeController
 import app.k56.player.ui.theme.ThemeMode
 
@@ -59,6 +60,7 @@ fun SettingsScreen(
     offlineStore: OfflineStore,
     settingsStore: SettingsStore,
     onOpenDsp: () -> Unit = {},
+    onOpenCache: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val session by repository.sessionFlow.collectAsStateWithLifecycle()
@@ -275,6 +277,10 @@ fun SettingsScreen(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+                Spacer(Modifier.height(10.dp))
+                OutlinedButton(onClick = onOpenCache, modifier = Modifier.fillMaxWidth()) {
+                    Text(stringResource(R.string.cache_manager_title))
+                }
                 if (offlineTracks.isEmpty()) {
                     Text(
                         stringResource(R.string.offline_empty),
@@ -472,11 +478,6 @@ fun SettingsScreen(
     }
 }
 
-private fun formatBytes(bytes: Long): String {
-    if (bytes <= 0L) return "0 MB"
-    val mb = bytes / 1048576.0
-    return if (mb >= 1024.0) String.format("%.1f GB", mb / 1024.0) else String.format("%.1f MB", mb)
-}
 
 @Composable
 private fun EditConnectionDialog(

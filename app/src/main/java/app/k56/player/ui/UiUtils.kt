@@ -61,3 +61,11 @@ fun Throwable.userMessage(context: Context): String = when (this) {
 
     else -> message?.takeIf { it.isNotBlank() } ?: context.getString(R.string.err_unknown)
 }
+
+/** Human readable byte size used by the storage and cache screens. */
+fun formatBytes(bytes: Long): String {
+    if (bytes <= 0L) return "0 MB"
+    val mb = bytes / 1048576.0
+    return if (mb >= 1024.0) String.format("%.1f GB", mb / 1024.0)
+    else String.format("%.1f MB", mb)
+}
