@@ -69,6 +69,12 @@
     <string name="player_sleep_off">Aus</string>
     <string name="player_queue">Warteschlange</string>
 
+    <string name="settings_edit_connection">Verbindung bearbeiten</string>
+
+    <string name="settings_edit_save">Speichern</string>
+
+    <string name="settings_edit_cancel">Abbrechen</string>
+
     <string name="settings_connection">Verbindung</string>
     <string name="settings_network">Netz</string>
     <string name="settings_route">Route</string>

@@ -7,6 +7,10 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DefaultHttpDataSource
+import androidx.media3.datasource.cache.CacheDataSource
+import androidx.media3.datasource.cache.LeastRecentlyUsedCacheEvictor
+import androidx.media3.datasource.cache.SimpleCache
+import androidx.media3.database.StandaloneDatabaseProvider
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.session.MediaSession
@@ -21,6 +25,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.File
 import java.util.UUID
 
 /**
@@ -31,6 +36,7 @@ import java.util.UUID
 class PlaybackService : MediaSessionService() {
 
     private lateinit var player: ExoPlayer
+    private lateinit var mediaCache: SimpleCache
     private var mediaSession: MediaSession? = null
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -48,9 +54,7 @@ class PlaybackService : MediaSessionService() {
         player = ExoPlayer.Builder(this)
             .setMediaSourceFactory(
                 DefaultMediaSourceFactory(
-                    DefaultHttpDataSource.Factory()
-                        .setDefaultRequestProperties(repository.playbackHeaders())
-                        .setAllowCrossProtocolRedirects(true),
+                    buildCachedDataSourceFactory(),
                 ),
             )
             .setAudioAttributes(
@@ -94,6 +98,24 @@ class PlaybackService : MediaSessionService() {
         super.onTaskRemoved(rootIntent)
     }
 
+    /** Upstream HTTP wrapped in a bounded on-disk cache (512 MiB, LRU). */
+    private fun buildCachedDataSourceFactory(): CacheDataSource.Factory {
+        val upstream = DefaultHttpDataSource.Factory()
+            .setDefaultRequestProperties(repository.playbackHeaders())
+            .setAllowCrossProtocolRedirects(true)
+        if (!::mediaCache.isInitialized) {
+            mediaCache = SimpleCache(
+                File(cacheDir, "media_cache"),
+                LeastRecentlyUsedCacheEvictor(512L * 1024L * 1024L),
+                StandaloneDatabaseProvider(this),
+            )
+        }
+        return CacheDataSource.Factory()
+            .setCache(mediaCache)
+            .setUpstreamDataSourceFactory(upstream)
+            .setFlags(CacheDataSource.FLAG_IGNORE_CACHE_ON_ERROR)
+    }
+
     override fun onDestroy() {
         reportStopped()
         progressJob?.cancel()
@@ -101,6 +123,7 @@ class PlaybackService : MediaSessionService() {
         mediaSession?.release()
         mediaSession = null
         player.release()
+        if (::mediaCache.isInitialized) mediaCache.release()
         super.onDestroy()
     }
 

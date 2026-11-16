@@ -15,6 +15,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Logout
+import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -24,6 +28,10 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -35,6 +43,7 @@ import app.k56.player.BuildConfig
 import app.k56.player.core.model.BackendKind
 import app.k56.player.core.net.NetworkTransport
 import app.k56.player.data.MediaRepository
+import kotlinx.coroutines.launch
 import app.k56.player.ui.theme.ThemeController
 import app.k56.player.ui.theme.ThemeMode
 
@@ -44,6 +53,10 @@ fun SettingsScreen(repository: MediaRepository) {
     val forceTranscode by repository.forceTranscode.collectAsStateWithLifecycle()
     val preferExternal by repository.preferExternal.collectAsStateWithLifecycle()
     val networkStatus by repository.networkStatus.collectAsStateWithLifecycle()
+    val scope = rememberCoroutineScope()
+    var editOpen by remember { mutableStateOf(false) }
+    var editBusy by remember { mutableStateOf(false) }
+    var editError by remember { mutableStateOf<String?>(null) }
 
     Column(
         modifier = Modifier
@@ -90,7 +103,49 @@ fun SettingsScreen(repository: MediaRepository) {
                         else -> stringResource(R.string.route_lan_if_available)
                     },
                 )
+                Spacer(Modifier.height(12.dp))
+                OutlinedButton(
+                    onClick = { editOpen = true },
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Icon(Icons.Rounded.Edit, contentDescription = null)
+                    Spacer(Modifier.width(8.dp))
+                    Text(stringResource(R.string.settings_edit_connection))
+                }
             }
+        }
+
+        if (editOpen && session != null) {
+            EditConnectionDialog(
+                initialInternal = session?.internalUrl.orEmpty(),
+                initialExternal = session?.externalUrl.orEmpty(),
+                initialUser = session?.userName.orEmpty(),
+                busy = editBusy,
+                error = editError,
+                onDismiss = {
+                    if (!editBusy) {
+                        editOpen = false
+                        editError = null
+                    }
+                },
+                onSave = { internal, external, user, pass ->
+                    val backend = session?.backend
+                    if (backend != null) {
+                        editBusy = true
+                        editError = null
+                        scope.launch {
+                            try {
+                                repository.login(backend, internal, external, user, pass)
+                                editOpen = false
+                            } catch (e: Exception) {
+                                editError = e.message ?: "Fehler"
+                            } finally {
+                                editBusy = false
+                            }
+                        }
+                    }
+                },
+            )
         }
 
         Spacer(Modifier.height(14.dp))
@@ -215,6 +270,83 @@ fun SettingsScreen(repository: MediaRepository) {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
+}
+
+@Composable
+private fun EditConnectionDialog(
+    initialInternal: String,
+    initialExternal: String,
+    initialUser: String,
+    busy: Boolean,
+    error: String?,
+    onDismiss: () -> Unit,
+    onSave: (String, String, String, String) -> Unit,
+) {
+    var internal by remember { mutableStateOf(initialInternal) }
+    var external by remember { mutableStateOf(initialExternal) }
+    var user by remember { mutableStateOf(initialUser) }
+    var pass by remember { mutableStateOf("") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.settings_edit_connection)) },
+        text = {
+            Column {
+                OutlinedTextField(
+                    value = internal,
+                    onValueChange = { internal = it },
+                    label = { Text(stringResource(R.string.login_lan_label)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Spacer(Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = external,
+                    onValueChange = { external = it },
+                    label = { Text(stringResource(R.string.login_external_label)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Spacer(Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = user,
+                    onValueChange = { user = it },
+                    label = { Text(stringResource(R.string.login_username)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Spacer(Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = pass,
+                    onValueChange = { pass = it },
+                    label = { Text(stringResource(R.string.login_password)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                if (error != null) {
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        text = error,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { onSave(internal.trim(), external.trim(), user.trim(), pass) },
+                enabled = !busy && (internal.isNotBlank() || external.isNotBlank()),
+            ) {
+                Text(stringResource(R.string.settings_edit_save))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss, enabled = !busy) {
+                Text(stringResource(R.string.settings_edit_cancel))
+            }
+        },
+    )
 }
 
 private fun themeLabel(mode: ThemeMode): Int = when (mode) {

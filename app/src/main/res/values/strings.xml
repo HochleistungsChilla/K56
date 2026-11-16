@@ -79,6 +79,9 @@
     <string name="player_queue">Queue</string>
 
     <!-- settings -->
+    <string name="settings_edit_connection">Edit connection</string>
+    <string name="settings_edit_save">Save</string>
+    <string name="settings_edit_cancel">Cancel</string>
     <string name="settings_connection">Connection</string>
     <string name="settings_network">Network</string>
     <string name="settings_route">Route</string>
