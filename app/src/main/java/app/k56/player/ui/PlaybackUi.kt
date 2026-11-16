@@ -9,6 +9,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.media3.common.Player
 import androidx.media3.session.MediaController
+import app.k56.player.playback.PlaybackQueue
 import app.k56.player.playback.PlaybackUiState
 import kotlinx.coroutines.delay
 
@@ -54,11 +55,13 @@ private fun Player.toUiState(): PlaybackUiState {
     val metadata = currentMediaItem?.mediaMetadata
     return PlaybackUiState(
         hasItem = currentMediaItem != null,
+        mediaId = currentMediaItem?.mediaId.orEmpty(),
         title = metadata?.title?.toString().orEmpty(),
         artist = metadata?.artist?.toString().orEmpty(),
         album = metadata?.albumTitle?.toString().orEmpty(),
         artworkUri = metadata?.artworkUri?.toString(),
         isPlaying = isPlaying,
+        isFavorite = metadata?.extras?.getBoolean(PlaybackQueue.KEY_FAVORITE, false) ?: false,
         positionMs = currentPosition.coerceAtLeast(0L),
         durationMs = duration.takeIf { it > 0L } ?: 0L,
         bufferedMs = bufferedPosition.coerceAtLeast(0L),

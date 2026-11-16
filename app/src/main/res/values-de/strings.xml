@@ -68,6 +68,7 @@
     <string name="player_sleep_timer">Sleep-Timer</string>
     <string name="player_sleep_off">Aus</string>
     <string name="player_queue">Warteschlange</string>
+    <string name="player_favorite">Favorit</string>
 
     <string name="settings_edit_connection">Verbindung bearbeiten</string>
 
@@ -254,6 +255,14 @@
     <string name="display_numbers_body">Position vor jedem Titel anzeigen.</string>
     <string name="display_columns">Spalten in der Bibliothek</string>
     <string name="display_columns_auto">Auto</string>
+
+    <string name="np_options_title">Jetzt läuft</string>
+    <string name="np_hide_favorite">Favorit-Button zeigen</string>
+    <string name="np_hide_favorite_body">Herz-Button, um den aktuellen Titel als Favorit zu setzen.</string>
+    <string name="np_fit_cover">Cover nicht beschneiden</string>
+    <string name="np_fit_cover_body">Zeigt das komplette Artwork statt es zu beschneiden.</string>
+    <string name="np_compact">Kompakte Bedienelemente</string>
+    <string name="np_compact_body">Kleinere Wiedergabe-Buttons im Player.</string>
 
     <string name="download_wifi_only">Downloads laufen nur im WLAN. Einstellung ändern.</string>
 

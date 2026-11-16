@@ -86,6 +86,16 @@ class SettingsStore(context: Context) {
     private val _resumeThresholdSeconds = MutableStateFlow(prefs.getInt(KEY_RESUME_THRESHOLD, 15))
     val resumeThresholdSeconds: StateFlow<Int> = _resumeThresholdSeconds.asStateFlow()
 
+    /** Now-playing options. */
+    private val _showNowPlayingFavorite = MutableStateFlow(prefs.getBoolean(KEY_NP_FAVORITE, true))
+    val showNowPlayingFavorite: StateFlow<Boolean> = _showNowPlayingFavorite.asStateFlow()
+
+    private val _fitCover = MutableStateFlow(prefs.getBoolean(KEY_NP_FIT_COVER, false))
+    val fitCover: StateFlow<Boolean> = _fitCover.asStateFlow()
+
+    private val _compactControls = MutableStateFlow(prefs.getBoolean(KEY_NP_COMPACT, false))
+    val compactControls: StateFlow<Boolean> = _compactControls.asStateFlow()
+
     fun setForceTranscode(value: Boolean) {
         prefs.edit().putBoolean(KEY_FORCE_TRANSCODE, value).apply()
         _forceTranscode.value = value
@@ -156,6 +166,21 @@ class SettingsStore(context: Context) {
         _resumeThresholdSeconds.value = value
     }
 
+    fun setShowNowPlayingFavorite(value: Boolean) {
+        prefs.edit().putBoolean(KEY_NP_FAVORITE, value).apply()
+        _showNowPlayingFavorite.value = value
+    }
+
+    fun setFitCover(value: Boolean) {
+        prefs.edit().putBoolean(KEY_NP_FIT_COVER, value).apply()
+        _fitCover.value = value
+    }
+
+    fun setCompactControls(value: Boolean) {
+        prefs.edit().putBoolean(KEY_NP_COMPACT, value).apply()
+        _compactControls.value = value
+    }
+
     companion object {
         private const val KEY_FORCE_TRANSCODE = "force_transcode"
         private const val KEY_PREFER_EXTERNAL = "prefer_external"
@@ -171,6 +196,9 @@ class SettingsStore(context: Context) {
         private const val KEY_DOWNLOAD_QUALITY = "download_quality"
         private const val KEY_DOWNLOAD_FORMAT = "download_format"
         private const val KEY_RESUME_THRESHOLD = "resume_threshold_seconds"
+        private const val KEY_NP_FAVORITE = "np_favorite"
+        private const val KEY_NP_FIT_COVER = "np_fit_cover"
+        private const val KEY_NP_COMPACT = "np_compact"
 
         val DEFAULT_HOME_SECTIONS = "recent,random_albums,random_artists"
 

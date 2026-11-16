@@ -69,6 +69,9 @@ fun SettingsScreen(
     val cacheLimitMb by settingsStore.cacheLimitMb.collectAsStateWithLifecycle()
     val autoplay by settingsStore.autoplay.collectAsStateWithLifecycle()
     val resumeThresholdSeconds by settingsStore.resumeThresholdSeconds.collectAsStateWithLifecycle()
+    val showNowPlayingFavorite by settingsStore.showNowPlayingFavorite.collectAsStateWithLifecycle()
+    val fitCover by settingsStore.fitCover.collectAsStateWithLifecycle()
+    val compactControls by settingsStore.compactControls.collectAsStateWithLifecycle()
     val keepScreenOn by settingsStore.keepScreenOn.collectAsStateWithLifecycle()
     val showTrackNumbers by settingsStore.showTrackNumbers.collectAsStateWithLifecycle()
     val libraryColumns by settingsStore.libraryColumns.collectAsStateWithLifecycle()
@@ -539,6 +542,64 @@ fun SettingsScreen(
                             },
                         )
                     }
+                }
+            }
+        }
+
+        Spacer(Modifier.height(14.dp))
+
+        Surface(
+            color = MaterialTheme.colorScheme.surfaceContainer,
+            shape = RoundedCornerShape(20.dp),
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Column(Modifier.padding(16.dp)) {
+                Text(
+                    stringResource(R.string.np_options_title),
+                    style = MaterialTheme.typography.titleLarge,
+                )
+                Spacer(Modifier.height(8.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text(stringResource(R.string.np_hide_favorite), style = MaterialTheme.typography.titleMedium)
+                        Text(
+                            stringResource(R.string.np_hide_favorite_body),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    Switch(
+                        checked = showNowPlayingFavorite,
+                        onCheckedChange = { settingsStore.setShowNowPlayingFavorite(it) },
+                    )
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text(stringResource(R.string.np_fit_cover), style = MaterialTheme.typography.titleMedium)
+                        Text(
+                            stringResource(R.string.np_fit_cover_body),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    Switch(
+                        checked = fitCover,
+                        onCheckedChange = { settingsStore.setFitCover(it) },
+                    )
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text(stringResource(R.string.np_compact), style = MaterialTheme.typography.titleMedium)
+                        Text(
+                            stringResource(R.string.np_compact_body),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    Switch(
+                        checked = compactControls,
+                        onCheckedChange = { settingsStore.setCompactControls(it) },
+                    )
                 }
             }
         }

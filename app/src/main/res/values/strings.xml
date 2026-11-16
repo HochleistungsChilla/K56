@@ -77,6 +77,7 @@
     <string name="player_sleep_timer">Sleep timer</string>
     <string name="player_sleep_off">Off</string>
     <string name="player_queue">Queue</string>
+    <string name="player_favorite">Favorite</string>
 
     <!-- settings -->
     <string name="settings_edit_connection">Edit connection</string>
@@ -264,6 +265,14 @@
     <string name="display_numbers_body">Show the position in front of each title.</string>
     <string name="display_columns">Library columns</string>
     <string name="display_columns_auto">Auto</string>
+
+    <string name="np_options_title">Now playing</string>
+    <string name="np_hide_favorite">Show favorite button</string>
+    <string name="np_hide_favorite_body">Heart button to toggle the current track as favorite.</string>
+    <string name="np_fit_cover">Fit cover (no crop)</string>
+    <string name="np_fit_cover_body">Show the full artwork instead of cropping it.</string>
+    <string name="np_compact">Compact controls</string>
+    <string name="np_compact_body">Smaller transport buttons in the player.</string>
 
     <string name="download_wifi_only">Downloads only run on Wi-Fi. Change it in settings.</string>
 

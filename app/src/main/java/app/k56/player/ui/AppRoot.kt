@@ -80,6 +80,9 @@ private fun MainShell(container: AppContainer) {
     val libraryColumns by container.settingsStore.libraryColumns.collectAsStateWithLifecycle()
     val wifiOnlyDownloads by container.settingsStore.wifiOnlyDownloads.collectAsStateWithLifecycle()
     val ignoreArticles by container.settingsStore.ignoreArticles.collectAsStateWithLifecycle()
+    val showNowPlayingFavorite by container.settingsStore.showNowPlayingFavorite.collectAsStateWithLifecycle()
+    val fitCover by container.settingsStore.fitCover.collectAsStateWithLifecycle()
+    val compactControls by container.settingsStore.compactControls.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
 
     val playTracks: (List<Track>, Int) -> Unit = { tracks, index ->
@@ -141,6 +144,23 @@ private fun MainShell(container: AppContainer) {
         val active = controller
         if (active != null) {
             scope.launch { resolveItem(track)?.let { active.addMediaItem(it) } }
+        }
+    }
+
+    val toggleFavorite: (String, Boolean) -> Unit = { id, current ->
+        val active = controller
+        if (active != null && id.isNotBlank()) {
+            scope.launch {
+                val newState = runCatching { repository.setFavorite(id, !current) }
+                    .getOrDefault(current)
+                val index = active.currentMediaItemIndex
+                if (index >= 0) {
+                    val item = active.getMediaItemAt(index)
+                    if (item.mediaId == id) {
+                        active.replaceMediaItem(index, PlaybackQueue.withFavorite(item, newState))
+                    }
+                }
+            }
         }
     }
 
@@ -274,6 +294,10 @@ private fun MainShell(container: AppContainer) {
                     onBack = { navController.popBackStack() },
                     onOpenDsp = { navController.navigate("dsp") },
                     keepScreenOn = keepScreenOn,
+                    showFavorite = showNowPlayingFavorite,
+                    fitCover = fitCover,
+                    compactControls = compactControls,
+                    onToggleFavorite = toggleFavorite,
                 )
             }
         }

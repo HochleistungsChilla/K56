@@ -43,11 +43,14 @@ class PlaybackConnection(context: Context) {
 
 object PlaybackQueue {
 
+    const val KEY_FAVORITE = "k56_favorite"
+
     fun mediaItem(track: Track, source: PlaybackSource): MediaItem {
         val metadata = MediaMetadata.Builder()
             .setTitle(track.title)
             .setArtist(track.artistName)
             .setAlbumTitle(track.albumName)
+            .setExtras(android.os.Bundle().apply { putBoolean(KEY_FAVORITE, track.isFavorite) })
             .apply { track.imageUrl?.let { setArtworkUri(Uri.parse(it)) } }
             .build()
 
@@ -58,15 +61,25 @@ object PlaybackQueue {
             .setMediaMetadata(metadata)
             .build()
     }
+
+    /** Copies [item] and flips its favorite flag in the media metadata extras. */
+    fun withFavorite(item: MediaItem, favorite: Boolean): MediaItem {
+        val md = item.mediaMetadata
+        val extras = md.extras ?: android.os.Bundle()
+        extras.putBoolean(KEY_FAVORITE, favorite)
+        return item.buildUpon().setMediaMetadata(md.buildUpon().setExtras(extras).build()).build()
+    }
 }
 
 data class PlaybackUiState(
     val hasItem: Boolean = false,
+    val mediaId: String = "",
     val title: String = "",
     val artist: String = "",
     val album: String = "",
     val artworkUri: String? = null,
     val isPlaying: Boolean = false,
+    val isFavorite: Boolean = false,
     val positionMs: Long = 0L,
     val durationMs: Long = 0L,
     val bufferedMs: Long = 0L,

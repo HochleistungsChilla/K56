@@ -19,6 +19,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Favorite
+import androidx.compose.material.icons.rounded.FavoriteBorder
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
@@ -52,6 +54,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -74,6 +77,10 @@ fun PlayerScreen(
     onBack: () -> Unit,
     onOpenDsp: () -> Unit = {},
     keepScreenOn: Boolean = false,
+    showFavorite: Boolean = true,
+    fitCover: Boolean = false,
+    compactControls: Boolean = false,
+    onToggleFavorite: (String, Boolean) -> Unit = { _, _ -> },
 ) {
     val view = androidx.compose.ui.platform.LocalView.current
     androidx.compose.runtime.DisposableEffect(keepScreenOn) {
@@ -160,6 +167,16 @@ fun PlayerScreen(
                 modifier = Modifier.weight(1f),
                 textAlign = TextAlign.Center,
             )
+            if (showFavorite) {
+                IconButton(onClick = { onToggleFavorite(state.mediaId, state.isFavorite) }) {
+                    Icon(
+                        imageVector = if (state.isFavorite) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
+                        contentDescription = stringResource(R.string.player_favorite),
+                        tint = if (state.isFavorite) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
             IconButton(onClick = onOpenDsp) {
                 Icon(
                     Icons.Rounded.Tune,
@@ -209,6 +226,7 @@ fun PlayerScreen(
                     .fillMaxWidth(0.92f)
                     .aspectRatio(1f),
                 shape = RoundedCornerShape(24.dp),
+                contentScale = if (fitCover) ContentScale.Fit else ContentScale.Crop,
             )
         }
 
@@ -270,6 +288,11 @@ fun PlayerScreen(
 
         Spacer(Modifier.height(6.dp))
 
+        val playButtonSize = if (compactControls) 56.dp else 72.dp
+        val playIconSize = if (compactControls) 30.dp else 38.dp
+        val skipIconSize = if (compactControls) 28.dp else 36.dp
+        val skipSpacing = if (compactControls) 4.dp else 8.dp
+
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
@@ -286,30 +309,30 @@ fun PlayerScreen(
                 Icon(
                     Icons.Rounded.SkipPrevious,
                     contentDescription = stringResource(R.string.player_previous),
-                    modifier = Modifier.size(36.dp),
+                    modifier = Modifier.size(skipIconSize),
                 )
             }
-            Spacer(Modifier.size(8.dp))
+            Spacer(Modifier.size(skipSpacing))
             FilledIconButton(
                 onClick = {
                     if (state.isPlaying) controller?.pause() else controller?.play()
                 },
-                modifier = Modifier.size(72.dp),
+                modifier = Modifier.size(playButtonSize),
             ) {
                 Icon(
                     imageVector = if (state.isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
                     contentDescription = stringResource(
                         if (state.isPlaying) R.string.common_pause else R.string.common_play,
                     ),
-                    modifier = Modifier.size(38.dp),
+                    modifier = Modifier.size(playIconSize),
                 )
             }
-            Spacer(Modifier.size(8.dp))
+            Spacer(Modifier.size(skipSpacing))
             IconButton(onClick = { controller?.seekToNextMediaItem() }) {
                 Icon(
                     Icons.Rounded.SkipNext,
                     contentDescription = stringResource(R.string.player_next),
-                    modifier = Modifier.size(36.dp),
+                    modifier = Modifier.size(skipIconSize),
                 )
             }
             Spacer(Modifier.weight(1f))

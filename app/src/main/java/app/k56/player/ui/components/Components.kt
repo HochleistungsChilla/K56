@@ -69,6 +69,7 @@ fun Artwork(
     url: String?,
     modifier: Modifier = Modifier,
     shape: Shape = RoundedCornerShape(12.dp),
+    contentScale: ContentScale = ContentScale.Crop,
 ) {
     Box(
         modifier = modifier
@@ -87,7 +88,7 @@ fun Artwork(
             AsyncImage(
                 model = url,
                 contentDescription = null,
-                contentScale = ContentScale.Crop,
+                contentScale = contentScale,
                 modifier = Modifier.fillMaxSize(),
             )
         }
