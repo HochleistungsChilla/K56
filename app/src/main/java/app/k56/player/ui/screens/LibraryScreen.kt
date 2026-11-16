@@ -318,6 +318,22 @@ class LibraryViewModel(
         }
     }
 
+    fun toggleArtistFavorite(artist: Artist) {
+        val wanted = !artist.isFavorite
+        artists = artists.map { if (it.id == artist.id) it.copy(isFavorite = wanted) else it }
+        viewModelScope.launch {
+            try {
+                val actual = repository.setFavorite(artist.id, wanted)
+                if (actual != wanted) {
+                    artists = artists.map { if (it.id == artist.id) it.copy(isFavorite = actual) else it }
+                }
+            } catch (e: Exception) {
+                artists = artists.map { if (it.id == artist.id) it.copy(isFavorite = !wanted) else it }
+                error = e.userMessage(appContext)
+            }
+        }
+    }
+
     /**
      * Runs a selection action in the ViewModel scope so it survives the
      * selection bar disappearing; cancellation never reaches the user.
@@ -759,6 +775,8 @@ fun LibraryScreen(
                                 if (!selectedArtists.remove(artist.id)) selectedArtists.add(artist.id)
                             },
                             selected = artist.id in selectedArtists,
+                            isFavorite = artist.isFavorite,
+                            onToggleFavorite = { vm.toggleArtistFavorite(artist) },
                             onMenu = { contextArtist = artist },
                         )
                         DropdownMenu(

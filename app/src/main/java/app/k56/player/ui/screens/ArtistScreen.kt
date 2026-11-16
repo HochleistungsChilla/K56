@@ -17,6 +17,8 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.Favorite
+import androidx.compose.material.icons.rounded.FavoriteBorder
 import androidx.compose.material.icons.rounded.Shuffle
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -100,6 +102,27 @@ class ArtistViewModel(
             }
         }
     }
+
+    fun toggleFavorite() {
+        val current = details ?: return
+        val artist = current.artist
+        val wanted = !artist.isFavorite
+        details = current.copy(artist = artist.copy(isFavorite = wanted))
+        viewModelScope.launch {
+            try {
+                val actual = repository.setFavorite(artist.id, wanted)
+                val latest = details
+                if (latest != null && latest.artist.id == artist.id && actual != wanted) {
+                    details = latest.copy(artist = latest.artist.copy(isFavorite = actual))
+                }
+            } catch (e: Exception) {
+                val latest = details
+                if (latest != null && latest.artist.id == artist.id) {
+                    details = latest.copy(artist = latest.artist.copy(isFavorite = !wanted))
+                }
+            }
+        }
+    }
 }
 
 @Composable
@@ -150,6 +173,8 @@ fun ArtistScreen(
                         onShuffle = {
                             if (details.topTracks.isNotEmpty()) onPlay(details.topTracks.shuffled(), 0)
                         },
+                        isFavorite = details.artist.isFavorite,
+                        onToggleFavorite = { vm.toggleFavorite() },
                     )
                 }
 
@@ -213,6 +238,8 @@ private fun ArtistHeader(
     details: ArtistDetails,
     onPlay: () -> Unit,
     onShuffle: () -> Unit,
+    isFavorite: Boolean,
+    onToggleFavorite: () -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -242,6 +269,14 @@ private fun ArtistHeader(
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+        IconButton(onClick = onToggleFavorite) {
+            Icon(
+                imageVector = if (isFavorite) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
+                contentDescription = null,
+                tint = if (isFavorite) MaterialTheme.colorScheme.primary
+                else MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
         if (details.topTracks.isNotEmpty()) {
             Spacer(Modifier.height(10.dp))
             androidx.compose.foundation.layout.Row(verticalAlignment = Alignment.CenterVertically) {

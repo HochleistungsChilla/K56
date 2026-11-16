@@ -19,6 +19,8 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.Favorite
+import androidx.compose.material.icons.rounded.FavoriteBorder
 import androidx.compose.material.icons.rounded.Shuffle
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
@@ -118,6 +120,27 @@ class AlbumViewModel(
             }
         }
     }
+
+    fun toggleFavorite() {
+        val current = details ?: return
+        val album = current.album
+        val wanted = !album.isFavorite
+        details = current.copy(album = album.copy(isFavorite = wanted))
+        viewModelScope.launch {
+            try {
+                val actual = repository.setFavorite(album.id, wanted)
+                val latest = details
+                if (latest != null && latest.album.id == album.id && actual != wanted) {
+                    details = latest.copy(album = latest.album.copy(isFavorite = actual))
+                }
+            } catch (e: Exception) {
+                val latest = details
+                if (latest != null && latest.album.id == album.id) {
+                    details = latest.copy(album = latest.album.copy(isFavorite = !wanted))
+                }
+            }
+        }
+    }
 }
 
 @Composable
@@ -169,6 +192,8 @@ fun AlbumScreen(
                         onShuffle = {
                             if (details.tracks.isNotEmpty()) onPlay(details.tracks.shuffled(), 0)
                         },
+                        isFavorite = details.album.isFavorite,
+                        onToggleFavorite = { vm.toggleFavorite() },
                     )
                 }
                 val overview = details.album.overview
@@ -252,6 +277,8 @@ private fun AlbumHeader(
     onOpenArtist: (String) -> Unit,
     onPlay: () -> Unit,
     onShuffle: () -> Unit,
+    isFavorite: Boolean,
+    onToggleFavorite: () -> Unit,
 ) {
     val album = details.album
     Column(
@@ -308,6 +335,14 @@ private fun AlbumHeader(
                 Icon(
                     Icons.Rounded.Shuffle,
                     contentDescription = stringResource(R.string.player_shuffle),
+                )
+            }
+            IconButton(onClick = onToggleFavorite) {
+                Icon(
+                    imageVector = if (isFavorite) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
+                    contentDescription = null,
+                    tint = if (isFavorite) MaterialTheme.colorScheme.primary
+                    else MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }

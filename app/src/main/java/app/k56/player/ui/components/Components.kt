@@ -215,6 +215,8 @@ fun ArtistCard(
     modifier: Modifier = Modifier,
     onLongClick: (() -> Unit)? = null,
     selected: Boolean = false,
+    isFavorite: Boolean = false,
+    onToggleFavorite: (() -> Unit)? = null,
     offlineCount: Int? = null,
     onMenu: (() -> Unit)? = null,
 ) {
@@ -274,22 +276,38 @@ fun ArtistCard(
                     )
                 }
             }
-            if (onMenu != null) {
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(4.dp)
-                        .size(24.dp)
-                        .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.6f), CircleShape)
-                        .clickable(onClick = onMenu),
-                    contentAlignment = Alignment.Center,
+            if (onToggleFavorite != null || onMenu != null) {
+                Row(
+                    modifier = Modifier.align(Alignment.TopEnd),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Icon(
-                        imageVector = Icons.Rounded.MoreVert,
-                        contentDescription = stringResource(R.string.action_more),
-                        tint = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.size(16.dp),
-                    )
+                    if (onToggleFavorite != null) {
+                        IconButton(onClick = onToggleFavorite) {
+                            Icon(
+                                imageVector = if (isFavorite) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
+                                contentDescription = null,
+                                tint = if (isFavorite) MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.75f),
+                            )
+                        }
+                    }
+                    if (onMenu != null) {
+                        Box(
+                            modifier = Modifier
+                                .padding(end = 4.dp)
+                                .size(24.dp)
+                                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.6f), CircleShape)
+                                .clickable(onClick = onMenu),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.MoreVert,
+                                contentDescription = stringResource(R.string.action_more),
+                                tint = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.size(16.dp),
+                            )
+                        }
+                    }
                 }
             }
         }

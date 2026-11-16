@@ -860,7 +860,7 @@ class JellyfinRepository(
         put("SortOrder", "Ascending")
         limit?.let { put("Limit", it.toString()) }
         startIndex?.let { put("StartIndex", it.toString()) }
-        put("Fields", "PrimaryImageAspectRatio,Overview,Genres")
+        put("Fields", "PrimaryImageAspectRatio,Overview,Genres,UserData")
         put("ImageTypeLimit", "1")
         put("EnableImageTypes", "Primary")
     }
@@ -918,6 +918,7 @@ class JellyfinRepository(
         name = Name ?: "Unbekannter Interpret",
         imageUrl = absoluteImageUrl(Id, ImageTags?.get("Primary")),
         overview = Overview?.takeIf { it.isNotBlank() },
+        isFavorite = UserData?.IsFavorite == true,
     )
 
     private fun BaseItemDto.toTrack(): Track {
@@ -960,7 +961,7 @@ class JellyfinRepository(
 
         const val ITEM_FIELDS =
             "PrimaryImageAspectRatio,ProductionYear,AlbumArtist,Artists,RunTimeTicks," +
-                "ChildCount,MediaSources,Container,Bitrate,Genres,Overview"
+                "ChildCount,MediaSources,Container,Bitrate,Genres,Overview,UserData"
 
         val DIRECT_PLAY_CONTAINERS = setOf(
             "mp3", "aac", "m4a", "m4b", "mp4", "flac", "ogg", "opus", "wav", "webm", "mka", "alac",

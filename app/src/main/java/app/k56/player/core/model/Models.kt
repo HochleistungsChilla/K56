@@ -81,6 +81,7 @@ data class Artist(
     val name: String,
     val imageUrl: String?,
     val overview: String? = null,
+    val isFavorite: Boolean = false,
 )
 
 data class Track(
