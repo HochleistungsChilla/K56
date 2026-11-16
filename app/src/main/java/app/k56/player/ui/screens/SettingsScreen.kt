@@ -58,6 +58,7 @@ fun SettingsScreen(
     repository: MediaRepository,
     offlineStore: OfflineStore,
     settingsStore: SettingsStore,
+    onOpenDsp: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val session by repository.sessionFlow.collectAsStateWithLifecycle()
@@ -415,6 +416,27 @@ fun SettingsScreen(
                             label = { Text(stringResource(themeLabel(entry))) },
                         )
                     }
+                }
+            }
+        }
+
+        Spacer(Modifier.height(14.dp))
+
+        Surface(
+            color = MaterialTheme.colorScheme.surfaceContainer,
+            shape = RoundedCornerShape(20.dp),
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Column(Modifier.padding(16.dp)) {
+                Text(stringResource(R.string.dsp_title), style = MaterialTheme.typography.titleLarge)
+                Text(
+                    stringResource(R.string.dsp_settings_body),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(Modifier.height(10.dp))
+                OutlinedButton(onClick = onOpenDsp, modifier = Modifier.fillMaxWidth()) {
+                    Text(stringResource(R.string.dsp_open))
                 }
             }
         }

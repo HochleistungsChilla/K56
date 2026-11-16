@@ -38,6 +38,7 @@ import app.k56.player.playback.PlaybackQueue
 import app.k56.player.ui.components.MiniPlayer
 import app.k56.player.ui.screens.AlbumScreen
 import app.k56.player.ui.screens.ArtistScreen
+import app.k56.player.ui.screens.DspScreen
 import app.k56.player.ui.screens.HomeScreen
 import app.k56.player.ui.screens.LibraryScreen
 import app.k56.player.ui.screens.LoginScreen
@@ -164,6 +165,13 @@ private fun MainShell(container: AppContainer) {
                     onPlay = playTracks,
                 )
             }
+            composable("dsp") {
+                DspScreen(
+                    dsp = container.dspState,
+                    irLibrary = container.irLibrary,
+                    onBack = { navController.popBackStack() },
+                )
+            }
             composable("search") {
                 SearchScreen(
                     repository = repository,
@@ -173,7 +181,12 @@ private fun MainShell(container: AppContainer) {
                 )
             }
             composable("settings") {
-                SettingsScreen(repository, container.offlineStore, container.settingsStore)
+                SettingsScreen(
+                    repository = repository,
+                    offlineStore = container.offlineStore,
+                    settingsStore = container.settingsStore,
+                    onOpenDsp = { navController.navigate("dsp") },
+                )
             }
             composable(
                 route = "album/{albumId}",

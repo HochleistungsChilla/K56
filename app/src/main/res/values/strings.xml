@@ -165,4 +165,23 @@
     <string name="quality_original">Original</string>
     <string name="download_quality_original_hint">Original files, untouched — best quality, largest size.</string>
     <string name="download_quality_transcode_hint">Transcoded on the server at %1$d kbps. Smaller files, slight quality loss.</string>
+
+    <string name="dsp_title">DSP &amp; sound</string>
+    <string name="dsp_settings_body">Equalizer, preamp, limiter and convolution with ViPER4Android kernels.</string>
+    <string name="dsp_open">Open DSP</string>
+    <string name="dsp_enable">DSP enabled</string>
+    <string name="dsp_enable_body">Applies to playback inside K56 only.</string>
+    <string name="dsp_preamp">Preamp %1$d dB</string>
+    <string name="dsp_bands">Equalizer</string>
+    <string name="dsp_limiter">Limiter</string>
+    <string name="dsp_limiter_body">Prevents clipping after boost and convolution.</string>
+    <string name="dsp_convolution">Convolution</string>
+    <string name="dsp_convolution_body">Kernels come from the ViPER4Android folder and are imported automatically.</string>
+    <string name="dsp_scan">Scan V4A folder</string>
+    <string name="dsp_pick_folder">Choose folder</string>
+    <string name="dsp_pick_file">Import .irs file</string>
+    <string name="dsp_ir_off">Off</string>
+    <string name="dsp_ir_none">No kernel selected</string>
+    <string name="dsp_imported">%1$d kernel(s) imported</string>
+    <string name="dsp_import_failed">File could not be read as an impulse response.</string>
 </resources>

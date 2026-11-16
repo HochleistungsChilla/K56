@@ -13,13 +13,17 @@ import androidx.media3.datasource.cache.LeastRecentlyUsedCacheEvictor
 import androidx.media3.datasource.cache.NoOpCacheEvictor
 import androidx.media3.datasource.cache.SimpleCache
 import androidx.media3.database.StandaloneDatabaseProvider
+import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.audio.AudioSink
+import androidx.media3.exoplayer.audio.DefaultAudioSink
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
 import app.k56.player.K56App
 import app.k56.player.data.SettingsStore
 import app.k56.player.data.StorageLocation
+import app.k56.player.dsp.DspProcessor
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -56,6 +60,7 @@ class PlaybackService : MediaSessionService() {
         super.onCreate()
 
         player = ExoPlayer.Builder(this)
+            .setRenderersFactory(DspRenderersFactory(this))
             .setMediaSourceFactory(
                 DefaultMediaSourceFactory(
                     buildCachedDataSourceFactory(),
@@ -100,6 +105,23 @@ class PlaybackService : MediaSessionService() {
             stopSelf()
         }
         super.onTaskRemoved(rootIntent)
+    }
+
+    /**
+     * Builds the audio sink with the DSP chain inserted after decoding, which is
+     * the same point in the pipeline where V4A and JamesDSP hook in.
+     */
+    private inner class DspRenderersFactory(context: android.content.Context) :
+        DefaultRenderersFactory(context) {
+        override fun buildAudioSink(
+            context: android.content.Context,
+            enableFloatOutput: Boolean,
+            enableAudioTrackPlaybackParams: Boolean,
+        ): AudioSink = DefaultAudioSink.Builder(context)
+            .setAudioProcessors(arrayOf(DspProcessor(appContainer.dspState)))
+            .setEnableFloatOutput(true)
+            .setEnableAudioTrackPlaybackParams(enableAudioTrackPlaybackParams)
+            .build()
     }
 
     /** Upstream HTTP wrapped in a bounded on-disk cache (512 MiB, LRU). */
