@@ -6,8 +6,11 @@ import app.k56.player.core.model.Artist
 import app.k56.player.core.model.ArtistDetails
 import app.k56.player.core.model.BackendKind
 import app.k56.player.core.model.DiscoveredServer
+import app.k56.player.core.model.LibraryCounts
+import app.k56.player.core.model.LibraryDelta
 import app.k56.player.core.model.LibraryView
 import app.k56.player.core.model.PlaybackSource
+import app.k56.player.core.model.Playlist
 import app.k56.player.core.model.SearchResults
 import app.k56.player.core.model.Session
 import app.k56.player.core.model.Track
@@ -151,6 +154,50 @@ class RepositoryRouter(
         delegate().instantMix(seedIds, limit)
 
     override suspend fun favoriteTracks(limit: Int): List<Track> = delegate().favoriteTracks(limit)
+
+    override suspend fun libraryCounts(parentId: String?): LibraryCounts =
+        delegate().libraryCounts(parentId)
+
+    override suspend fun changedSince(minDateLastSaved: Long): LibraryDelta =
+        delegate().changedSince(minDateLastSaved)
+
+    override suspend fun albumsByArtist(artistId: String, limit: Int): List<Album> =
+        delegate().albumsByArtist(artistId, limit)
+
+    override suspend fun artistTopTracks(artistId: String, limit: Int): List<Track> =
+        delegate().artistTopTracks(artistId, limit)
+
+    override suspend fun artistAppearsOn(artistId: String, limit: Int): List<Album> =
+        delegate().artistAppearsOn(artistId, limit)
+
+    override suspend fun genres(parentId: String?): List<String> =
+        delegate().genres(parentId)
+
+    override suspend fun genreAlbums(genre: String): List<Album> =
+        delegate().genreAlbums(genre)
+
+    override suspend fun genreTracks(genre: String): List<Track> =
+        delegate().genreTracks(genre)
+
+    override suspend fun playlists(): List<Playlist> = delegate().playlists()
+
+    override suspend fun playlistTracks(playlistId: String): List<Track> =
+        delegate().playlistTracks(playlistId)
+
+    override suspend fun createPlaylist(name: String, itemIds: List<String>): Playlist? =
+        delegate().createPlaylist(name, itemIds)
+
+    override suspend fun renamePlaylist(playlistId: String, name: String): Boolean =
+        delegate().renamePlaylist(playlistId, name)
+
+    override suspend fun deletePlaylist(playlistId: String): Boolean =
+        delegate().deletePlaylist(playlistId)
+
+    override suspend fun addToPlaylist(playlistId: String, itemIds: List<String>): Boolean =
+        delegate().addToPlaylist(playlistId, itemIds)
+
+    override suspend fun removeFromPlaylist(playlistId: String, itemIds: List<String>): Boolean =
+        delegate().removeFromPlaylist(playlistId, itemIds)
 
     override suspend fun search(term: String): SearchResults = delegate().search(term)
 
