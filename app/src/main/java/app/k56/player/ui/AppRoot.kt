@@ -410,6 +410,7 @@ private fun MainShell(container: AppContainer) {
                     artistId = entry.arguments?.getString("artistId").orEmpty(),
                     onBack = { navController.popBackStack() },
                     onOpenAlbum = { navController.navigate("album/$it") },
+                    onPlay = playTracks,
                 )
             }
             composable("player") {

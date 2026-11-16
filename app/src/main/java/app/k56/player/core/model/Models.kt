@@ -80,6 +80,7 @@ data class Artist(
     val id: String,
     val name: String,
     val imageUrl: String?,
+    val overview: String? = null,
 )
 
 data class Track(
@@ -107,6 +108,8 @@ data class AlbumDetails(
 data class ArtistDetails(
     val artist: Artist,
     val albums: List<Album>,
+    val topTracks: List<Track> = emptyList(),
+    val appearsOn: List<Album> = emptyList(),
 )
 
 data class SearchResults(

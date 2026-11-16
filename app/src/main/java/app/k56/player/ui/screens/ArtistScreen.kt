@@ -33,13 +33,17 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.k56.player.R
 import app.k56.player.core.model.ArtistDetails
+import app.k56.player.core.model.Track
 import app.k56.player.data.MediaRepository
 import app.k56.player.ui.appViewModel
 import app.k56.player.ui.components.AlbumCard
 import app.k56.player.ui.components.Artwork
 import app.k56.player.ui.components.ErrorState
+import app.k56.player.ui.components.HorizontalAlbumRow
 import app.k56.player.ui.components.LoadingState
 import app.k56.player.ui.components.ScreenHeader
+import app.k56.player.ui.components.SectionHeader
+import app.k56.player.ui.components.TrackRow
 import app.k56.player.ui.userMessage
 import kotlinx.coroutines.launch
 
@@ -81,6 +85,7 @@ fun ArtistScreen(
     artistId: String,
     onBack: () -> Unit,
     onOpenAlbum: (String) -> Unit,
+    onPlay: (List<Track>, Int) -> Unit,
 ) {
     val context = LocalContext.current
     val vm = appViewModel { ArtistViewModel(repository, artistId, context.applicationContext) }
@@ -100,12 +105,58 @@ fun ArtistScreen(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth(),
-                contentPadding = PaddingValues(16.dp),
+                contentPadding = PaddingValues(bottom = 24.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 item(span = { GridItemSpan(maxLineSpan) }) {
                     ArtistHeader(details)
+                }
+
+                val overview = details.artist.overview
+                if (!overview.isNullOrBlank()) {
+                    item(span = { GridItemSpan(maxLineSpan) }) {
+                        Text(
+                            text = overview,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(horizontal = 16.dp),
+                        )
+                    }
+                }
+
+                if (details.topTracks.isNotEmpty()) {
+                    item(span = { GridItemSpan(maxLineSpan) }) {
+                        SectionHeader(stringResource(R.string.artist_top_tracks))
+                    }
+                    details.topTracks.forEachIndexed { index, track ->
+                        item(span = { GridItemSpan(maxLineSpan) }) {
+                            TrackRow(
+                                track = track,
+                                onClick = { onPlay(details.topTracks, index) },
+                                index = index + 1,
+                            )
+                        }
+                    }
+                }
+
+                if (details.appearsOn.isNotEmpty()) {
+                    item(span = { GridItemSpan(maxLineSpan) }) {
+                        Spacer(Modifier.height(4.dp))
+                        SectionHeader(stringResource(R.string.artist_appears_on))
+                    }
+                    item(span = { GridItemSpan(maxLineSpan) }) {
+                        HorizontalAlbumRow(
+                            albums = details.appearsOn,
+                            onOpenAlbum = onOpenAlbum,
+                        )
+                    }
+                }
+
+                if (details.albums.isNotEmpty()) {
+                    item(span = { GridItemSpan(maxLineSpan) }) {
+                        SectionHeader(stringResource(R.string.library_tab_albums))
+                    }
                 }
                 items(details.albums, key = { it.id }) { album ->
                     AlbumCard(album = album, onClick = { onOpenAlbum(album.id) })

@@ -336,7 +336,7 @@ class JellyfinRepository(
         val current = requireSession()
         val api = ensureApi()
         val artist = api.item(artistId, current.userId)
-        val albums = api.items(
+        val ownAlbums = api.items(
             itemQuery(
                 parentId = null,
                 includeTypes = "MusicAlbum",
@@ -347,7 +347,44 @@ class JellyfinRepository(
                 limit = 200,
             ),
         ).Items.orEmpty().map { it.toAlbum() }
-        return ArtistDetails(artist.toArtist(), albums)
+        return ArtistDetails(
+            artist = artist.toArtist(),
+            albums = ownAlbums,
+            topTracks = artistTopTracks(artistId),
+            appearsOn = artistAppearsOn(artistId),
+        )
+    }
+
+    override suspend fun artistTopTracks(artistId: String, limit: Int): List<Track> = ensureApi()
+        .items(
+            itemQuery(
+                includeTypes = "Audio",
+                recursive = true,
+                sortBy = "PlayCount,SortName",
+                sortOrder = "Descending,Ascending",
+                artistIds = artistId,
+                limit = limit,
+            ),
+        )
+        .Items.orEmpty()
+        .map { it.toTrack() }
+
+    override suspend fun artistAppearsOn(artistId: String, limit: Int): List<Album> {
+        val ownIds = albumsByArtist(artistId, 200).map { it.id }.toSet()
+        return ensureApi()
+            .items(
+                itemQuery(
+                    includeTypes = "MusicAlbum",
+                    recursive = true,
+                    sortBy = "ProductionYear,SortName",
+                    sortOrder = "Ascending",
+                    artistIds = artistId,
+                    limit = limit,
+                ),
+            )
+            .Items.orEmpty()
+            .map { it.toAlbum() }
+            .filter { it.id !in ownIds }
     }
 
     override suspend fun songs(parentId: String?, limit: Int): List<Track> = ensureApi()
@@ -617,6 +654,7 @@ class JellyfinRepository(
         id = Id,
         name = Name ?: "Unbekannter Interpret",
         imageUrl = absoluteImageUrl(Id, ImageTags?.get("Primary")),
+        overview = Overview?.takeIf { it.isNotBlank() },
     )
 
     private fun BaseItemDto.toTrack(): Track {

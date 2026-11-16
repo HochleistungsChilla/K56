@@ -79,6 +79,15 @@ interface MediaRepository {
         albums(null, limit = 2000).filter { it.artistId == artistId }.take(limit)
 
     /**
+     * An artist's most-played tracks. Backends without a play-count query return
+     * an empty list; the artist page hides the section when there is nothing.
+     */
+    suspend fun artistTopTracks(artistId: String, limit: Int = 20): List<Track> = emptyList()
+
+    /** Albums the artist appears on but does not head as album artist. */
+    suspend fun artistAppearsOn(artistId: String, limit: Int = 50): List<Album> = emptyList()
+
+    /**
      * Every favourite track the server knows, independent of how many songs the
      * library list happens to load. Backends without a filter fall back to
      * filtering [songs].
