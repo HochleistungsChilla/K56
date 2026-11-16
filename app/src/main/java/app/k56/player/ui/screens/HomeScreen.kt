@@ -167,10 +167,6 @@ fun HomeScreen(
     val wifiOnlyDownloads = settingsStore.wifiOnlyDownloads.value
     fun enqueueTracks(tracks: List<Track>) {
         scope.launch {
-            if (wifiOnlyDownloads && !onWifi) {
-                Toast.makeText(context, R.string.download_wifi_only, Toast.LENGTH_SHORT).show()
-                return@launch
-            }
             val requests = tracks.mapNotNull { track ->
                 if (offlineStore.isDownloaded(track.id)) return@mapNotNull null
                 val source = runCatching { repository.downloadSource(track) }.getOrNull()

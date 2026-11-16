@@ -400,15 +400,16 @@ class LibraryViewModel(
         error = null
         // The on-device index makes the library open instantly; the server is
         // only asked for the light things (favorites, playlists, counts).
-        val hasIndex = !libraryDb.isEmpty()
-        if (hasIndex) {
-            readFromIndex()
-            loading = false
-        } else {
-            loading = true
-        }
+        loading = true
 
         viewModelScope.launch {
+            val hasIndex = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                !libraryDb.isEmpty()
+            }
+            if (hasIndex) {
+                readFromIndex()
+                loading = false
+            }
             try {
                 coroutineScope {
                     val libraryId = repository.defaultLibraryId()
@@ -456,12 +457,27 @@ class LibraryViewModel(
     }
 
     /** Fills every list from the SQLite index. Cheap enough for the main thread. */
-    fun readFromIndex() {
-        albums = libraryDb.allAlbums()
-        artists = libraryDb.allArtists()
-        songs = libraryDb.allTracks()
-        genres = libraryDb.allGenres()
-        counts = libraryDb.counts()
+    suspend fun readFromIndex() {
+        // ~60k rows build a lot of objects: keep that off the main thread.
+        val snapshot = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            listOf(
+                libraryDb.allAlbums(),
+                libraryDb.allArtists(),
+                libraryDb.allTracks(),
+                libraryDb.allGenres(),
+            )
+        }
+        @Suppress("UNCHECKED_CAST")
+        albums = snapshot[0] as List<Album>
+        @Suppress("UNCHECKED_CAST")
+        artists = snapshot[1] as List<Artist>
+        @Suppress("UNCHECKED_CAST")
+        songs = snapshot[2] as List<Track>
+        @Suppress("UNCHECKED_CAST")
+        genres = snapshot[3] as List<String>
+        counts = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            libraryDb.counts()
+        }
         refreshFavorites()
     }
 }
@@ -559,10 +575,6 @@ fun LibraryScreen(
     // Resolve sources, then hand the whole batch to the concurrent queue.
     fun enqueueTracks(tracks: List<Track>) {
         scope.launch {
-            if (wifiOnlyDownloads && !onWifi) {
-                Toast.makeText(context, R.string.download_wifi_only, Toast.LENGTH_SHORT).show()
-                return@launch
-            }
             val requests = tracks.mapNotNull { track ->
                 if (offlineStore.isDownloaded(track.id)) return@mapNotNull null
                 val source = runCatching { repository.downloadSource(track) }.getOrNull()

@@ -20,6 +20,12 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        CrashLog.install(this)
+        // Crashes from the previous run land in the debug log, so they can be shared.
+        CrashLog.drain(this)?.lineSequence()
+            ?.filter { it.isNotBlank() }
+            ?.take(200)
+            ?.forEach { app.k56.player.data.library.SyncLog.error("Absturz: $it") }
         enableEdgeToEdge()
 
         if (Build.VERSION.SDK_INT >= 33 &&

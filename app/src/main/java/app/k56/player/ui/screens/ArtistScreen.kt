@@ -163,20 +163,12 @@ fun ArtistScreen(
 
     fun downloadTracks(tracks: List<Track>) {
         scope.launch {
-            if (wifiOnlyDownloads && !onWifi) {
-                Toast.makeText(context, R.string.download_wifi_only, Toast.LENGTH_SHORT).show()
-                return@launch
-            }
             enqueueDownloads(tracks, repository, offlineStore)
         }
     }
 
     fun downloadAllAlbums(albums: List<Album>) {
         scope.launch {
-            if (wifiOnlyDownloads && !onWifi) {
-                Toast.makeText(context, R.string.download_wifi_only, Toast.LENGTH_SHORT).show()
-                return@launch
-            }
             val tracks = albums.flatMap { album ->
                 runCatching { repository.albumDetails(album.id).tracks }.getOrDefault(emptyList())
             }
