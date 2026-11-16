@@ -1,5 +1,7 @@
 package app.k56.player.ui.screens
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -39,6 +41,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import android.widget.Toast
 import app.k56.player.R
 import app.k56.player.BuildConfig
 import app.k56.player.core.model.BackendKind
@@ -91,6 +94,42 @@ fun SettingsScreen(
     val preferExternal by repository.preferExternal.collectAsStateWithLifecycle()
     val networkStatus by repository.networkStatus.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
+
+    val exportLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("application/json"),
+    ) { uri ->
+        if (uri != null) {
+            scope.launch {
+                runCatching {
+                    context.contentResolver.openOutputStream(uri)?.use { out ->
+                        out.write(settingsStore.exportJson().toByteArray())
+                    }
+                }.onSuccess {
+                    Toast.makeText(context, R.string.backup_export_ok, Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+    val importLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument(),
+    ) { uri ->
+        if (uri != null) {
+            scope.launch {
+                val text = runCatching {
+                    context.contentResolver.openInputStream(uri)
+                        ?.use { it.readBytes().decodeToString() }
+                        .orEmpty()
+                }.getOrNull()
+                if (text.isNullOrBlank()) {
+                    Toast.makeText(context, R.string.backup_import_failed, Toast.LENGTH_LONG).show()
+                } else {
+                    settingsStore.importJson(text)
+                    Toast.makeText(context, R.string.backup_import_ok, Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
     var editOpen by remember { mutableStateOf(false) }
     var editBusy by remember { mutableStateOf(false) }
     var editError by remember { mutableStateOf<String?>(null) }
@@ -762,6 +801,33 @@ fun SettingsScreen(
                 Spacer(Modifier.height(10.dp))
                 OutlinedButton(onClick = onOpenDsp, modifier = Modifier.fillMaxWidth()) {
                     Text(stringResource(R.string.dsp_open))
+                }
+            }
+        }
+
+        Spacer(Modifier.height(14.dp))
+
+        Surface(
+            color = MaterialTheme.colorScheme.surfaceContainer,
+            shape = RoundedCornerShape(20.dp),
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Column(Modifier.padding(16.dp)) {
+                Text(stringResource(R.string.backup_title), style = MaterialTheme.typography.titleLarge)
+                Spacer(Modifier.height(8.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedButton(
+                        onClick = { exportLauncher.launch("k56-settings.json") },
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        Text(stringResource(R.string.backup_export))
+                    }
+                    OutlinedButton(
+                        onClick = { importLauncher.launch(arrayOf("application/json")) },
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        Text(stringResource(R.string.backup_import))
+                    }
                 }
             }
         }

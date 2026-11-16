@@ -272,6 +272,13 @@
     <string name="orientation_landscape">Querformat</string>
     <string name="grid_spacing_title">Rasterabstand</string>
 
+    <string name="backup_title">Sicherung &amp; Wiederherstellung</string>
+    <string name="backup_export">Einstellungen exportieren</string>
+    <string name="backup_import">Einstellungen importieren</string>
+    <string name="backup_export_ok">Einstellungen exportiert</string>
+    <string name="backup_import_ok">Einstellungen importiert</string>
+    <string name="backup_import_failed">Import fehlgeschlagen: ungültige Datei</string>
+
     <string name="np_options_title">Jetzt läuft</string>
     <string name="np_hide_favorite">Favorit-Button zeigen</string>
     <string name="np_hide_favorite_body">Herz-Button, um den aktuellen Titel als Favorit zu setzen.</string>

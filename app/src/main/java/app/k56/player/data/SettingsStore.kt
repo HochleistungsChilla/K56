@@ -5,6 +5,7 @@ import android.os.Environment
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import org.json.JSONObject
 import java.io.File
 
 /** Where downloads and the streaming cache are written. */
@@ -179,6 +180,64 @@ class SettingsStore(context: Context) {
     fun setGridSpacing(value: Int) {
         prefs.edit().putInt(KEY_GRID_SPACING, value).apply()
         _gridSpacing.value = value
+    }
+
+    /** Serializes every setting to a JSON object. Contains no tokens or secrets. */
+    fun exportJson(): String {
+        val obj = JSONObject()
+        prefs.all.forEach { (key, value) -> obj.put(key, value) }
+        return obj.toString()
+    }
+
+    /** Replaces every setting from a JSON export and refreshes the in-memory state. */
+    fun importJson(json: String) {
+        val obj = runCatching { JSONObject(json) }.getOrNull() ?: return
+        val editor = prefs.edit().clear()
+        obj.keys().forEach { key ->
+            when (val value = obj.opt(key)) {
+                is Boolean -> editor.putBoolean(key, value)
+                is Int -> editor.putInt(key, value)
+                is Long -> editor.putLong(key, value)
+                is String -> editor.putString(key, value)
+                else -> Unit
+            }
+        }
+        editor.apply()
+        reload()
+    }
+
+    /** Re-reads every value so imported settings take effect immediately. */
+    private fun reload() {
+        _forceTranscode.value = prefs.getBoolean(KEY_FORCE_TRANSCODE, false)
+        _preferExternal.value = prefs.getBoolean(KEY_PREFER_EXTERNAL, false)
+        _storageLocation.value = runCatching {
+            StorageLocation.valueOf(prefs.getString(KEY_STORAGE, null) ?: "INTERNAL")
+        }.getOrDefault(StorageLocation.INTERNAL)
+        _downloadQuality.value = runCatching {
+            DownloadQuality.valueOf(prefs.getString(KEY_DOWNLOAD_QUALITY, null) ?: "ORIGINAL")
+        }.getOrDefault(DownloadQuality.ORIGINAL)
+        _downloadFormat.value = runCatching {
+            DownloadFormat.valueOf(prefs.getString(KEY_DOWNLOAD_FORMAT, null) ?: "AAC")
+        }.getOrDefault(DownloadFormat.AAC)
+        _keepScreenOn.value = prefs.getBoolean(KEY_KEEP_SCREEN_ON, true)
+        _showTrackNumbers.value = prefs.getBoolean(KEY_TRACK_NUMBERS, true)
+        _showTrackSubtitle.value = prefs.getBoolean(KEY_SHOW_SUBTITLE, true)
+        _showItemCount.value = prefs.getBoolean(KEY_SHOW_ITEM_COUNT, false)
+        _wifiOnlyDownloads.value = prefs.getBoolean(KEY_WIFI_ONLY, true)
+        _autoCacheFavorites.value = prefs.getBoolean(KEY_AUTO_CACHE_FAVORITES, false)
+        _ignoreArticles.value = prefs.getBoolean(KEY_IGNORE_ARTICLES, true)
+        _homeSections.value = (prefs.getString(KEY_HOME_SECTIONS, null) ?: DEFAULT_HOME_SECTIONS)
+            .split(',')
+            .filter { it.isNotBlank() }
+        _libraryColumns.value = prefs.getInt(KEY_COLUMNS, 0)
+        _autoplay.value = prefs.getBoolean(KEY_AUTOPLAY, true)
+        _circularQueue.value = prefs.getBoolean(KEY_CIRCULAR_QUEUE, false)
+        _cacheLimitMb.value = prefs.getInt(KEY_CACHE_LIMIT, 512)
+        _resumeThresholdSeconds.value = prefs.getInt(KEY_RESUME_THRESHOLD, 15)
+        _screenOrientation.value = runCatching {
+            ScreenOrientation.valueOf(prefs.getString(KEY_ORIENTATION, null) ?: "AUTO")
+        }.getOrDefault(ScreenOrientation.AUTO)
+        _gridSpacing.value = prefs.getInt(KEY_GRID_SPACING, 12)
     }
 
     fun setWifiOnlyDownloads(value: Boolean) {
