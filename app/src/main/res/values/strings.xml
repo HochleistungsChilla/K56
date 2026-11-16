@@ -196,4 +196,6 @@
     <string name="cache_clear_stream">Clear stream cache</string>
     <string name="cache_downloads_title">Downloads</string>
     <string name="cache_delete_one">Delete download</string>
+
+    <string name="offline_reload">Reload</string>
 </resources>

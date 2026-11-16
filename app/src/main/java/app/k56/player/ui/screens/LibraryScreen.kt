@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
@@ -225,6 +226,7 @@ fun LibraryScreen(
                     )
                 } else {
                     val missing = favorites.count { it.id !in downloadedIds }
+                    val downloaded = favorites.count { it.id in downloadedIds }
                     Column(Modifier.weight(1f)) {
                         Row(
                             modifier = Modifier
@@ -242,6 +244,26 @@ fun LibraryScreen(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.weight(1f),
                             )
+                            if (downloaded > 0 && missing == 0) {
+                                OutlinedButton(
+                                    onClick = {
+                                        scope.launch {
+                                            favorites.filter { it.id in downloadedIds }.forEach { track ->
+                                                try {
+                                                    // Replace the old file so the new quality actually applies.
+                                                    offlineStore.delete(track.id)
+                                                    val source = repository.downloadSource(track)
+                                                    offlineStore.download(track, source.url, repository.playbackHeaders())
+                                                } catch (_: Exception) {
+                                                    // one failure must not abort the batch
+                                                }
+                                            }
+                                        }
+                                    },
+                                ) {
+                                    Text(stringResource(R.string.offline_reload))
+                                }
+                            }
                             if (missing > 0) {
                                 Button(
                                     onClick = {

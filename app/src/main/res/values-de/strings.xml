@@ -186,4 +186,6 @@
     <string name="cache_clear_stream">Streaming-Cache leeren</string>
     <string name="cache_downloads_title">Downloads</string>
     <string name="cache_delete_one">Download löschen</string>
+
+    <string name="offline_reload">Neu laden</string>
 </resources>
