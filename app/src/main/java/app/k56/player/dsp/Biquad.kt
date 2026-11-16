@@ -69,6 +69,12 @@ class Biquad {
         a2 = (((a + 1) - (a - 1) * cosw - twoSqrtAalpha) / a0).toFloat()
     }
 
+    /** Direct coefficient assignment (used by the ViPER DDC cascade). */
+    fun setCoefficients(nb0: Float, nb1: Float, nb2: Float, na1: Float, na2: Float) {
+        b0 = nb0; b1 = nb1; b2 = nb2
+        a1 = na1; a2 = na2
+    }
+
     fun process(input: Float): Float {
         val out = b0 * input + b1 * x1 + b2 * x2 - a1 * y1 - a2 * y2
         x2 = x1; x1 = input

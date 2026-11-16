@@ -9,6 +9,7 @@ import app.k56.player.data.SettingsStore
 import app.k56.player.data.cache.MediaCache
 import app.k56.player.data.offline.OfflineStore
 import app.k56.player.dsp.DspState
+import app.k56.player.dsp.DdcStore
 import app.k56.player.dsp.IrLibrary
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -34,10 +35,17 @@ class AppContainer(context: Context) {
 
     val mediaCache = MediaCache(appContext, settingsStore)
     val irLibrary = IrLibrary(appContext)
+    val ddcStore = DdcStore(appContext)
     val dspState = DspState(appContext).also { state ->
         // Restore the last kernel and pick up newly dropped .irs files.
         state.restoreIr(irLibrary.directory)
-        appScope.launch { runCatching { irLibrary.scanAndImport() } }
+        state.restoreDdc(ddcStore.directory)
+        appScope.launch {
+            runCatching { ddcStore.ensureBundled() }
+            runCatching { ddcStore.scanAndImport() }
+            state.restoreDdc(ddcStore.directory)
+            runCatching { irLibrary.scanAndImport() }
+        }
     }
 
 }

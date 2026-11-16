@@ -178,6 +178,7 @@ private fun MainShell(container: AppContainer) {
                 DspScreen(
                     dsp = container.dspState,
                     irLibrary = container.irLibrary,
+                    ddcStore = container.ddcStore,
                     onBack = { navController.popBackStack() },
                 )
             }

@@ -67,12 +67,19 @@ class DspState(context: Context) {
     /** Bumped whenever a filter-affecting parameter changes. */
     @Volatile var eqVersion: Int = 0
 
+    private var currentDdc: DdcProfile? = null
+    private var currentDdcName: String? = prefs.getString(KEY_DDC, null)
+    @Volatile var ddcVersion: Int = 0
+        private set
+
     private var currentIr: ImpulseResponse? = null
     private var currentIrName: String? = prefs.getString(KEY_IR, null)
     @Volatile var irVersion: Int = 0
         private set
 
     val irName: String? get() = currentIrName
+    val ddcName: String? get() = currentDdcName
+    val ddc: DdcProfile? get() = currentDdc
     val ir: ImpulseResponse? get() = currentIr
 
     fun applyEnabled(value: Boolean) {
@@ -161,6 +168,27 @@ class DspState(context: Context) {
         eqVersion++
     }
 
+    /** Selects a DDC correction curve, or clears it with null. */
+    fun setDdc(file: File?) {
+        currentDdc = if (file == null) null else DdcProfile.parse(file)
+        currentDdcName = if (currentDdc == null) null else file?.name
+        prefs.edit().putString(KEY_DDC, currentDdcName).apply()
+        ddcVersion++
+    }
+
+    fun restoreDdc(directory: File) {
+        val name = currentDdcName ?: return
+        val file = File(directory, name)
+        if (file.exists()) setDdc(file) else clearDdc()
+    }
+
+    fun clearDdc() {
+        currentDdc = null
+        currentDdcName = null
+        prefs.edit().remove(KEY_DDC).apply()
+        ddcVersion++
+    }
+
     /** Loads an impulse response from an imported file, or clears it. */
     fun setIr(file: File?) {
         currentIr = if (file == null) null else runCatching {
@@ -191,6 +219,7 @@ class DspState(context: Context) {
         private const val KEY_BANDS = "bands"
         private const val KEY_LIMITER = "limiter"
         private const val KEY_IR = "ir"
+        private const val KEY_DDC = "ddc"
         private const val KEY_CLARITY = "clarity"
         private const val KEY_BASS_GAIN = "bass_gain"
         private const val KEY_BASS_FREQ = "bass_freq"

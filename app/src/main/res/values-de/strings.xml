@@ -210,4 +210,9 @@
     <string name="dsp_tube">Röhre / Analog-X</string>
     <string name="dsp_tube_drive">Drive (%1$d dB)</string>
     <string name="dsp_tube_mix">Mix (%1$d %%)</string>
+
+    <string name="ddc_title">DDC-Korrektur</string>
+    <string name="ddc_body">Kopfhörer-Korrekturkurven aus ViPER4Android. Fünf Biquad-Sektionen je Samplerate.</string>
+    <string name="ddc_pick">.vdc importieren</string>
+    <string name="ddc_none">Kein Profil gewählt</string>
 </resources>

@@ -33,6 +33,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import app.k56.player.R
+import app.k56.player.dsp.DdcStore
 import app.k56.player.dsp.DspState
 import app.k56.player.dsp.IrLibrary
 import app.k56.player.ui.components.ScreenHeader
@@ -48,6 +49,7 @@ import java.io.File
 fun DspScreen(
     dsp: DspState,
     irLibrary: IrLibrary,
+    ddcStore: DdcStore,
     onBack: () -> Unit,
 ) {
     val context = LocalContext.current
@@ -59,6 +61,9 @@ fun DspScreen(
     var limiter by remember { mutableStateOf(dsp.limiterEnabled) }
     var irName by remember { mutableStateOf(dsp.irName) }
     var kernels by remember { mutableStateOf(irLibrary.imported()) }
+    var ddcName by remember { mutableStateOf(dsp.ddcName) }
+    var profiles by remember { mutableStateOf(ddcStore.imported()) }
+    var ddcToken by remember { mutableIntStateOf(0) }
     var clarity by remember { mutableStateOf(dsp.clarity) }
     var bassGain by remember { mutableStateOf(dsp.bassGainDb) }
     var bassFreq by remember { mutableStateOf(dsp.bassFreq) }
@@ -92,6 +97,22 @@ fun DspScreen(
         }
     }
 
+    val pickDdc = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) {
+            scope.launch {
+                val file = ddcStore.importFromUri(context, uri)
+                profiles = ddcStore.imported()
+                if (file != null) {
+                    dsp.setDdc(file)
+                    ddcName = dsp.ddcName
+                    message = null
+                } else {
+                    message = context.getString(R.string.dsp_import_failed)
+                }
+            }
+        }
+    }
+
     val pickFolder = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
         if (uri != null) {
             irLibrary.rememberFolder(context, uri)
@@ -101,6 +122,12 @@ fun DspScreen(
 
     // First entry scans the known V4A folders; the SAF-picked tree is re-scanned
     // on every open so new kernels show up without another tap.
+    LaunchedEffect(ddcToken) {
+        runCatching { ddcStore.ensureBundled() }
+        runCatching { ddcStore.scanAndImport() }
+        profiles = ddcStore.imported()
+    }
+
     LaunchedEffect(scanToken) {
         val added = runCatching { irLibrary.scanAndImport() }.getOrDefault(0)
         kernels = irLibrary.imported()
@@ -199,6 +226,73 @@ fun DspScreen(
                             limiter = it
                             dsp.setLimiter(it)
                         },
+                    )
+                }
+            }
+        }
+
+        Spacer(Modifier.height(14.dp))
+
+        Surface(
+            color = MaterialTheme.colorScheme.surfaceContainer,
+            shape = MaterialTheme.shapes.large,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+        ) {
+            Column(Modifier.padding(16.dp)) {
+                Text(stringResource(R.string.ddc_title), style = MaterialTheme.typography.titleLarge)
+                Text(
+                    stringResource(R.string.ddc_body),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(Modifier.height(10.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    OutlinedButton(
+                        onClick = { ddcToken++ },
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        Text(stringResource(R.string.dsp_scan))
+                    }
+                    OutlinedButton(
+                        onClick = { pickDdc.launch(arrayOf("*/*")) },
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        Text(stringResource(R.string.ddc_pick))
+                    }
+                }
+                Spacer(Modifier.height(10.dp))
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    FilterChip(
+                        selected = ddcName == null,
+                        onClick = {
+                            dsp.clearDdc()
+                            ddcName = null
+                        },
+                        label = { Text(stringResource(R.string.dsp_ir_off)) },
+                    )
+                    Text(
+                        text = ddcName ?: stringResource(R.string.ddc_none),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                profiles.forEach { file: File ->
+                    Spacer(Modifier.height(4.dp))
+                    FilterChip(
+                        selected = ddcName == file.name,
+                        onClick = {
+                            dsp.setDdc(file)
+                            ddcName = dsp.ddcName
+                        },
+                        label = { Text(file.nameWithoutExtension) },
                     )
                 }
             }

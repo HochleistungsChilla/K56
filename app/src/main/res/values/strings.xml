@@ -220,4 +220,9 @@
     <string name="dsp_tube">Tube / Analog-X</string>
     <string name="dsp_tube_drive">Drive (%1$d dB)</string>
     <string name="dsp_tube_mix">Mix (%1$d %%)</string>
+
+    <string name="ddc_title">DDC correction</string>
+    <string name="ddc_body">Headphone correction curves from ViPER4Android. Five biquad sections per sample rate.</string>
+    <string name="ddc_pick">Import .vdc</string>
+    <string name="ddc_none">No profile selected</string>
 </resources>

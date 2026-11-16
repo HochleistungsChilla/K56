@@ -25,6 +25,8 @@ class DspProcessor(private val state: DspState) : BaseAudioProcessor() {
     private var bandFilters: Array<Array<Biquad>> = emptyArray()
     private var appliedEqVersion = -1
     private var appliedIrVersion = -1
+    private var appliedDdcVersion = -1
+    private var ddcStages: Array<DdcStage> = emptyArray()
     private var convolvers: Array<Convolver?> = emptyArray()
 
     private var preampGain = 1f
@@ -55,6 +57,7 @@ class DspProcessor(private val state: DspState) : BaseAudioProcessor() {
         compressors = Array(channels) { Compressor(sampleRate) }
         agcs = Array(channels) { Agc(sampleRate) }
         reverbs = Array(channels) { channel -> Reverb(sampleRate, channel) }
+        appliedDdcVersion = -1
         stereoStage = StereoStage(sampleRate)
         return inputAudioFormat
     }
@@ -139,6 +142,9 @@ class DspProcessor(private val state: DspState) : BaseAudioProcessor() {
         val reverbWet = state.reverbWet / 100f
         val reverbRoom = state.reverbRoom
 
+        // Headphone correction first: the DDC curve assumes a raw signal.
+        ddcStages.getOrNull(ch)?.process(buffer, frames)
+
         for (f in 0 until frames) {
             var sample = buffer[f] * preampGain
             if (filters != null) {
@@ -193,6 +199,7 @@ class DspProcessor(private val state: DspState) : BaseAudioProcessor() {
         compressors.forEach { it.reset() }
         agcs.forEach { it.reset() }
         reverbs.forEach { it.reset() }
+        ddcStages.forEach { it.reset() }
         stereoStage?.reset()
         limiterGain = FloatArray(channels) { 1f }
         appliedIrVersion = -1
@@ -215,6 +222,12 @@ class DspProcessor(private val state: DspState) : BaseAudioProcessor() {
                     }
                 }
             }
+        }
+
+        val ddcVersion = state.ddcVersion
+        if (ddcVersion != appliedDdcVersion) {
+            appliedDdcVersion = ddcVersion
+            ddcStages = Array(channels) { DdcStage(state.ddc, sampleRate) }
         }
 
         val irVersion = state.irVersion
