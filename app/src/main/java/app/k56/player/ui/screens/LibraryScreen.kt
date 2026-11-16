@@ -2,6 +2,7 @@ package app.k56.player.ui.screens
 
 import android.content.Context
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -15,9 +16,20 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
+import androidx.compose.material.icons.rounded.DeleteOutline
+import androidx.compose.material.icons.rounded.Download
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.Shuffle
+import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.Icons
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
@@ -26,6 +38,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -113,6 +126,22 @@ class LibraryViewModel(
         }
     }
 
+    fun toggleAlbumFavorite(album: Album) {
+        val wanted = !album.isFavorite
+        albums = albums.map { if (it.id == album.id) it.copy(isFavorite = wanted) else it }
+        viewModelScope.launch {
+            try {
+                val actual = repository.setFavorite(album.id, wanted)
+                if (actual != wanted) {
+                    albums = albums.map { if (it.id == album.id) it.copy(isFavorite = actual) else it }
+                }
+            } catch (e: Exception) {
+                albums = albums.map { if (it.id == album.id) it.copy(isFavorite = !wanted) else it }
+                error = e.userMessage(appContext)
+            }
+        }
+    }
+
     fun load() {
         loading = true
         error = null
@@ -153,6 +182,37 @@ fun LibraryScreen(
     var tab by rememberSaveable { mutableIntStateOf(0) }
     var sortMode by rememberSaveable { mutableIntStateOf(0) }
     var onlyOffline by rememberSaveable { mutableStateOf(false) }
+    val selectedTracks = remember { mutableStateListOf<String>() }
+    val selectedAlbums = remember { mutableStateListOf<String>() }
+    val selectedArtists = remember { mutableStateListOf<String>() }
+    val selectionMode = selectedTracks.isNotEmpty() || selectedAlbums.isNotEmpty() || selectedArtists.isNotEmpty()
+
+    fun toggleTrack(id: String) {
+        if (!selectedTracks.remove(id)) selectedTracks.add(id)
+    }
+
+    suspend fun resolveSelection(): List<Track> {
+        val out = LinkedHashMap<String, Track>()
+        (vm.songs + vm.favorites).forEach { if (it.id in selectedTracks) out[it.id] = it }
+        for (albumId in selectedAlbums) {
+            runCatching { repository.albumDetails(albumId) }.getOrNull()
+                ?.tracks?.forEach { out[it.id] = it }
+        }
+        for (artistId in selectedArtists) {
+            val details = runCatching { repository.artistDetails(artistId) }.getOrNull() ?: continue
+            details.albums.take(25).forEach { album ->
+                runCatching { repository.albumDetails(album.id) }.getOrNull()
+                    ?.tracks?.forEach { out[it.id] = it }
+            }
+        }
+        return out.values.toList()
+    }
+
+    fun clearSelection() {
+        selectedTracks.clear()
+        selectedAlbums.clear()
+        selectedArtists.clear()
+    }
     val scope = rememberCoroutineScope()
     val offline by offlineStore.tracks.collectAsState()
     val downloads by offlineStore.progress.collectAsState()
@@ -170,6 +230,7 @@ fun LibraryScreen(
         }
     }
 
+    Box(Modifier.fillMaxSize()) {
     Column(Modifier.fillMaxSize()) {
         TabRow(selectedTabIndex = tab) {
             listOf(
@@ -228,7 +289,22 @@ fun LibraryScreen(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 items(vm.albums, key = { it.id }) { album ->
-                    AlbumCard(album = album, onClick = { onOpenAlbum(album.id) })
+                    AlbumCard(
+                        album = album,
+                        onClick = {
+                            if (selectionMode) {
+                                if (!selectedAlbums.remove(album.id)) selectedAlbums.add(album.id)
+                            } else {
+                                onOpenAlbum(album.id)
+                            }
+                        },
+                        onLongClick = {
+                            if (!selectedAlbums.remove(album.id)) selectedAlbums.add(album.id)
+                        },
+                        selected = album.id in selectedAlbums,
+                        isFavorite = album.isFavorite,
+                        onToggleFavorite = { vm.toggleAlbumFavorite(album) },
+                    )
                 }
             }
 
@@ -242,7 +318,20 @@ fun LibraryScreen(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 items(vm.artists, key = { it.id }) { artist ->
-                    ArtistCard(artist = artist, onClick = { onOpenArtist(artist.id) })
+                    ArtistCard(
+                        artist = artist,
+                        onClick = {
+                            if (selectionMode) {
+                                if (!selectedArtists.remove(artist.id)) selectedArtists.add(artist.id)
+                            } else {
+                                onOpenArtist(artist.id)
+                            }
+                        },
+                        onLongClick = {
+                            if (!selectedArtists.remove(artist.id)) selectedArtists.add(artist.id)
+                        },
+                        selected = artist.id in selectedArtists,
+                    )
                 }
             }
 
@@ -262,7 +351,11 @@ fun LibraryScreen(
                     itemsIndexed(songs, key = { _, track -> track.id }) { index, track ->
                         TrackRow(
                             track = track,
-                            onClick = { onPlay(songs, index) },
+                            onClick = {
+                                if (selectionMode) toggleTrack(track.id) else onPlay(songs, index)
+                            },
+                            onLongClick = { toggleTrack(track.id) },
+                            selected = track.id in selectedTracks,
                             index = index + 1,
                             isFavorite = track.isFavorite,
                             onToggleFavorite = { vm.toggleTrackFavorite(track) },
@@ -309,6 +402,26 @@ fun LibraryScreen(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.weight(1f),
                             )
+                            IconButton(
+                                onClick = {
+                                    if (favorites.isNotEmpty()) onPlay(favorites, 0)
+                                },
+                            ) {
+                                Icon(
+                                    Icons.Rounded.PlayArrow,
+                                    contentDescription = stringResource(R.string.common_play),
+                                )
+                            }
+                            IconButton(
+                                onClick = {
+                                    if (favorites.isNotEmpty()) onPlay(favorites.shuffled(), 0)
+                                },
+                            ) {
+                                Icon(
+                                    Icons.Rounded.Shuffle,
+                                    contentDescription = stringResource(R.string.player_shuffle),
+                                )
+                            }
                             if (downloaded > 0 && missing == 0) {
                                 OutlinedButton(
                                     onClick = {
@@ -357,7 +470,12 @@ fun LibraryScreen(
                             itemsIndexed(favorites, key = { _, track -> track.id }) { index, track ->
                                 TrackRow(
                                     track = track,
-                                    onClick = { onPlay(favorites, index) },
+                                    onClick = {
+                                        if (selectionMode) toggleTrack(track.id)
+                                        else onPlay(favorites, index)
+                                    },
+                                    onLongClick = { toggleTrack(track.id) },
+                                    selected = track.id in selectedTracks,
                                     index = index + 1,
                                     isFavorite = true,
                                     onToggleFavorite = { vm.toggleTrackFavorite(track) },
@@ -375,5 +493,124 @@ fun LibraryScreen(
                 }
             }
         }
+        } // Column
+
+        if (selectionMode) {
+            SelectionBar(
+                count = selectedTracks.size + selectedAlbums.size + selectedArtists.size,
+                onPlay = {
+                    scope.launch {
+                        val list = resolveSelection()
+                        if (list.isNotEmpty()) onPlay(list, 0)
+                        clearSelection()
+                    }
+                },
+                onShuffle = {
+                    scope.launch {
+                        val list = resolveSelection().shuffled()
+                        if (list.isNotEmpty()) onPlay(list, 0)
+                        clearSelection()
+                    }
+                },
+                onQueue = {
+                    scope.launch {
+                        resolveSelection().forEach { onAddToQueue(it) }
+                        clearSelection()
+                    }
+                },
+                onDownload = {
+                    scope.launch {
+                        resolveSelection().forEach { downloadOne(it) }
+                        clearSelection()
+                    }
+                },
+                onDelete = {
+                    scope.launch {
+                        resolveSelection().forEach { offlineStore.delete(it.id) }
+                        clearSelection()
+                    }
+                },
+                onSelectAll = {
+                    when (tab) {
+                        0 -> {
+                            selectedAlbums.clear()
+                            selectedAlbums.addAll(vm.albums.map { it.id })
+                        }
+                        1 -> {
+                            selectedArtists.clear()
+                            selectedArtists.addAll(vm.artists.map { it.id })
+                        }
+                        2 -> {
+                            selectedTracks.clear()
+                            selectedTracks.addAll(vm.songs.map { it.id })
+                        }
+                        else -> {
+                            selectedTracks.clear()
+                            selectedTracks.addAll(vm.favorites.map { it.id })
+                        }
+                    }
+                },
+                onCancel = { clearSelection() },
+            )
+        }
+    }
+}
+
+@Composable
+private fun SelectionBar(
+    count: Int,
+    onPlay: () -> Unit,
+    onShuffle: () -> Unit,
+    onQueue: () -> Unit,
+    onDownload: () -> Unit,
+    onDelete: () -> Unit,
+    onSelectAll: () -> Unit,
+    onCancel: () -> Unit,
+) {
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        tonalElevation = 6.dp,
+        shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Column(Modifier.padding(horizontal = 12.dp, vertical = 10.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = stringResource(R.string.selection_count, count),
+                    style = MaterialTheme.typography.titleSmall,
+                    modifier = Modifier.weight(1f),
+                )
+                IconButton(onClick = onSelectAll) {
+                    Text(stringResource(R.string.selection_all), style = MaterialTheme.typography.labelLarge)
+                }
+                IconButton(onClick = onCancel) {
+                    Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.selection_cancel))
+                }
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+            ) {
+                SelectionAction(Icons.Rounded.PlayArrow, stringResource(R.string.common_play), onPlay)
+                SelectionAction(Icons.Rounded.Shuffle, stringResource(R.string.player_shuffle), onShuffle)
+                SelectionAction(Icons.Rounded.Add, stringResource(R.string.action_add_queue), onQueue)
+                SelectionAction(Icons.Rounded.Download, stringResource(R.string.offline_download), onDownload)
+                SelectionAction(Icons.Rounded.DeleteOutline, stringResource(R.string.cache_delete_one), onDelete)
+            }
+        }
+    }
+}
+
+@Composable
+private fun SelectionAction(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    onClick: () -> Unit,
+) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        IconButton(onClick = onClick) {
+            Icon(icon, contentDescription = label)
+        }
+        Text(label, style = MaterialTheme.typography.labelSmall)
     }
 }

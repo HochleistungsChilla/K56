@@ -1,7 +1,9 @@
 package app.k56.player.ui.components
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -92,25 +94,49 @@ fun Artwork(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun AlbumCard(
     album: Album,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    onLongClick: (() -> Unit)? = null,
+    selected: Boolean = false,
+    isFavorite: Boolean = false,
+    onToggleFavorite: (() -> Unit)? = null,
 ) {
     Column(
         modifier = modifier
             .clip(RoundedCornerShape(16.dp))
-            .clickable(onClick = onClick)
+            .background(
+                if (selected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
+                else androidx.compose.ui.graphics.Color.Transparent,
+            )
+            .combinedClickable(onClick = onClick, onLongClick = onLongClick)
             .padding(2.dp),
     ) {
-        Artwork(
-            url = album.imageUrl,
-            modifier = Modifier
-                .fillMaxWidth()
-                .aspectRatio(1f),
-            shape = RoundedCornerShape(14.dp),
-        )
+        Box {
+            Artwork(
+                url = album.imageUrl,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(1f),
+                shape = RoundedCornerShape(14.dp),
+            )
+            if (onToggleFavorite != null) {
+                IconButton(
+                    onClick = onToggleFavorite,
+                    modifier = Modifier.align(Alignment.TopEnd),
+                ) {
+                    Icon(
+                        imageVector = if (isFavorite) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
+                        contentDescription = null,
+                        tint = if (isFavorite) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.75f),
+                    )
+                }
+            }
+        }
         Spacer(Modifier.height(8.dp))
         Text(
             text = album.name,
@@ -128,16 +154,23 @@ fun AlbumCard(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ArtistCard(
     artist: Artist,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    onLongClick: (() -> Unit)? = null,
+    selected: Boolean = false,
 ) {
     Column(
         modifier = modifier
             .clip(RoundedCornerShape(16.dp))
-            .clickable(onClick = onClick)
+            .background(
+                if (selected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
+                else androidx.compose.ui.graphics.Color.Transparent,
+            )
+            .combinedClickable(onClick = onClick, onLongClick = onLongClick)
             .padding(2.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -159,6 +192,7 @@ fun ArtistCard(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun TrackRow(
     track: Track,
@@ -175,12 +209,18 @@ fun TrackRow(
     onDownload: (() -> Unit)? = null,
     onPlayNext: (() -> Unit)? = null,
     onAddToQueue: (() -> Unit)? = null,
+    onLongClick: (() -> Unit)? = null,
+    selected: Boolean = false,
 ) {
     var menuOpen by remember { mutableStateOf(false) }
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .background(
+                if (selected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)
+                else androidx.compose.ui.graphics.Color.Transparent,
+            )
+            .combinedClickable(onClick = onClick, onLongClick = onLongClick)
             .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {

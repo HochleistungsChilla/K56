@@ -244,4 +244,10 @@
     <string name="action_more">More</string>
     <string name="action_play_next">Play next</string>
     <string name="action_add_queue">Add to queue</string>
+
+    <string name="selection_count">%1$d selected</string>
+    <string name="selection_all">All</string>
+    <string name="selection_cancel">Cancel</string>
+
+    <string name="player_queue_count">Queue (%1$d)</string>
 </resources>

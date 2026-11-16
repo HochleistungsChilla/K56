@@ -234,4 +234,10 @@
     <string name="action_more">Mehr</string>
     <string name="action_play_next">Als Nächstes</string>
     <string name="action_add_queue">In Warteschlange</string>
+
+    <string name="selection_count">%1$d ausgewählt</string>
+    <string name="selection_all">Alle</string>
+    <string name="selection_cancel">Abbrechen</string>
+
+    <string name="player_queue_count">Warteschlange (%1$d)</string>
 </resources>

@@ -33,6 +33,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
@@ -161,12 +162,6 @@ fun PlayerScreen(
                     }
                 }
             }
-            IconButton(onClick = { showQueue = true }) {
-                Icon(
-                    Icons.Rounded.QueueMusic,
-                    contentDescription = stringResource(R.string.player_queue),
-                )
-            }
         }
 
         Spacer(Modifier.height(8.dp))
@@ -232,6 +227,17 @@ fun PlayerScreen(
         }
 
         Spacer(Modifier.height(10.dp))
+
+        OutlinedButton(
+            onClick = { showQueue = true },
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Icon(Icons.Rounded.QueueMusic, contentDescription = null)
+            Spacer(Modifier.width(8.dp))
+            Text(stringResource(R.string.player_queue_count, controller?.mediaItemCount ?: 0))
+        }
+
+        Spacer(Modifier.height(6.dp))
 
         Row(
             modifier = Modifier.fillMaxWidth(),
