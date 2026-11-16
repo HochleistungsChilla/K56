@@ -150,4 +150,9 @@
     <string name="cache_off">Aus</string>
     <string name="cache_unlimited">Unbegrenzt</string>
     <string name="cache_hint">Wirkt ab dem nächsten Start der Wiedergabe.</string>
+
+    <string name="download_quality_title">Download-Qualität</string>
+    <string name="quality_original">Original</string>
+    <string name="download_quality_original_hint">Originaldateien, unverändert — beste Qualität, größter Platzbedarf.</string>
+    <string name="download_quality_transcode_hint">Am Server auf %1$d kbps transkodiert. Kleinere Dateien, minimaler Qualitätsverlust.</string>
 </resources>

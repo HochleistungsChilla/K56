@@ -44,6 +44,8 @@ import app.k56.player.BuildConfig
 import app.k56.player.core.model.BackendKind
 import app.k56.player.core.net.NetworkTransport
 import app.k56.player.data.MediaRepository
+import app.k56.player.data.DownloadFormat
+import app.k56.player.data.DownloadQuality
 import app.k56.player.data.SettingsStore
 import app.k56.player.data.StorageLocation
 import app.k56.player.data.offline.OfflineStore
@@ -62,6 +64,8 @@ fun SettingsScreen(
     val offlineTracks by offlineStore.tracks.collectAsStateWithLifecycle()
     val storageLocation by settingsStore.storageLocation.collectAsStateWithLifecycle()
     val cacheLimitMb by settingsStore.cacheLimitMb.collectAsStateWithLifecycle()
+    val downloadQuality by settingsStore.downloadQuality.collectAsStateWithLifecycle()
+    val downloadFormat by settingsStore.downloadFormat.collectAsStateWithLifecycle()
     val hasSdCard = remember { SettingsStore.externalRoot(context) != null }
     val forceTranscode by repository.forceTranscode.collectAsStateWithLifecycle()
     val preferExternal by repository.preferExternal.collectAsStateWithLifecycle()
@@ -210,6 +214,63 @@ fun SettingsScreen(
                 }
                 Text(
                     stringResource(R.string.cache_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+
+                Spacer(Modifier.height(14.dp))
+                Text(
+                    stringResource(R.string.download_quality_title),
+                    style = MaterialTheme.typography.titleMedium,
+                )
+                Spacer(Modifier.height(6.dp))
+                Row(
+                    modifier = Modifier.horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    DownloadQuality.entries.forEach { entry ->
+                        FilterChip(
+                            selected = downloadQuality == entry,
+                            onClick = { settingsStore.setDownloadQuality(entry) },
+                            label = {
+                                Text(
+                                    when (entry) {
+                                        DownloadQuality.ORIGINAL ->
+                                            stringResource(R.string.quality_original)
+                                        else -> "${entry.kbps} kbps"
+                                    },
+                                )
+                            },
+                        )
+                    }
+                }
+                Spacer(Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier.horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    DownloadFormat.entries.forEach { entry ->
+                        FilterChip(
+                            selected = downloadFormat == entry,
+                            onClick = { settingsStore.setDownloadFormat(entry) },
+                            enabled = downloadQuality != DownloadQuality.ORIGINAL,
+                            label = {
+                                Text(
+                                    when (entry) {
+                                        DownloadFormat.AAC -> "AAC (m4a)"
+                                        DownloadFormat.MP3 -> "MP3"
+                                    },
+                                )
+                            },
+                        )
+                    }
+                }
+                Text(
+                    text = if (downloadQuality == DownloadQuality.ORIGINAL) {
+                        stringResource(R.string.download_quality_original_hint)
+                    } else {
+                        stringResource(R.string.download_quality_transcode_hint, downloadQuality.kbps)
+                    },
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

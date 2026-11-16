@@ -21,6 +21,8 @@ import app.k56.player.core.net.ServerUrl
 import app.k56.player.data.MediaRepository
 import app.k56.player.data.NotAuthenticatedException
 import app.k56.player.data.SessionStore
+import app.k56.player.data.DownloadFormat
+import app.k56.player.data.DownloadQuality
 import app.k56.player.data.SettingsStore
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.StateFlow
@@ -404,14 +406,35 @@ class JellyfinRepository(
         }
     }
 
-    /** Always the untouched original file, so the download is not a live HLS session. */
+    /**
+     * A single progressive file, never a live HLS session: either the untouched
+     * original or a server-side transcode at the configured bitrate.
+     */
     override suspend fun downloadSource(track: Track): PlaybackSource {
         val current = session ?: throw NotAuthenticatedException()
         val base = baseUrl().ifBlank { current.serverUrl }
-        val url = "${base}Audio/${track.id}/stream" +
-            "?static=true&MediaSourceId=${track.id}" +
-            "&DeviceId=${current.deviceId}&api_key=${current.token}"
-        return PlaybackSource(url = url, mimeType = null, transcoded = false)
+        val quality = settingsStore.downloadQuality.value
+        if (quality == DownloadQuality.ORIGINAL) {
+            val url = "${base}Audio/${track.id}/stream" +
+                "?static=true&MediaSourceId=${track.id}" +
+                "&DeviceId=${current.deviceId}&api_key=${current.token}"
+            return PlaybackSource(url = url, mimeType = null, transcoded = false)
+        }
+
+        val codec = when (settingsStore.downloadFormat.value) {
+            DownloadFormat.MP3 -> "mp3"
+            DownloadFormat.AAC -> "aac"
+        }
+        val url = "${base}Audio/${track.id}/universal" +
+            "?UserId=${current.userId}&DeviceId=${current.deviceId}" +
+            "&MaxStreamingBitrate=${quality.kbps * 1000}" +
+            "&AudioCodec=$codec&TranscodingContainer=$codec&TranscodingProtocol=http" +
+            "&api_key=${current.token}"
+        return PlaybackSource(
+            url = url,
+            mimeType = if (codec == "mp3") "audio/mpeg" else "audio/mp4",
+            transcoded = true,
+        )
     }
 
     override suspend fun reportPlaybackStart(itemId: String, playSessionId: String, positionTicks: Long) {

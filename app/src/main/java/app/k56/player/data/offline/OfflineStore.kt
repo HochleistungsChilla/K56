@@ -3,6 +3,8 @@ package app.k56.player.data.offline
 import android.content.Context
 import android.net.Uri
 import app.k56.player.core.model.Track
+import app.k56.player.data.DownloadFormat
+import app.k56.player.data.DownloadQuality
 import app.k56.player.data.SettingsStore
 import app.k56.player.data.StorageLocation
 import kotlinx.coroutines.Dispatchers
@@ -107,7 +109,17 @@ class OfflineStore(context: Context, private val settingsStore: SettingsStore) {
             dir = directoryFor(appContext, location).apply { mkdirs() }
         }
 
-        val target = File(dir, fileNameFor(track.id))
+        // A transcoded download needs a container extension so players and
+        // external apps can identify it; originals keep their server bytes.
+        val suffix = if (settingsStore.downloadQuality.value == DownloadQuality.ORIGINAL) {
+            ""
+        } else {
+            when (settingsStore.downloadFormat.value) {
+                DownloadFormat.MP3 -> ".mp3"
+                DownloadFormat.AAC -> ".m4a"
+            }
+        }
+        val target = File(dir, fileNameFor(track.id) + suffix)
         val temp = File(dir, target.name + ".part")
 
         cancelled -= track.id
