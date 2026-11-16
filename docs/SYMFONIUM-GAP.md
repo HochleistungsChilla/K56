@@ -2,6 +2,7 @@
 
 Quelle: öffentliche Doku (docs.symfonium.app/wiki/settings/settings-all-settings-tree/ und Unterseiten).
 Kein Code, keine APK, kein Decompile — nur dokumentierte Konzepte.
+Stand: 2026-11-16, Abgleich gegen K56-Quellcode (SettingsStore/Theme/Screens).
 
 Status: ✅ vorhanden · 🟡 teilweise · ❌ fehlt · ⛔ bewusst nicht
 Aufwand: S (< 1 h) · M (1–3 h) · L (> 3 h)
@@ -12,21 +13,63 @@ Aufwand: S (< 1 h) · M (1–3 h) · L (> 3 h)
 |---|---|---|---|
 | Theme (hell/dunkel/System/Matrix) | ✅ | – | ThemeController |
 | Primärfarbe / eigene Themes | ❌ | M | Farbpaletten pro Theme |
+| Custom Theme Import/Export (JSON) | ❌ | M | Theme-Editor + Online-Katalog |
+| Farbpalette-Stil (TonalSpot/Neutral/Vibrant/…) | ❌ | M | Material-3-Scheme-Generierung |
+| Cover-Art-Dynamic-Color | ❌ | M | Farbe aus aktuellem Cover ableiten |
 | Typografie | ❌ | S | Schriftgröße/Font wählbar |
 | Dynamische Farben (Material You) | ❌ | S | Android 12+ |
 | Navigationseinträge / Labels | ⛔ | – | 4 feste Tabs |
+| Navigation-Layout (Portrait/Landscape) | ❌ | M | Floating-Toolbar / Side-Menu |
+| Skip Genre-Detailseite | ❌ | S | direkt zu Alben/Artists |
+| Skip Artist-Detailseite | ❌ | S | direkt zu Alben/Tracks |
+| Default Song Action | ❌ | S | Play/Enqueue wählbar |
+| Show Playback Messages | ❌ | S | kurze Toast-Infos bei Queue-Aktionen |
+| Queue next als Drop-Target | ❌ | S | Drag & Drop |
+| Expanded Player automatisch öffnen | ❌ | S | bei Wiedergabestart |
 | Keep Screen On | ✅ | – | Einstellungen → Darstellung |
 | Screen Orientation | ❌ | S | Portrait/Landscape/Auto |
+| Rounded Corners (global) | ❌ | S | Eckradius |
+| Change Language | ❌ | S | Android-13-App-Sprache |
+| Application Logo | ⛔ | S | eigenes Branding (BRANDING.md) |
+| Hide Filter Button | ❌ | S | Top-Button-Bar |
+| Hide Cast Button | ⛔ | S | kein Cast implementiert |
+| Changelog nach Update | ❌ | S | |
 | Media Lists: Anzahl anzeigen | ❌ | S | Badge in Listen |
 | Media Lists: Zusatzinfo 1/2 | 🟡 | S | Album/Interpret-Zeile |
+| Media Lists: Top-Button-Row ausblenden | ❌ | S | Quick-Action-Leiste |
+| Media Lists: Swipe-Aktionen (links/rechts) | ❌ | M | Play/Queue/Favorit |
+| Media Lists: Favorit/Offline-Overlay | ❌ | S | Badge auf Artwork |
 | Home: Sektionen + Reihenfolge | ✅ | – | Stift-Dialog |
 | Home: Sektionen einzeln konfigurierbar | 🟡 | S | aktuell 4 feste Sektionen |
+| Home: Icon wählbar | ❌ | S | oberes Home-Icon |
+| Home: Playlist als Row („Add to home") | ❌ | M | |
 | Library: Spalten | ✅ | – | Auto/2/3/4 |
+| Library: Spalten (Landscape) | ❌ | S | getrennt von Portrait |
 | Library: Abstand | ❌ | S | Grid-Spacing |
+| Library: Shortcuts wählbar | ❌ | S | Navigationseinträge |
 | Album-Seite: „More from artist" | ❌ | S | |
+| Album-Seite: „More from artist" Sort | ❌ | S | |
 | Album-Seite: „About" | ❌ | M | braucht Metadaten |
+| Album-Seite: About-Zeilen konfigurierbar | ❌ | S | |
+| Album-Seite: Künstler immer im Track | ❌ | S | |
+| Album-Seite: Header-Style (Live-Preview) | ❌ | M | Größe/Hintergrund/Blur |
 | Artist-Seite: „Top tracks"/„Appears on" | ❌ | M | |
+| Artist-Seite: Header-Style (Live-Preview) | ❌ | M | |
+| Artist-Seite: Albums Sort/Style/Spalten | ❌ | M | Liste/Grid |
+| Artist-Seite: Top-tracks Anzahl + Quelle | ❌ | S | Favoriten/Most-played |
+| Artist-Seite: Albums nach Typ gruppieren | ❌ | S | Live/Compilation |
+| Genre-Seite (komplett) | ❌ | L | kein GenreScreen vorhanden |
+| Playlist-Seite: Header-Style | ❌ | M | Live-Preview |
 | Now Playing: Tracknummer | ✅ | – | Einstellungen → Darstellung |
+| Now Playing: Tracknummer in Media Session | ❌ | S | |
+| Now Playing: Styles speichern/importieren | ❌ | L | styles.symfonium.app |
+| Now Playing: Kompakt/Floating-Player-Style | ❌ | M | Größe/Radius/Schatten |
+| Now Playing: runder Progress-Indikator | ❌ | S | |
+| Now Playing: Expanded Screen-Style (Portrait/Landscape) | ❌ | L | |
+| Now Playing: Cover/Background/Button-Styles | ❌ | M | |
+| Now Playing: animierter Progressbar + Overlay-Icons | ❌ | S | |
+| Now Playing: zusätzliche Künstler | ❌ | S | |
+| Now Playing: Thumbnail in Landscape tauschen | ❌ | S | |
 | Now Playing: Favorit verstecken | ❌ | S | |
 | Now Playing: Cover nicht croppen | ❌ | S | ContentScale.Fit |
 | Now Playing: kompakt / Buttons wählbar | ❌ | M | |
@@ -40,19 +83,42 @@ Aufwand: S (< 1 h) · M (1–3 h) · L (> 3 h)
 | DSP / EQ / Convolver / DDC | ✅ | – | eigener DSP |
 | Endlos-Autoplay richtungsgebunden | ✅ | – | Jellyfin InstantMix |
 | Resume-Punkt (Position merken) | ❌ | M | Prio 1 |
+| Min. Spielzeit für Resume-Punkt (s) | ❌ | S | Teil von Resume |
+| Audiobook-Resume-Rollback | ❌ | S | beim Fortsetzen zurückrollen |
 | „Save Now Playing state" | ❌ | M | letzter Titel + Queue |
 | Multiple queues | ❌ | L | |
 | Personal mixes size | 🟡 | S | 60 Titel fix |
 | Min. play % bevor „gespielt" | ❌ | S | |
 | Circular queue navigation | ❌ | S | Ende → Anfang |
+| Previous/Next-Rewind-Verhalten | 🟡 | S | Prev bei Titelbeginn zurückspulen |
+| Retain player state (Shuffle/Repeat/Speed/Pitch) | 🟡 | S | nur Standard |
 | Pitch control | ❌ | M | |
+| Remember last renderer | ❌ | M | |
+| Volume auto play/pause | ❌ | M | bei Lautstärke 0 pausieren |
 | Headphone/Bluetooth auto play | ❌ | M | |
 | Pause on task removal | ✅ | – | |
+| Ignore remote stop command | ❌ | S | Stop als Pause |
 | Cellular/WLAN Max-Bitrate | 🟡 | M | nur Download-Qualität |
+| Prefer internal decoder | ⛔ | S | ExoPlayer default |
+| Offload-Mode | ❌ | M | USB/AAudio |
+| Hi-Res local renderer | ❌ | M | |
+| Transcoding-Engine | ❌ | L | ffmpeg-Eigenbau |
 | ReplayGain | ❌ | M | braucht Tags |
-| Audio-Focus-Optionen | 🟡 | M | Standardverhalten |
+| Enhanced ReplayGain-Processor | ❌ | M | |
+| Audio-Focus: Short Action | 🟡 | M | Standardverhalten |
+| Audio-Focus: Permanent Loss | 🟡 | M | |
 | Headset-Buttons (1/2/3 Klick) | ❌ | M | |
+| Headset: Remap Next/Prev | ❌ | S | |
+| Headset: Slower click detection | ❌ | S | |
 | Notification-Buttons wählbar | ❌ | S | |
+| Notification: Skip prev/next zeigen | 🟡 | S | fixe Media-Session-Buttons |
+| Notification: Action 1/2/3 | ❌ | M | |
+| Bluetooth Lyrics | ❌ | M | |
+| Expert EQ-Mode | ❌ | M | |
+| EQ Block Size | ❌ | S | |
+| Reset AutoEQ-DB | ❌ | S | |
+| Media-Session-Queue publizieren | 🟡 | S | |
+| USB-Audio-Handling | ⛔ | M | niche |
 | Gapless | ✅ | – | ExoPlayer default |
 | Crossfade / Smart Fades | ❌ | L | eigener AudioProcessor |
 
@@ -65,9 +131,20 @@ Aufwand: S (< 1 h) · M (1–3 h) · L (> 3 h)
 | Streaming-Cache-Größe (aus/…/unbegrenzt) | ✅ | – | |
 | Cache-Manager | ✅ | – | |
 | Nur WLAN für Downloads | ✅ | – | |
+| WLAN-Status nur primäre Verbindung | ❌ | S | VPN/WireGuard-Erkennung |
 | Automatisches Offline-Cachen von Favoriten | ❌ | M | Prio 2 |
+| Favoriten in Original-Qualität cachen | ❌ | S | |
 | Automatischer Offline-Modus | ❌ | M | |
+| Bei Transcode vom Server streamen | ❌ | S | |
+| Bei WLAN statt Offline streamen | ❌ | S | |
+| Parallele Downloads (Anzahl) | ❌ | S | |
+| HTTP/1.1 für Downloads erzwingen | ❌ | S | |
+| Pre-Cache Queue (Mobil/WLAN) | 🟡 | M | rolling cache |
+| Ersten Track vor Wiedergabe fertig cachen | ❌ | S | |
+| Vollständig gecachte in Rolling-Cache übernehmen | ❌ | M | |
 | Bild-Cache / High-Quality-Images | 🟡 | S | Coil-Standard |
+| WLAN-only Bild-Downloads | ❌ | S | |
+| High-Quality (lossless) Bilder | 🟡 | S | |
 | Langsamere Downloads | ⛔ | – | unnötig |
 
 ## Database / Advanced
@@ -77,9 +154,35 @@ Aufwand: S (< 1 h) · M (1–3 h) · L (> 3 h)
 | Artikel beim Sortieren ignorieren | ✅ | – | |
 | ASCII-Sort | 🟡 | S | nur lowercase |
 | Auto-Sync / leere Alben entfernen | ⛔ | – | Server-Aufgabe |
+| Waveform-Analyse (lokal/WLAN/jede Verb.) | ❌ | L | lokale/Server-Dateien |
+| Album-/Composer in Playcounts | ❌ | S | |
+| Album-Playcount-Berechnung | ❌ | S | avg/total/lowest |
+| Halbe Sterne (Ratings) | ❌ | S | |
+| Metadaten-Scrape-Sprache | ❌ | S | |
+| Playlist-Track nur per Pfad matchen | ❌ | S | |
+| FastScroll mehr Daten laden | ❌ | S | |
 | Settings-PIN | ❌ | S | |
+| Debug-Mode | ❌ | S | |
 | Debug/Logs teilen | ❌ | M | |
-| Backup & Restore der Einstellungen | ❌ | M | |
+| Manage generated files | ❌ | S | |
+| Don't kill my app | ❌ | S | Hilfe-Link |
+| Clear image cache | ❌ | S | |
+| Clear media info cache | ❌ | S | |
+| Cleanup internal states | ❌ | S | |
+| DB kompaktieren | ❌ | S | |
+| Playback-Historie löschen | ❌ | S | |
+| Anonymous Analytics | ⛔ | S | Privacy |
+| Anonymous Crash Reporting | ⛔ | S | |
+| Disable media session usage | ❌ | S | |
+| Metered WLAN = Mobil | ❌ | S | |
+| VPN = Mobil | ❌ | S | |
+| Backup & Restore der Einstellungen | ❌ | M | verschlüsselt, Symfonium-Backup |
+
+## Android Auto
+
+| Option | Status | Aufwand | Notiz |
+|---|---|---|---|
+| Android Auto (komplett: Tabs, Home/Library/Favorites-Rows, Display-Styles) | ⛔ | L | kein AA-Support, bewusst out of scope |
 
 ## Nächste Schritte (Reihenfolge)
 
@@ -89,3 +192,5 @@ Aufwand: S (< 1 h) · M (1–3 h) · L (> 3 h)
 4. Circular queue navigation (S).
 5. Media-Listen-Zusatzinfo + Anzahl (S).
 6. Orientation + Grid-Abstand (S).
+7. Backup & Restore der Einstellungen (M) — schützt Setup vor Verlust.
+8. Expanded-Now-Playing-Styles (L) — größtes visuelles Differenzierungsmerkmal.
