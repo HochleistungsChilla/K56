@@ -286,13 +286,29 @@ fun TrackRow(
         modifier = modifier
             .fillMaxWidth()
             .background(
-                if (selected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)
+                if (selected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.28f)
                 else androidx.compose.ui.graphics.Color.Transparent,
+            )
+            .then(
+                if (selected) {
+                    Modifier.border(2.dp, MaterialTheme.colorScheme.primary)
+                } else {
+                    Modifier
+                },
             )
             .combinedClickable(onClick = onClick, onLongClick = onLongClick)
             .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        if (selected) {
+            Icon(
+                Icons.Rounded.Check,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(18.dp),
+            )
+            Spacer(Modifier.width(8.dp))
+        }
         if (index != null) {
             Text(
                 text = index.toString(),

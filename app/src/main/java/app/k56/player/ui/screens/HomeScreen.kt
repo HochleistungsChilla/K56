@@ -20,6 +20,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Shuffle
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
@@ -48,12 +50,15 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
+import android.widget.Toast
 import app.k56.player.R
 import app.k56.player.core.model.Album
 import app.k56.player.core.model.Artist
 import app.k56.player.core.model.Track
+import app.k56.player.core.net.NetworkTransport
 import app.k56.player.data.MediaRepository
 import app.k56.player.data.SettingsStore
+import app.k56.player.data.offline.OfflineStore
 import app.k56.player.ui.appViewModel
 import app.k56.player.ui.components.ArtistCard
 import app.k56.player.ui.components.EmptyState
@@ -143,9 +148,11 @@ class HomeViewModel(
 fun HomeScreen(
     repository: MediaRepository,
     settingsStore: SettingsStore,
+    offlineStore: OfflineStore,
     onOpenAlbum: (String) -> Unit,
     onOpenArtist: (String) -> Unit,
     onPlay: (List<Track>, Int) -> Unit,
+    onAddToQueue: (Track) -> Unit = {},
     gridSpacing: Int = 12,
 ) {
     val context = LocalContext.current
@@ -153,6 +160,24 @@ fun HomeScreen(
     val vm = appViewModel { HomeViewModel(repository, context.applicationContext) }
     val sections by settingsStore.homeSections.collectAsStateWithLifecycle()
     var editOpen by remember { mutableStateOf(false) }
+
+    val net by repository.networkStatus.collectAsStateWithLifecycle()
+    val onWifi = net.transport == NetworkTransport.WIFI || net.transport == NetworkTransport.ETHERNET
+    val wifiOnlyDownloads = settingsStore.wifiOnlyDownloads.value
+    val downloadOne: (Track) -> Unit = { track ->
+        scope.launch {
+            if (wifiOnlyDownloads && !onWifi) {
+                Toast.makeText(context, R.string.download_wifi_only, Toast.LENGTH_SHORT).show()
+                return@launch
+            }
+            try {
+                val source = repository.downloadSource(track)
+                offlineStore.download(track, source.url, repository.playbackHeaders())
+            } catch (e: Exception) {
+                Toast.makeText(context, e.userMessage(context), Toast.LENGTH_LONG).show()
+            }
+        }
+    }
 
     val selectedAlbums = remember { mutableStateListOf<String>() }
     val selectedArtists = remember { mutableStateListOf<String>() }
@@ -357,6 +382,20 @@ fun HomeScreen(
                     selectedArtists.clear()
                     selectedArtists.addAll(vm.artists.map { it.id })
                 },
+                onQueue = {
+                    scope.launch {
+                        val list = resolveSelection()
+                        clearSelection()
+                        list.forEach { onAddToQueue(it) }
+                    }
+                },
+                onDownload = {
+                    scope.launch {
+                        val list = resolveSelection()
+                        clearSelection()
+                        list.forEach { downloadOne(it) }
+                    }
+                },
                 onCancel = { clearSelection() },
                 modifier = Modifier.align(Alignment.BottomCenter),
             )
@@ -472,6 +511,8 @@ private fun HomeSelectionBar(
     onPlay: () -> Unit,
     onShuffle: () -> Unit,
     onSelectAll: () -> Unit,
+    onQueue: () -> Unit,
+    onDownload: () -> Unit,
     onCancel: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -504,6 +545,8 @@ private fun HomeSelectionBar(
             ) {
                 HomeSelectionAction(Icons.Rounded.PlayArrow, stringResource(R.string.common_play), onPlay)
                 HomeSelectionAction(Icons.Rounded.Shuffle, stringResource(R.string.player_shuffle), onShuffle)
+                HomeSelectionAction(Icons.Rounded.Add, stringResource(R.string.action_add_queue), onQueue)
+                HomeSelectionAction(Icons.Rounded.Download, stringResource(R.string.offline_download), onDownload)
             }
         }
     }

@@ -329,9 +329,11 @@ private fun MainShell(container: AppContainer) {
                 HomeScreen(
                     repository = repository,
                     settingsStore = container.settingsStore,
+                    offlineStore = container.offlineStore,
                     onOpenAlbum = { navController.navigate("album/$it") },
                     onOpenArtist = { navController.navigate("artist/$it") },
                     onPlay = playTracks,
+                    onAddToQueue = addToQueue,
                     gridSpacing = gridSpacing,
                 )
             }
