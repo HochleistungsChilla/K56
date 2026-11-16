@@ -173,7 +173,7 @@ private fun MainShell(container: AppContainer) {
                 )
             }
             composable("settings") {
-                SettingsScreen(repository, container.offlineStore)
+                SettingsScreen(repository, container.offlineStore, container.settingsStore)
             }
             composable(
                 route = "album/{albumId}",

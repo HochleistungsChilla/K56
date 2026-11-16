@@ -140,4 +140,14 @@
     <string name="offline_tracks">Titel auf diesem Gerät</string>
     <string name="offline_clear">Alle Downloads löschen</string>
     <string name="offline_empty">Noch keine Downloads. In Favoriten Titel herunterladen.</string>
+
+    <string name="storage_location">Speicherort</string>
+    <string name="storage_internal">Intern</string>
+    <string name="storage_external">SD-Karte</string>
+    <string name="storage_no_sd">Keine SD-Karte erkannt — Downloads bleiben intern.</string>
+    <string name="storage_free">Frei: %1$s</string>
+    <string name="cache_title">Streaming-Cache</string>
+    <string name="cache_off">Aus</string>
+    <string name="cache_unlimited">Unbegrenzt</string>
+    <string name="cache_hint">Wirkt ab dem nächsten Start der Wiedergabe.</string>
 </resources>

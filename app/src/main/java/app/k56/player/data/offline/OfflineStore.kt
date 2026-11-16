@@ -3,6 +3,8 @@ package app.k56.player.data.offline
 import android.content.Context
 import android.net.Uri
 import app.k56.player.core.model.Track
+import app.k56.player.data.SettingsStore
+import app.k56.player.data.StorageLocation
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -27,6 +29,7 @@ data class OfflineTrack(
     val fileName: String,
     val bytes: Long,
     val savedAt: Long,
+    val storage: StorageLocation = StorageLocation.INTERNAL,
 ) {
     fun toTrack(): Track = Track(
         id = id,
@@ -45,16 +48,18 @@ data class OfflineTrack(
         played = false,
     )
 
-    fun file(context: Context): File = File(OfflineStore.directory(context), fileName)
+    fun file(context: Context): File =
+        File(OfflineStore.directoryFor(context, storage), fileName)
+
     fun uri(context: Context): Uri = Uri.fromFile(file(context))
 }
 
 /**
- * Downloads tracks into the app-private directory and keeps an index of what is
- * on disk. Deliberately independent of the backend: it is handed a resolved
- * download URL, so it works for every adapter that can produce a static stream.
+ * Downloads tracks into app storage and keeps an index of what is on disk.
+ * Each entry remembers where it was written, so switching between internal
+ * storage and the SD card never orphans existing files.
  */
-class OfflineStore(context: Context) {
+class OfflineStore(context: Context, private val settingsStore: SettingsStore) {
 
     private val appContext = context.applicationContext
     private val prefs = appContext.getSharedPreferences("k56_offline", Context.MODE_PRIVATE)
@@ -78,10 +83,14 @@ class OfflineStore(context: Context) {
         cancelled += id
     }
 
+    /** Bytes used in one storage location, for the settings summary. */
+    fun bytesIn(location: StorageLocation): Long =
+        _tracks.value.filter { it.storage == location }.sumOf { it.bytes }
+
     /**
      * Streams [url] to disk with progress. Returns the stored entry, or null when
-     * the transfer was cancelled or failed. Throws on HTTP errors so the caller
-     * can surface a message.
+     * the transfer was cancelled. Throws on HTTP errors so the caller can surface
+     * a message.
      */
     suspend fun download(
         track: Track,
@@ -89,7 +98,15 @@ class OfflineStore(context: Context) {
         headers: Map<String, String> = emptyMap(),
     ): OfflineTrack? = withContext(Dispatchers.IO) {
         if (isDownloaded(track.id)) return@withContext find(track.id)
-        val dir = directory(appContext).apply { mkdirs() }
+
+        var location = settingsStore.storageLocation.value
+        var dir = directoryFor(appContext, location)
+        // No card present (or not writable): fall back to internal storage instead of failing.
+        if (!dir.exists() && !dir.mkdirs()) {
+            location = StorageLocation.INTERNAL
+            dir = directoryFor(appContext, location).apply { mkdirs() }
+        }
+
         val target = File(dir, fileNameFor(track.id))
         val temp = File(dir, target.name + ".part")
 
@@ -156,6 +173,7 @@ class OfflineStore(context: Context) {
                 fileName = target.name,
                 bytes = target.length(),
                 savedAt = System.currentTimeMillis(),
+                storage = location,
             )
             _tracks.value = (_tracks.value.filterNot { it.id == entry.id } + entry)
             writeIndex(_tracks.value)
@@ -176,7 +194,7 @@ class OfflineStore(context: Context) {
 
     fun delete(id: String) {
         val entry = _tracks.value.firstOrNull { it.id == id } ?: return
-        runCatching { File(directory(appContext), entry.fileName).delete() }
+        runCatching { File(directoryFor(appContext, entry.storage), entry.fileName).delete() }
         _tracks.value = _tracks.value.filterNot { it.id == id }
         writeIndex(_tracks.value)
     }
@@ -192,8 +210,11 @@ class OfflineStore(context: Context) {
                 val id = o.optString("id").takeIf { it.isNotBlank() } ?: return@mapNotNull null
                 val fileName = o.optString("fileName")
                 if (fileName.isBlank()) return@mapNotNull null
-                // Drop entries whose file disappeared (cache cleaner, uninstall leftovers).
-                if (!File(directory(appContext), fileName).exists()) return@mapNotNull null
+                val storage = runCatching {
+                    StorageLocation.valueOf(o.optString("storage", "INTERNAL"))
+                }.getOrDefault(StorageLocation.INTERNAL)
+                // Drop entries whose file disappeared (cleaner run, card removed).
+                if (!File(directoryFor(appContext, storage), fileName).exists()) return@mapNotNull null
                 OfflineTrack(
                     id = id,
                     title = o.optString("title"),
@@ -205,6 +226,7 @@ class OfflineStore(context: Context) {
                     fileName = fileName,
                     bytes = o.optLong("bytes"),
                     savedAt = o.optLong("savedAt"),
+                    storage = storage,
                 )
             }
         }.getOrDefault(emptyList())
@@ -225,6 +247,7 @@ class OfflineStore(context: Context) {
                     put("fileName", entry.fileName)
                     put("bytes", entry.bytes)
                     put("savedAt", entry.savedAt)
+                    put("storage", entry.storage.name)
                 },
             )
         }
@@ -239,7 +262,15 @@ class OfflineStore(context: Context) {
     companion object {
         private const val KEY_INDEX = "index"
 
-        fun directory(context: Context): File = File(context.filesDir, "offline")
+        fun directoryFor(context: Context, location: StorageLocation): File {
+            val base = when (location) {
+                StorageLocation.INTERNAL -> File(context.filesDir, "offline")
+                StorageLocation.EXTERNAL ->
+                    SettingsStore.externalRoot(context)?.let { File(it, "offline") }
+                        ?: File(context.filesDir, "offline")
+            }
+            return base
+        }
 
         /** File names must not leak into path traversal; ids are server GUIDs. */
         fun fileNameFor(id: String): String = id.replace(Regex("[^A-Za-z0-9._-]"), "_")

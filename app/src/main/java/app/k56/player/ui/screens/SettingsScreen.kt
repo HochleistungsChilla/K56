@@ -44,15 +44,25 @@ import app.k56.player.BuildConfig
 import app.k56.player.core.model.BackendKind
 import app.k56.player.core.net.NetworkTransport
 import app.k56.player.data.MediaRepository
+import app.k56.player.data.SettingsStore
+import app.k56.player.data.StorageLocation
 import app.k56.player.data.offline.OfflineStore
 import kotlinx.coroutines.launch
 import app.k56.player.ui.theme.ThemeController
 import app.k56.player.ui.theme.ThemeMode
 
 @Composable
-fun SettingsScreen(repository: MediaRepository, offlineStore: OfflineStore) {
+fun SettingsScreen(
+    repository: MediaRepository,
+    offlineStore: OfflineStore,
+    settingsStore: SettingsStore,
+) {
+    val context = LocalContext.current
     val session by repository.sessionFlow.collectAsStateWithLifecycle()
     val offlineTracks by offlineStore.tracks.collectAsStateWithLifecycle()
+    val storageLocation by settingsStore.storageLocation.collectAsStateWithLifecycle()
+    val cacheLimitMb by settingsStore.cacheLimitMb.collectAsStateWithLifecycle()
+    val hasSdCard = remember { SettingsStore.externalRoot(context) != null }
     val forceTranscode by repository.forceTranscode.collectAsStateWithLifecycle()
     val preferExternal by repository.preferExternal.collectAsStateWithLifecycle()
     val networkStatus by repository.networkStatus.collectAsStateWithLifecycle()
@@ -130,6 +140,79 @@ fun SettingsScreen(repository: MediaRepository, offlineStore: OfflineStore) {
                 Spacer(Modifier.height(8.dp))
                 InfoRow(stringResource(R.string.offline_tracks), offlineTracks.size.toString())
                 InfoRow("Speicher", formatBytes(offlineTracks.sumOf { it.bytes }))
+
+                Spacer(Modifier.height(12.dp))
+                Text(
+                    stringResource(R.string.storage_location),
+                    style = MaterialTheme.typography.titleMedium,
+                )
+                Spacer(Modifier.height(6.dp))
+                Row(
+                    modifier = Modifier.horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    FilterChip(
+                        selected = storageLocation == StorageLocation.INTERNAL,
+                        onClick = { settingsStore.setStorageLocation(StorageLocation.INTERNAL) },
+                        label = { Text(stringResource(R.string.storage_internal)) },
+                    )
+                    FilterChip(
+                        selected = storageLocation == StorageLocation.EXTERNAL,
+                        onClick = { if (hasSdCard) settingsStore.setStorageLocation(StorageLocation.EXTERNAL) },
+                        enabled = hasSdCard,
+                        label = { Text(stringResource(R.string.storage_external)) },
+                    )
+                }
+                if (!hasSdCard) {
+                    Text(
+                        stringResource(R.string.storage_no_sd),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                } else {
+                    val dir = app.k56.player.data.offline.OfflineStore
+                        .directoryFor(context, storageLocation)
+                    Text(
+                        stringResource(
+                            R.string.storage_free,
+                            formatBytes(SettingsStore.freeBytes(dir)),
+                        ),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+
+                Spacer(Modifier.height(14.dp))
+                Text(
+                    stringResource(R.string.cache_title),
+                    style = MaterialTheme.typography.titleMedium,
+                )
+                Spacer(Modifier.height(6.dp))
+                Row(
+                    modifier = Modifier.horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    listOf(0, 128, 256, 512, 1024, -1).forEach { mb ->
+                        FilterChip(
+                            selected = cacheLimitMb == mb,
+                            onClick = { settingsStore.setCacheLimitMb(mb) },
+                            label = {
+                                Text(
+                                    when (mb) {
+                                        0 -> stringResource(R.string.cache_off)
+                                        -1 -> stringResource(R.string.cache_unlimited)
+                                        else -> "$mb MiB"
+                                    },
+                                )
+                            },
+                        )
+                    }
+                }
+                Text(
+                    stringResource(R.string.cache_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
                 if (offlineTracks.isEmpty()) {
                     Text(
                         stringResource(R.string.offline_empty),
@@ -260,7 +343,6 @@ fun SettingsScreen(repository: MediaRepository, offlineStore: OfflineStore) {
                     style = MaterialTheme.typography.titleMedium,
                 )
                 Spacer(Modifier.height(10.dp))
-                val context = LocalContext.current
                 Row(
                     modifier = Modifier.horizontalScroll(rememberScrollState()),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
