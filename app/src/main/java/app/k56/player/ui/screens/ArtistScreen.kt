@@ -15,6 +15,11 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.Shuffle
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -86,6 +91,8 @@ fun ArtistScreen(
     onBack: () -> Unit,
     onOpenAlbum: (String) -> Unit,
     onPlay: (List<Track>, Int) -> Unit,
+    onPlayNext: (Track) -> Unit = {},
+    onAddToQueue: (Track) -> Unit = {},
 ) {
     val context = LocalContext.current
     val vm = appViewModel { ArtistViewModel(repository, artistId, context.applicationContext) }
@@ -110,7 +117,13 @@ fun ArtistScreen(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 item(span = { GridItemSpan(maxLineSpan) }) {
-                    ArtistHeader(details)
+                    ArtistHeader(
+                        details = details,
+                        onPlay = { if (details.topTracks.isNotEmpty()) onPlay(details.topTracks, 0) },
+                        onShuffle = {
+                            if (details.topTracks.isNotEmpty()) onPlay(details.topTracks.shuffled(), 0)
+                        },
+                    )
                 }
 
                 val overview = details.artist.overview
@@ -135,6 +148,8 @@ fun ArtistScreen(
                                 track = track,
                                 onClick = { onPlay(details.topTracks, index) },
                                 index = index + 1,
+                                onPlayNext = { onPlayNext(track) },
+                                onAddToQueue = { onAddToQueue(track) },
                             )
                         }
                     }
@@ -167,7 +182,11 @@ fun ArtistScreen(
 }
 
 @Composable
-private fun ArtistHeader(details: ArtistDetails) {
+private fun ArtistHeader(
+    details: ArtistDetails,
+    onPlay: () -> Unit,
+    onShuffle: () -> Unit,
+) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -196,5 +215,16 @@ private fun ArtistHeader(details: ArtistDetails) {
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+        if (details.topTracks.isNotEmpty()) {
+            Spacer(Modifier.height(10.dp))
+            androidx.compose.foundation.layout.Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = onPlay) {
+                    Icon(Icons.Rounded.PlayArrow, contentDescription = stringResource(R.string.common_play))
+                }
+                IconButton(onClick = onShuffle) {
+                    Icon(Icons.Rounded.Shuffle, contentDescription = stringResource(R.string.player_shuffle))
+                }
+            }
+        }
     }
 }

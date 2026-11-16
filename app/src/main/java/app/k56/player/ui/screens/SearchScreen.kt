@@ -139,6 +139,8 @@ fun SearchScreen(
     onOpenAlbum: (String) -> Unit,
     onOpenArtist: (String) -> Unit,
     onPlay: (List<Track>, Int) -> Unit,
+    onPlayNext: (Track) -> Unit = {},
+    onAddToQueue: (Track) -> Unit = {},
 ) {
     val context = LocalContext.current
     val vm = appViewModel { SearchViewModel(repository, context.applicationContext) }
@@ -292,6 +294,8 @@ fun SearchScreen(
                         track = track,
                         onClick = { onPlay(results.tracks, index) },
                         showArtwork = true,
+                        onPlayNext = { onPlayNext(track) },
+                        onAddToQueue = { onAddToQueue(track) },
                     )
                 }
             }

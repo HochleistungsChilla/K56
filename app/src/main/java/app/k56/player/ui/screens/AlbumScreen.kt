@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -18,8 +19,10 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.Shuffle
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -106,6 +109,8 @@ fun AlbumScreen(
     onOpenArtist: (String) -> Unit,
     onOpenAlbum: (String) -> Unit,
     onPlay: (List<Track>, Int) -> Unit,
+    onPlayNext: (Track) -> Unit = {},
+    onAddToQueue: (Track) -> Unit = {},
 ) {
     val context = LocalContext.current
     val vm = appViewModel { AlbumViewModel(repository, albumId, context.applicationContext) }
@@ -133,6 +138,9 @@ fun AlbumScreen(
                         onPlay = {
                             if (details.tracks.isNotEmpty()) onPlay(details.tracks, 0)
                         },
+                        onShuffle = {
+                            if (details.tracks.isNotEmpty()) onPlay(details.tracks.shuffled(), 0)
+                        },
                     )
                 }
                 val overview = details.album.overview
@@ -150,6 +158,8 @@ fun AlbumScreen(
                         track = track,
                         onClick = { onPlay(details.tracks, index) },
                         index = index + 1,
+                        onPlayNext = { onPlayNext(track) },
+                        onAddToQueue = { onAddToQueue(track) },
                     )
                 }
                 if (vm.moreFromArtist.isNotEmpty()) {
@@ -213,6 +223,7 @@ private fun AlbumHeader(
     details: AlbumDetails,
     onOpenArtist: (String) -> Unit,
     onPlay: () -> Unit,
+    onShuffle: () -> Unit,
 ) {
     val album = details.album
     Column(
@@ -258,10 +269,19 @@ private fun AlbumHeader(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Spacer(Modifier.height(14.dp))
-        Button(onClick = onPlay, enabled = details.tracks.isNotEmpty()) {
-            Icon(Icons.Rounded.PlayArrow, contentDescription = null)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Button(onClick = onPlay, enabled = details.tracks.isNotEmpty()) {
+                Icon(Icons.Rounded.PlayArrow, contentDescription = null)
+                Spacer(Modifier.width(8.dp))
+                Text(stringResource(R.string.common_play))
+            }
             Spacer(Modifier.width(8.dp))
-            Text(stringResource(R.string.common_play))
+            IconButton(onClick = onShuffle, enabled = details.tracks.isNotEmpty()) {
+                Icon(
+                    Icons.Rounded.Shuffle,
+                    contentDescription = stringResource(R.string.player_shuffle),
+                )
+            }
         }
         Spacer(Modifier.height(8.dp))
     }

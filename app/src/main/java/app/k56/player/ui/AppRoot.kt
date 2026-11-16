@@ -376,6 +376,8 @@ private fun MainShell(container: AppContainer) {
                     onOpenAlbum = { navController.navigate("album/$it") },
                     onOpenArtist = { navController.navigate("artist/$it") },
                     onPlay = playTracks,
+                    onPlayNext = playNext,
+                    onAddToQueue = addToQueue,
                 )
             }
             composable("settings") {
@@ -399,6 +401,8 @@ private fun MainShell(container: AppContainer) {
                     onOpenArtist = { navController.navigate("artist/$it") },
                     onOpenAlbum = { navController.navigate("album/$it") },
                     onPlay = playTracks,
+                    onPlayNext = playNext,
+                    onAddToQueue = addToQueue,
                 )
             }
             composable(
@@ -411,6 +415,8 @@ private fun MainShell(container: AppContainer) {
                     onBack = { navController.popBackStack() },
                     onOpenAlbum = { navController.navigate("album/$it") },
                     onPlay = playTracks,
+                    onPlayNext = playNext,
+                    onAddToQueue = addToQueue,
                 )
             }
             composable("player") {
