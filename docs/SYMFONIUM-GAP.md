@@ -65,14 +65,14 @@ Aufwand: S (< 1 h) · M (1–3 h) · L (> 3 h)
 | Now Playing: Styles speichern/importieren | ❌ | L | styles.symfonium.app |
 | Now Playing: Kompakt/Floating-Player-Style | ❌ | M | Größe/Radius/Schatten |
 | Now Playing: runder Progress-Indikator | ❌ | S | |
-| Now Playing: Expanded Screen-Style (Portrait/Landscape) | ❌ | L | |
-| Now Playing: Cover/Background/Button-Styles | ❌ | M | |
-| Now Playing: animierter Progressbar + Overlay-Icons | ❌ | S | |
+| Now Playing: Expanded Screen-Style (Portrait/Landscape) | 🟡 | L | zwei Stile (Standard/großes Cover); volles Portrait/Landscape-Layout offen |
+| Now Playing: Cover/Background/Button-Styles | 🟡 | M | Cover-Rand 0–24 dp, Hintergrund Gradient/einfarbig/Album-Farbe |
+| Now Playing: animierter Progressbar + Overlay-Icons | 🟡 | S | animierte Progressbar (Option); Overlay-Icons offen |
 | Now Playing: zusätzliche Künstler | ❌ | S | |
 | Now Playing: Thumbnail in Landscape tauschen | ❌ | S | |
 | Now Playing: Favorit verstecken | ✅ | S | Option |
 | Now Playing: Cover nicht croppen | ✅ | S | ContentScale.Fit (Option) |
-| Now Playing: kompakt / Buttons wählbar | 🟡 | S | kompakte Bedienelemente (Option); freie Button-Wahl fehlt |
+| Now Playing: kompakt / Buttons wählbar | ✅ | S | kompakte Bedienelemente + Shuffle/Repeat/Queue/DSP/Sleep/Favorit frei wählbar |
 | Now Playing: Rating/Volume/Infos | ❌ | M | |
 | Queue unten statt oben | ✅ | – | Button unter Transport |
 
@@ -176,7 +176,7 @@ Aufwand: S (< 1 h) · M (1–3 h) · L (> 3 h)
 | Disable media session usage | ❌ | S | |
 | Metered WLAN = Mobil | ❌ | S | |
 | VPN = Mobil | ❌ | S | |
-| Backup & Restore der Einstellungen | 🟡 | M | JSON-Export/-Import, unverschlüsselt |
+| Backup & Restore der Einstellungen | ✅ | M | JSON-Export/-Import, optional AES-256-GCM-verschlüsselt |
 
 ## Android Auto
 
@@ -194,9 +194,11 @@ Erledigt (2026-11-16, 11 Commits):
 5. ✅ Media-Listen: Zusatzinfo + Anzahl.
 6. ✅ „Save Now Playing state" (Queue + letzter Titel, fehlende Titel überspringen).
 7. ✅ Orientation (Auto/Portrait/Landscape) + Grid-Abstand 4–16 dp.
-8. 🟡 Backup & Restore der Einstellungen (JSON, unverschlüsselt).
+8. ✅ Backup & Restore der Einstellungen (JSON, optional AES-256-GCM-verschlüsselt).
+9. ✅ Queue-Bearbeitung (verschieben/entfernen/leeren).
+10. ✅ Player-Buttons frei wählbar.
+11. ✅ Expanded Now Playing (Stile, Cover-Rand, Hintergrund, animierte Progressbar).
 
 Weiter offen:
-- Backup-Verschlüsselung (Backup & Restore vollständig abschließen).
-- Expanded-Now-Playing-Styles (L) — größtes visuelles Differenzierungsmerkmal.
-- Freie Button-Wahl im Player (Rest von „kompakt / Buttons wählbar").
+- Volles Portrait/Landscape-Layout + freie Button-Styles (Expanded Now Playing abschließen).
+- Overlay-Icons auf der animierten Progressbar.
