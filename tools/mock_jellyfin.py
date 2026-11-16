@@ -83,9 +83,24 @@ class H(BaseHTTPRequestHandler):
         if path.startswith("/Users/") and path.endswith("/Views"):
             return self._send(200, {"Items": [], "TotalRecordCount": 0, "StartIndex": 0})
         if path == "/Items":
+            types = (q.get("IncludeItemTypes") or [""])[0]
+            parent = (q.get("ParentId") or [None])[0]
             term = (q.get("searchTerm") or q.get("SearchTerm") or [None])[0]
-            items = search_items(term) if term else []
-            return self._send(200, {"Items": items, "TotalRecordCount": len(items), "StartIndex": 0})
+            if term:
+                return self._send(200, {"Items": search_items(term), "TotalRecordCount": len(search_items(term)), "StartIndex": 0})
+            if "Playlist" in types:
+                pl = [item("playlist-1", "Test Playlist", "Playlist", ChildCount=2)]
+                return self._send(200, {"Items": pl, "TotalRecordCount": 1, "StartIndex": 0})
+            if parent == "playlist-1":
+                tracks = [
+                    item("track-1", "Test Track", "Audio",
+                         Album="Test Album", AlbumId="album-1", Artists=["Test Artist"],
+                         RunTimeTicks=2000000000, IndexNumber=1, ParentIndexNumber=1,
+                         MediaSources=[{"Id": "track-1", "Container": "mp3", "Bitrate": 320000}],
+                         UserData={"IsFavorite": False, "Played": False}),
+                ]
+                return self._send(200, {"Items": tracks, "TotalRecordCount": 1, "StartIndex": 0})
+            return self._send(200, {"Items": [], "TotalRecordCount": 0, "StartIndex": 0})
         if path.startswith("/Items/"):
             # Item detail: return a generic item.
             iid = path.split("/")[-1]
