@@ -27,7 +27,7 @@ Aufwand: S (< 1 h) · M (1–3 h) · L (> 3 h)
 | Queue next als Drop-Target | ❌ | S | Drag & Drop |
 | Expanded Player automatisch öffnen | ❌ | S | bei Wiedergabestart |
 | Keep Screen On | ✅ | – | Einstellungen → Darstellung |
-| Screen Orientation | ❌ | S | Portrait/Landscape/Auto |
+| Screen Orientation | ✅ | S | Portrait/Landscape/Auto |
 | Rounded Corners (global) | ❌ | S | Eckradius |
 | Change Language | ❌ | S | Android-13-App-Sprache |
 | Application Logo | ⛔ | S | eigenes Branding (BRANDING.md) |
@@ -45,7 +45,7 @@ Aufwand: S (< 1 h) · M (1–3 h) · L (> 3 h)
 | Home: Playlist als Row („Add to home") | ❌ | M | |
 | Library: Spalten | ✅ | – | Auto/2/3/4 |
 | Library: Spalten (Landscape) | ❌ | S | getrennt von Portrait |
-| Library: Abstand | ❌ | S | Grid-Spacing |
+| Library: Abstand | ✅ | S | Grid-Spacing 4–16 dp |
 | Library: Shortcuts wählbar | ❌ | S | Navigationseinträge |
 | Album-Seite: „More from artist" | ❌ | S | |
 | Album-Seite: „More from artist" Sort | ❌ | S | |
@@ -85,7 +85,7 @@ Aufwand: S (< 1 h) · M (1–3 h) · L (> 3 h)
 | Resume-Punkt (Position merken) | ✅ | M | SharedPreferences, pro Item |
 | Min. Spielzeit für Resume-Punkt (s) | ✅ | S | Schwelle als Einstellung (Default 15 s) |
 | Audiobook-Resume-Rollback | ❌ | S | beim Fortsetzen zurückrollen |
-| „Save Now Playing state" | ❌ | M | letzter Titel + Queue |
+| „Save Now Playing state" | ✅ | M | Queue + letzter Titel, fehlende Titel überspringen |
 | Multiple queues | ❌ | L | |
 | Personal mixes size | 🟡 | S | 60 Titel fix |
 | Min. play % bevor „gespielt" | ❌ | S | |
@@ -176,7 +176,7 @@ Aufwand: S (< 1 h) · M (1–3 h) · L (> 3 h)
 | Disable media session usage | ❌ | S | |
 | Metered WLAN = Mobil | ❌ | S | |
 | VPN = Mobil | ❌ | S | |
-| Backup & Restore der Einstellungen | ❌ | M | verschlüsselt, Symfonium-Backup |
+| Backup & Restore der Einstellungen | 🟡 | M | JSON-Export/-Import, unverschlüsselt |
 
 ## Android Auto
 
@@ -186,16 +186,17 @@ Aufwand: S (< 1 h) · M (1–3 h) · L (> 3 h)
 
 ## Nächste Schritte (Reihenfolge)
 
-Erledigt (2026-11-16, 5 Commits):
-1. ✅ Resume-Punkt + Schwelle — „Save Now Playing" (letzter Titel + Queue) weiter offen.
+Erledigt (2026-11-16, 11 Commits):
+1. ✅ Resume-Punkt + Schwelle (Default 15 s).
 2. ✅ Now-Playing: Favorit verstecken, Cover nicht croppen, kompakte Bedienelemente.
 3. ✅ Automatisches Offline-Cachen von Favoriten (respektiert WLAN-only).
 4. ✅ Circular queue navigation.
 5. ✅ Media-Listen: Zusatzinfo + Anzahl.
+6. ✅ „Save Now Playing state" (Queue + letzter Titel, fehlende Titel überspringen).
+7. ✅ Orientation (Auto/Portrait/Landscape) + Grid-Abstand 4–16 dp.
+8. 🟡 Backup & Restore der Einstellungen (JSON, unverschlüsselt).
 
 Weiter offen:
-- „Save Now Playing state" (letzter Titel + Queue wiederherstellen) (M).
-- Orientation + Grid-Abstand (S).
-- Backup & Restore der Einstellungen (M) — schützt Setup vor Verlust.
+- Backup-Verschlüsselung (Backup & Restore vollständig abschließen).
 - Expanded-Now-Playing-Styles (L) — größtes visuelles Differenzierungsmerkmal.
 - Freie Button-Wahl im Player (Rest von „kompakt / Buttons wählbar").
