@@ -63,6 +63,14 @@ class SettingsStore(context: Context) {
     private val _ignoreArticles = MutableStateFlow(prefs.getBoolean(KEY_IGNORE_ARTICLES, true))
     val ignoreArticles: StateFlow<Boolean> = _ignoreArticles.asStateFlow()
 
+    /** Ordered home-page sections the user wants to see. */
+    private val _homeSections = MutableStateFlow(
+        (prefs.getString(KEY_HOME_SECTIONS, null) ?: DEFAULT_HOME_SECTIONS)
+            .split(',')
+            .filter { it.isNotBlank() },
+    )
+    val homeSections: StateFlow<List<String>> = _homeSections.asStateFlow()
+
     private val _libraryColumns = MutableStateFlow(prefs.getInt(KEY_COLUMNS, 0))
     val libraryColumns: StateFlow<Int> = _libraryColumns.asStateFlow()
 
@@ -119,6 +127,11 @@ class SettingsStore(context: Context) {
         _ignoreArticles.value = value
     }
 
+    fun applyHomeSections(value: List<String>) {
+        prefs.edit().putString(KEY_HOME_SECTIONS, value.joinToString(",")).apply()
+        _homeSections.value = value
+    }
+
     fun setLibraryColumns(value: Int) {
         prefs.edit().putInt(KEY_COLUMNS, value).apply()
         _libraryColumns.value = value
@@ -143,10 +156,13 @@ class SettingsStore(context: Context) {
         private const val KEY_KEEP_SCREEN_ON = "keep_screen_on"
         private const val KEY_TRACK_NUMBERS = "track_numbers"
         private const val KEY_COLUMNS = "library_columns"
+        private const val KEY_HOME_SECTIONS = "home_sections"
         private const val KEY_WIFI_ONLY = "wifi_only_downloads"
         private const val KEY_IGNORE_ARTICLES = "ignore_articles"
         private const val KEY_DOWNLOAD_QUALITY = "download_quality"
         private const val KEY_DOWNLOAD_FORMAT = "download_format"
+
+        val DEFAULT_HOME_SECTIONS = "recent,random_albums,random_artists"
 
         /** The removable card, or null when the device has none. */
         fun externalRoot(context: Context): File? {

@@ -255,4 +255,13 @@
     <string name="wifi_only_body">Schont mobiles Datenvolumen; Downloads warten auf WLAN.</string>
     <string name="articles_title">Artikel beim Sortieren ignorieren</string>
     <string name="articles_body">The/Die werden unter dem ersten echten Wort einsortiert.</string>
+
+    <string name="home_edit">Startseite bearbeiten</string>
+    <string name="home_edit_body">Wähle, was erscheint und in welcher Reihenfolge.</string>
+    <string name="mix_titles">Titel-Mix</string>
+    <string name="mix_album">Album-Mix</string>
+    <string name="mix_artist">Interpreten-Mix</string>
+    <string name="home_random_albums">Zufällige Alben</string>
+    <string name="home_random_artists">Zufällige Interpreten</string>
+    <string name="home_random_songs">Zufällige Titel</string>
 </resources>

@@ -191,8 +191,10 @@ private fun MainShell(container: AppContainer) {
             composable("home") {
                 HomeScreen(
                     repository = repository,
+                    settingsStore = container.settingsStore,
                     onOpenAlbum = { navController.navigate("album/$it") },
                     onOpenArtist = { navController.navigate("artist/$it") },
+                    onPlay = playTracks,
                 )
             }
             composable("library") {

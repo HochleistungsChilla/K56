@@ -265,4 +265,13 @@
     <string name="wifi_only_body">Protects mobile data; downloads wait for a WLAN.</string>
     <string name="articles_title">Ignore articles when sorting</string>
     <string name="articles_body">The/Die are sorted under the first real word.</string>
+
+    <string name="home_edit">Edit start page</string>
+    <string name="home_edit_body">Choose what appears and in which order.</string>
+    <string name="mix_titles">Title mix</string>
+    <string name="mix_album">Album mix</string>
+    <string name="mix_artist">Artist mix</string>
+    <string name="home_random_albums">Random albums</string>
+    <string name="home_random_artists">Random artists</string>
+    <string name="home_random_songs">Random titles</string>
 </resources>
