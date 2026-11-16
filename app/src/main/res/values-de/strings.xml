@@ -360,6 +360,8 @@
     <string name="home_random_songs">Zufällige Titel</string>
     <string name="home_continue">Weiterhören</string>
     <string name="home_recent_played">Zuletzt gespielt</string>
+    <string name="home_track_count">%1$d Titel</string>
+    <string name="action_show_all">Alle anzeigen</string>
     <string name="library_loaded_count">%1$d von %2$d geladen</string>
     <string name="library_offline_copy">Offline — Kopie am Gerät, Stand %1$s</string>
     <string name="offline_copy">Offline-Kopie</string>

@@ -43,6 +43,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -575,12 +576,30 @@ fun TrackRow(
 }
 
 @Composable
-fun SectionHeader(title: String, modifier: Modifier = Modifier) {
-    Text(
-        text = title,
-        style = MaterialTheme.typography.titleLarge,
-        modifier = modifier.padding(horizontal = 16.dp, vertical = 10.dp),
-    )
+fun SectionHeader(title: String, modifier: Modifier = Modifier, onShowAll: (() -> Unit)? = null) {
+    if (onShowAll == null) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleLarge,
+            modifier = modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+        )
+    } else {
+        Row(
+            modifier = modifier
+                .fillMaxWidth()
+                .padding(start = 16.dp, end = 8.dp, top = 2.dp, bottom = 2.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.weight(1f),
+            )
+            TextButton(onClick = onShowAll) {
+                Text(stringResource(R.string.action_show_all))
+            }
+        }
+    }
 }
 
 @Composable

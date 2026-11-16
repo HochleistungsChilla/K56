@@ -46,6 +46,7 @@ import app.k56.player.ui.screens.AlbumScreen
 import app.k56.player.ui.screens.ArtistScreen
 import app.k56.player.ui.screens.CacheScreen
 import app.k56.player.ui.screens.DspScreen
+import app.k56.player.ui.screens.GenreScreen
 import app.k56.player.ui.screens.HomeScreen
 import app.k56.player.ui.screens.LibraryScreen
 import app.k56.player.ui.screens.LoginScreen
@@ -380,6 +381,8 @@ private fun MainShell(container: AppContainer) {
                     resumeStore = container.resumeStore,
                     onOpenAlbum = { navController.navigate("album/$it") },
                     onOpenArtist = { navController.navigate("artist/$it") },
+                    onOpenGenre = { navController.navigate("genre/$it") },
+                    onOpenLibrary = { navController.navigate("library") },
                     onPlay = playTracks,
                     onAddToQueue = addToQueue,
                     gridSpacing = gridSpacing,
@@ -475,6 +478,22 @@ private fun MainShell(container: AppContainer) {
                     offlineStore = container.offlineStore,
                     settingsStore = container.settingsStore,
                     artistId = entry.arguments?.getString("artistId").orEmpty(),
+                    onBack = { navController.popBackStack() },
+                    onOpenAlbum = { navController.navigate("album/$it") },
+                    onPlay = playTracks,
+                    onPlayNext = playNext,
+                    onAddToQueue = addToQueue,
+                )
+            }
+            composable(
+                route = "genre/{genreName}",
+                arguments = listOf(navArgument("genreName") { type = NavType.StringType }),
+            ) { entry ->
+                GenreScreen(
+                    repository = repository,
+                    offlineStore = container.offlineStore,
+                    libraryDb = container.libraryDb,
+                    genre = entry.arguments?.getString("genreName").orEmpty(),
                     onBack = { navController.popBackStack() },
                     onOpenAlbum = { navController.navigate("album/$it") },
                     onPlay = playTracks,

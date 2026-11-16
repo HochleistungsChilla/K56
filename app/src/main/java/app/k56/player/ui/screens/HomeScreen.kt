@@ -31,6 +31,7 @@ import androidx.compose.material.icons.rounded.KeyboardArrowUp
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -59,6 +60,7 @@ import android.widget.Toast
 import app.k56.player.R
 import app.k56.player.core.model.Album
 import app.k56.player.core.model.Artist
+import app.k56.player.core.model.Playlist
 import app.k56.player.core.model.Track
 import app.k56.player.core.net.NetworkTransport
 import app.k56.player.data.MediaRepository
@@ -100,6 +102,12 @@ class HomeViewModel(
         private set
     var recentPlayed by mutableStateOf<List<Track>>(emptyList())
         private set
+    var favorites by mutableStateOf<List<Track>>(emptyList())
+        private set
+    var playlists by mutableStateOf<List<Playlist>>(emptyList())
+        private set
+    var genres by mutableStateOf<List<String>>(emptyList())
+        private set
     var loading by mutableStateOf(true)
         private set
     var error by mutableStateOf<String?>(null)
@@ -127,10 +135,12 @@ class HomeViewModel(
                     val albums = async { repository.albums(libraryId, limit = 300) }
                     val artistJob = async { repository.artists(libraryId, limit = 40) }
                     val songsJob = async { repository.songs(libraryId, limit = 600) }
+                    val playlistsJob = async { repository.playlists() }
                     recentAlbums = recent.await()
                     allAlbums = albums.await()
                     artists = artistJob.await()
                     songs = songsJob.await()
+                    playlists = playlistsJob.await()
                 }
             } catch (e: Exception) {
                 error = e.userMessage(appContext)
@@ -159,6 +169,8 @@ class HomeViewModel(
             ResumeItem(track, point.positionMs, point.durationMs)
         }
         recentPlayed = libraryDb.recentPlays(12)
+        favorites = libraryDb.favoriteTracks(12)
+        genres = libraryDb.allGenres().take(12)
     }
 
     /** Title mix: a wide random slice of the library. */
@@ -198,6 +210,8 @@ fun HomeScreen(
     resumeStore: ResumeStore,
     onOpenAlbum: (String) -> Unit,
     onOpenArtist: (String) -> Unit,
+    onOpenGenre: (String) -> Unit,
+    onOpenLibrary: () -> Unit,
     onPlay: (List<Track>, Int) -> Unit,
     onAddToQueue: (Track) -> Unit = {},
     gridSpacing: Int = 12,
@@ -427,6 +441,71 @@ fun HomeScreen(
                         }
                     }
 
+                    "favorites" -> if (vm.favorites.isNotEmpty()) {
+                        item {
+                            SectionHeader(
+                                stringResource(R.string.library_tab_favorites),
+                                onShowAll = onOpenLibrary,
+                            )
+                        }
+                        item {
+                            Column(Modifier.padding(horizontal = 16.dp)) {
+                                vm.favorites.forEachIndexed { index, track ->
+                                    TrackRow(
+                                        track = track,
+                                        onClick = { onPlay(vm.favorites, index) },
+                                        isDownloaded = track.id in downloadedIds,
+                                        downloadProgress = downloads[track.id],
+                                        onDownload = if (track.id in downloadedIds) null else { { downloadOne(track) } },
+                                        onAddToQueue = { onAddToQueue(track) },
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    "playlists" -> if (vm.playlists.isNotEmpty()) {
+                        item {
+                            SectionHeader(
+                                stringResource(R.string.library_tab_playlists),
+                                onShowAll = onOpenLibrary,
+                            )
+                        }
+                        item {
+                            LazyRow(
+                                contentPadding = PaddingValues(horizontal = 16.dp),
+                                horizontalArrangement = Arrangement.spacedBy(gridSpacing.dp),
+                            ) {
+                                items(vm.playlists.take(12), key = { it.id }) { playlist ->
+                                    PlaylistCard(playlist, onClick = onOpenLibrary)
+                                }
+                            }
+                        }
+                    }
+
+                    "genres" -> if (vm.genres.isNotEmpty()) {
+                        item {
+                            SectionHeader(
+                                stringResource(R.string.library_tab_genres),
+                                onShowAll = onOpenLibrary,
+                            )
+                        }
+                        item {
+                            LazyRow(
+                                contentPadding = PaddingValues(horizontal = 16.dp),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                items(vm.genres, key = { it }) { genre ->
+                                    FilterChip(
+                                        selected = false,
+                                        onClick = { onOpenGenre(genre) },
+                                        label = { Text(genre) },
+                                    )
+                                }
+                            }
+                        }
+                    }
+
                     "songs" -> if (vm.songs.isNotEmpty()) {
                         item { SectionHeader(stringResource(R.string.home_random_songs)) }
                         item {
@@ -566,6 +645,40 @@ private fun ContinueCard(resume: ResumeItem, onClick: () -> Unit) {
 }
 
 @Composable
+private fun PlaylistCard(playlist: Playlist, onClick: () -> Unit) {
+    Column(
+        modifier = Modifier
+            .width(150.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .clickable(onClick = onClick)
+            .padding(2.dp),
+    ) {
+        Artwork(
+            url = playlist.imageUrl,
+            modifier = Modifier
+                .fillMaxWidth()
+                .aspectRatio(1f),
+            shape = RoundedCornerShape(14.dp),
+        )
+        Spacer(Modifier.height(8.dp))
+        Text(
+            text = playlist.name,
+            style = MaterialTheme.typography.titleMedium,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+        if (playlist.trackCount != null) {
+            Text(
+                text = stringResource(R.string.home_track_count, playlist.trackCount),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+            )
+        }
+    }
+}
+
+@Composable
 private fun HomeSectionsDialog(
     current: List<String>,
     onDismiss: () -> Unit,
@@ -575,6 +688,9 @@ private fun HomeSectionsDialog(
         "recent" to stringResource(R.string.home_recently_added),
         "continue" to stringResource(R.string.home_continue),
         "recent_played" to stringResource(R.string.home_recent_played),
+        "favorites" to stringResource(R.string.library_tab_favorites),
+        "playlists" to stringResource(R.string.library_tab_playlists),
+        "genres" to stringResource(R.string.library_tab_genres),
         "random_albums" to stringResource(R.string.home_random_albums),
         "random_artists" to stringResource(R.string.home_random_artists),
         "songs" to stringResource(R.string.home_random_songs),

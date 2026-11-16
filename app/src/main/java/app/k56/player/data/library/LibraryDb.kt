@@ -592,6 +592,21 @@ class LibraryDb private constructor(context: Context) :
         .rawQuery("SELECT * FROM tracks WHERE id = ?", arrayOf(id))
         .use { cursor -> if (cursor.moveToFirst()) cursor.toTrack() else null }
 
+    /** Own favourites plus artist-derived favourites (artist favourited, track not excepted). */
+    fun favoriteTracks(limit: Int = 12): List<Track> = readableDatabase
+        .rawQuery(
+            "SELECT t.* FROM tracks t WHERE t.is_favorite = 1 OR (" +
+                "t.artist_name IS NOT NULL AND EXISTS (" +
+                "SELECT 1 FROM artists a JOIN artist_favorites f ON a.id = f.artist_id " +
+                "WHERE a.name = t.artist_name" +
+                ") AND NOT EXISTS (" +
+                "SELECT 1 FROM artist_favorite_exceptions e WHERE e.track_id = t.id" +
+                ")" +
+                ") ORDER BY t.title COLLATE NOCASE LIMIT $limit",
+            null,
+        )
+        .use { cursor -> buildList { while (cursor.moveToNext()) add(cursor.toTrack()) } }
+
     private fun count(table: String): Int = readableDatabase
         .rawQuery("SELECT COUNT(*) FROM $table", null)
         .use { cursor -> if (cursor.moveToFirst()) cursor.getInt(0) else 0 }
