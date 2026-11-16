@@ -226,6 +226,7 @@ private fun MainShell(container: AppContainer) {
                 PlayerScreen(
                     controller = controller,
                     onBack = { navController.popBackStack() },
+                    onOpenDsp = { navController.navigate("dsp") },
                 )
             }
         }

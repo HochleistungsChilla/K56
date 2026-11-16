@@ -70,6 +70,14 @@ interface MediaRepository {
     suspend fun albumDetails(albumId: String): AlbumDetails
     suspend fun artistDetails(artistId: String): ArtistDetails
     suspend fun songs(parentId: String?, limit: Int = 500): List<Track>
+
+    /**
+     * Every favourite track the server knows, independent of how many songs the
+     * library list happens to load. Backends without a filter fall back to
+     * filtering [songs].
+     */
+    suspend fun favoriteTracks(limit: Int = 2000): List<Track> =
+        songs(null, limit).filter { it.isFavorite }
     suspend fun search(term: String): SearchResults
 
     suspend fun setFavorite(itemId: String, favorite: Boolean): Boolean

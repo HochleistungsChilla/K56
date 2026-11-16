@@ -68,6 +68,8 @@ class LibraryViewModel(
         private set
     var songs by mutableStateOf<List<Track>>(emptyList())
         private set
+    var favorites by mutableStateOf<List<Track>>(emptyList())
+        private set
     var loading by mutableStateOf(true)
         private set
     var error by mutableStateOf<String?>(null)
@@ -81,17 +83,32 @@ class LibraryViewModel(
     fun toggleTrackFavorite(track: Track) {
         val wanted = !track.isFavorite
         songs = songs.map { if (it.id == track.id) it.copy(isFavorite = wanted) else it }
+        // Favourites live in their own list so the tab is not limited to the
+        // songs the library page happened to load.
+        favorites = if (wanted) {
+            (favorites.filterNot { it.id == track.id } + track.copy(isFavorite = true))
+                .sortedBy { it.title.lowercase() }
+        } else {
+            favorites.filterNot { it.id == track.id }
+        }
         viewModelScope.launch {
             try {
                 val actual = repository.setFavorite(track.id, wanted)
-                if (actual != wanted) {
-                    songs = songs.map { if (it.id == track.id) it.copy(isFavorite = actual) else it }
-                }
+                if (actual != wanted) applyFavorite(track, actual)
             } catch (e: Exception) {
-                // roll back the optimistic update
-                songs = songs.map { if (it.id == track.id) it.copy(isFavorite = !wanted) else it }
+                applyFavorite(track, !wanted)
                 error = e.userMessage(appContext)
             }
+        }
+    }
+
+    private fun applyFavorite(track: Track, favorite: Boolean) {
+        songs = songs.map { if (it.id == track.id) it.copy(isFavorite = favorite) else it }
+        favorites = if (favorite) {
+            (favorites.filterNot { it.id == track.id } + track.copy(isFavorite = true))
+                .sortedBy { it.title.lowercase() }
+        } else {
+            favorites.filterNot { it.id == track.id }
         }
     }
 
@@ -105,9 +122,11 @@ class LibraryViewModel(
                     val albumsJob = async { repository.albums(libraryId, limit = 300) }
                     val artistsJob = async { repository.artists(libraryId, limit = 300) }
                     val songsJob = async { repository.songs(libraryId, limit = 600) }
+                    val favoritesJob = async { repository.favoriteTracks() }
                     albums = albumsJob.await()
                     artists = artistsJob.await()
                     songs = songsJob.await()
+                    favorites = favoritesJob.await()
                 }
             } catch (e: Exception) {
                 error = e.userMessage(appContext)
@@ -217,7 +236,7 @@ fun LibraryScreen(
             }
 
             else -> {
-                val favorites = vm.songs.filter { it.isFavorite }
+                val favorites = vm.favorites
                 if (favorites.isEmpty()) {
                     EmptyState(
                         title = stringResource(R.string.library_tab_favorites),

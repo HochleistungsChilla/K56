@@ -215,4 +215,13 @@
     <string name="ddc_body">Kopfhörer-Korrekturkurven aus ViPER4Android. Fünf Biquad-Sektionen je Samplerate.</string>
     <string name="ddc_pick">.vdc importieren</string>
     <string name="ddc_none">Kein Profil gewählt</string>
+
+    <string name="dsp_bass_title">Dynamic Bass</string>
+    <string name="dsp_bass_summary">%1$d dB · %2$d Hz</string>
+    <string name="dsp_flat">Flach</string>
+    <string name="dsp_adjusted">Angepasst</string>
+    <string name="dsp_disabled_hint">DSP einschalten, um die Effekte einzustellen.</string>
+    <string name="dsp_comp_summary">%1$d dB · %2$.1f:1</string>
+    <string name="dsp_tube_summary">%1$d dB · %2$d %%</string>
+    <string name="dsp_on">An</string>
 </resources>

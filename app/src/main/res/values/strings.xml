@@ -225,4 +225,13 @@
     <string name="ddc_body">Headphone correction curves from ViPER4Android. Five biquad sections per sample rate.</string>
     <string name="ddc_pick">Import .vdc</string>
     <string name="ddc_none">No profile selected</string>
+
+    <string name="dsp_bass_title">Dynamic bass</string>
+    <string name="dsp_bass_summary">%1$d dB · %2$d Hz</string>
+    <string name="dsp_flat">Flat</string>
+    <string name="dsp_adjusted">Adjusted</string>
+    <string name="dsp_disabled_hint">Turn DSP on to configure the effects.</string>
+    <string name="dsp_comp_summary">%1$d dB · %2$.1f:1</string>
+    <string name="dsp_tube_summary">%1$d dB · %2$d %%</string>
+    <string name="dsp_on">On</string>
 </resources>

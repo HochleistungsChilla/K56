@@ -350,6 +350,20 @@ class JellyfinRepository(
         .Items.orEmpty()
         .map { it.toTrack() }
 
+    override suspend fun favoriteTracks(limit: Int): List<Track> = ensureApi()
+        .items(
+            itemQuery(
+                includeTypes = "Audio",
+                recursive = true,
+                sortBy = "SortName",
+                sortOrder = "Ascending",
+                limit = limit,
+                filters = "IsFavorite",
+            ),
+        )
+        .Items.orEmpty()
+        .map { it.toTrack() }
+
     override suspend fun search(term: String): SearchResults {
         val query = term.trim()
         if (query.length < 2) return SearchResults()

@@ -27,6 +27,7 @@ import androidx.compose.material.icons.rounded.Shuffle
 import androidx.compose.material.icons.rounded.SkipNext
 import androidx.compose.material.icons.rounded.SkipPrevious
 import androidx.compose.material.icons.rounded.Timer
+import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -63,7 +64,11 @@ import app.k56.player.ui.rememberPlaybackUiState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PlayerScreen(controller: MediaController?, onBack: () -> Unit) {
+fun PlayerScreen(
+    controller: MediaController?,
+    onBack: () -> Unit,
+    onOpenDsp: () -> Unit = {},
+) {
     val state = rememberPlaybackUiState(controller)
 
     if (!state.hasItem) {
@@ -123,6 +128,13 @@ fun PlayerScreen(controller: MediaController?, onBack: () -> Unit) {
                 modifier = Modifier.weight(1f),
                 textAlign = TextAlign.Center,
             )
+            IconButton(onClick = onOpenDsp) {
+                Icon(
+                    Icons.Rounded.Tune,
+                    contentDescription = stringResource(R.string.dsp_title),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
             Box {
                 IconButton(onClick = { timerMenu = true }) {
                     Icon(
