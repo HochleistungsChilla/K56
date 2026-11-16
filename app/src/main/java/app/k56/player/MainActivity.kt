@@ -11,6 +11,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import app.k56.player.ui.K56Root
 import app.k56.player.ui.theme.K56Theme
+import app.k56.player.ui.theme.ThemeController
 
 class MainActivity : ComponentActivity() {
 
@@ -29,8 +30,9 @@ class MainActivity : ComponentActivity() {
         }
 
         val container = (application as K56App).container
+        ThemeController.load(this)
         setContent {
-            K56Theme {
+            K56Theme(mode = ThemeController.mode) {
                 K56Root(container)
             }
         }

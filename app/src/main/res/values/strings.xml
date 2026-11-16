@@ -54,6 +54,8 @@
     <string name="library_tab_albums">Albums</string>
     <string name="library_tab_artists">Artists</string>
     <string name="library_tab_tracks">Tracks</string>
+    <string name="library_tab_favorites">Favorites</string>
+    <string name="library_empty_favorites">No favorites yet. Tap the heart on a track.</string>
 
     <!-- album / artist -->
     <string name="album_title">Album</string>
@@ -72,6 +74,7 @@
     <string name="player_previous">Previous track</string>
     <string name="player_next">Next track</string>
     <string name="player_repeat">Repeat</string>
+    <string name="player_queue">Queue</string>
 
     <!-- settings -->
     <string name="settings_connection">Connection</string>
@@ -85,6 +88,11 @@
     <string name="settings_force_transcode">Force transcoding</string>
     <string name="settings_force_transcode_body">AAC/HLS instead of direct play. Useful when a codec does not run on the device.</string>
     <string name="settings_sign_out">Sign out</string>
+    <string name="settings_theme_title">Appearance</string>
+    <string name="theme_system">System</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
+    <string name="theme_matrix">Matrix</string>
     <string name="settings_about_title">About K56</string>
     <string name="settings_about_version">Version %1$s · GPL-3.0-or-later</string>
     <string name="settings_about_body">K56 is an independent, open-source cleanroom reimplementation of an Android music player. No code, assets or trademarks of Symfonium were used. Minimum Jellyfin version: %1$s.</string>
