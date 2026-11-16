@@ -35,6 +35,7 @@ import app.k56.player.ui.appViewModel
 import app.k56.player.ui.components.AlbumCard
 import app.k56.player.ui.components.ArtistCard
 import app.k56.player.ui.components.ErrorState
+import app.k56.player.ui.components.EmptyState
 import app.k56.player.ui.components.LoadingState
 import app.k56.player.ui.components.TrackRow
 import app.k56.player.ui.userMessage
@@ -60,6 +61,24 @@ class LibraryViewModel(
 
     init {
         load()
+    }
+
+    /** Toggle a track's favourite flag on the server and update the local list. */
+    fun toggleTrackFavorite(track: Track) {
+        val wanted = !track.isFavorite
+        songs = songs.map { if (it.id == track.id) it.copy(isFavorite = wanted) else it }
+        viewModelScope.launch {
+            try {
+                val actual = repository.setFavorite(track.id, wanted)
+                if (actual != wanted) {
+                    songs = songs.map { if (it.id == track.id) it.copy(isFavorite = actual) else it }
+                }
+            } catch (e: Exception) {
+                // roll back the optimistic update
+                songs = songs.map { if (it.id == track.id) it.copy(isFavorite = !wanted) else it }
+                error = e.userMessage(appContext)
+            }
+        }
     }
 
     fun load() {
@@ -102,6 +121,7 @@ fun LibraryScreen(
                 stringResource(R.string.library_tab_albums),
                 stringResource(R.string.library_tab_artists),
                 stringResource(R.string.library_tab_tracks),
+                stringResource(R.string.library_tab_favorites),
             ).forEachIndexed { index, label ->
                 Tab(
                     selected = tab == index,
@@ -145,7 +165,7 @@ fun LibraryScreen(
                 }
             }
 
-            else -> LazyColumn(
+            tab == 2 -> LazyColumn(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth(),
@@ -156,7 +176,37 @@ fun LibraryScreen(
                         track = track,
                         onClick = { onPlay(vm.songs, index) },
                         index = index + 1,
+                        isFavorite = track.isFavorite,
+                        onToggleFavorite = { vm.toggleTrackFavorite(track) },
                     )
+                }
+            }
+
+            else -> {
+                val favorites = vm.songs.filter { it.isFavorite }
+                if (favorites.isEmpty()) {
+                    EmptyState(
+                        title = stringResource(R.string.library_tab_favorites),
+                        subtitle = stringResource(R.string.library_empty_favorites),
+                        modifier = Modifier.weight(1f),
+                    )
+                } else {
+                    LazyColumn(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth(),
+                        contentPadding = PaddingValues(bottom = 20.dp),
+                    ) {
+                        itemsIndexed(favorites, key = { _, track -> track.id }) { index, track ->
+                            TrackRow(
+                                track = track,
+                                onClick = { onPlay(favorites, index) },
+                                index = index + 1,
+                                isFavorite = true,
+                                onToggleFavorite = { vm.toggleTrackFavorite(track) },
+                            )
+                        }
+                    }
                 }
             }
         }

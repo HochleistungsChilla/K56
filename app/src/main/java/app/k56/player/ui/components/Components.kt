@@ -19,6 +19,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.Favorite
+import androidx.compose.material.icons.rounded.FavoriteBorder
 import androidx.compose.material.icons.rounded.MusicNote
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
@@ -154,6 +156,8 @@ fun TrackRow(
     modifier: Modifier = Modifier,
     index: Int? = null,
     showArtwork: Boolean = true,
+    isFavorite: Boolean = false,
+    onToggleFavorite: (() -> Unit)? = null,
 ) {
     Row(
         modifier = modifier
@@ -199,6 +203,16 @@ fun TrackRow(
             )
         }
         Spacer(Modifier.width(12.dp))
+        if (onToggleFavorite != null) {
+            IconButton(onClick = onToggleFavorite) {
+                Icon(
+                    imageVector = if (isFavorite) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
+                    contentDescription = null,
+                    tint = if (isFavorite) MaterialTheme.colorScheme.primary
+                    else MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
         Text(
             text = formatDuration(track.durationMs),
             style = MaterialTheme.typography.labelMedium,
