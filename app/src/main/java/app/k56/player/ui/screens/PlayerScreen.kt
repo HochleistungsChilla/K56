@@ -32,6 +32,9 @@ import androidx.compose.material.icons.rounded.SkipNext
 import androidx.compose.material.icons.rounded.SkipPrevious
 import androidx.compose.material.icons.rounded.Timer
 import androidx.compose.material.icons.rounded.Tune
+import androidx.compose.material.icons.rounded.ArrowDownward
+import androidx.compose.material.icons.rounded.ArrowUpward
+import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -43,6 +46,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -81,6 +85,9 @@ fun PlayerScreen(
     fitCover: Boolean = false,
     compactControls: Boolean = false,
     onToggleFavorite: (String, Boolean) -> Unit = { _, _ -> },
+    onMoveQueueItem: (Int, Int) -> Unit = { _, _ -> },
+    onRemoveQueueItem: (Int) -> Unit = {},
+    onClearQueue: () -> Unit = {},
 ) {
     val view = androidx.compose.ui.platform.LocalView.current
     androidx.compose.runtime.DisposableEffect(keepScreenOn) {
@@ -371,7 +378,19 @@ fun PlayerScreen(
                     .fillMaxWidth()
                     .padding(bottom = 24.dp),
             ) {
-                item { SectionHeader(stringResource(R.string.player_queue)) }
+                item {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(end = 16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        SectionHeader(stringResource(R.string.player_queue), modifier = Modifier.weight(1f))
+                        TextButton(onClick = { onClearQueue(); showQueue = false }, enabled = count > 0) {
+                            Text(stringResource(R.string.queue_clear))
+                        }
+                    }
+                }
                 items(count) { index ->
                     val item = controller?.getMediaItemAt(index)
                     Row(
@@ -408,6 +427,31 @@ fun PlayerScreen(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
+                            )
+                        }
+                        IconButton(
+                            onClick = { onMoveQueueItem(index, index - 1) },
+                            enabled = index > 0,
+                        ) {
+                            Icon(
+                                Icons.Rounded.ArrowUpward,
+                                contentDescription = stringResource(R.string.queue_move_up),
+                            )
+                        }
+                        IconButton(
+                            onClick = { onMoveQueueItem(index, index + 1) },
+                            enabled = index < count - 1,
+                        ) {
+                            Icon(
+                                Icons.Rounded.ArrowDownward,
+                                contentDescription = stringResource(R.string.queue_move_down),
+                            )
+                        }
+                        IconButton(onClick = { onRemoveQueueItem(index) }) {
+                            Icon(
+                                Icons.Rounded.DeleteOutline,
+                                contentDescription = stringResource(R.string.queue_remove),
+                                tint = MaterialTheme.colorScheme.error,
                             )
                         }
                     }

@@ -245,6 +245,26 @@ private fun MainShell(container: AppContainer) {
         }
     }
 
+    val moveQueueItem: (Int, Int) -> Unit = { from, to ->
+        controller?.moveMediaItem(from, to)
+        if (from in queueTracks.indices && to in queueTracks.indices) {
+            queueTracks.add(to, queueTracks.removeAt(from))
+        }
+        persistQueue()
+    }
+
+    val removeQueueItem: (Int) -> Unit = { index ->
+        controller?.removeMediaItem(index)
+        if (index in queueTracks.indices) queueTracks.removeAt(index)
+        persistQueue()
+    }
+
+    val clearQueue: () -> Unit = {
+        controller?.clearMediaItems()
+        queueTracks.clear()
+        persistQueue()
+    }
+
     Scaffold(
         bottomBar = {
             if (showBars) {
@@ -383,6 +403,9 @@ private fun MainShell(container: AppContainer) {
                     fitCover = fitCover,
                     compactControls = compactControls,
                     onToggleFavorite = toggleFavorite,
+                    onMoveQueueItem = moveQueueItem,
+                    onRemoveQueueItem = removeQueueItem,
+                    onClearQueue = clearQueue,
                 )
             }
         }

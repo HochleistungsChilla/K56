@@ -68,6 +68,10 @@
     <string name="player_sleep_timer">Sleep-Timer</string>
     <string name="player_sleep_off">Aus</string>
     <string name="player_queue">Warteschlange</string>
+    <string name="queue_clear">Leeren</string>
+    <string name="queue_move_up">Nach oben</string>
+    <string name="queue_move_down">Nach unten</string>
+    <string name="queue_remove">Entfernen</string>
     <string name="player_favorite">Favorit</string>
 
     <string name="settings_edit_connection">Verbindung bearbeiten</string>
