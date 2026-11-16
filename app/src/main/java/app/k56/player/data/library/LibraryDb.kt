@@ -68,13 +68,22 @@ class LibraryDb private constructor(context: Context) :
         db.execSQL("CREATE INDEX idx_tracks_title ON tracks(title)")
         db.execSQL("CREATE INDEX idx_tracks_album ON tracks(album_id)")
         db.execSQL("CREATE INDEX idx_albums_name ON albums(name)")
+        createFavoriteTables(db)
     }
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
-        listOf("tracks", "albums", "artists", "genres", "sync_state").forEach {
-            db.execSQL("DROP TABLE IF EXISTS $it")
+        if (oldVersion < 2) {
+            createFavoriteTables(db)
         }
-        onCreate(db)
+    }
+
+    private fun createFavoriteTables(db: SQLiteDatabase) {
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS artist_favorites (artist_id TEXT PRIMARY KEY, added_at INTEGER NOT NULL)",
+        )
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS artist_favorite_exceptions (track_id TEXT PRIMARY KEY, added_at INTEGER NOT NULL)",
+        )
     }
 
     /** True when nothing has been imported yet. */
@@ -480,6 +489,59 @@ class LibraryDb private constructor(context: Context) :
         ).use { cursor -> buildList { while (cursor.moveToNext()) add(cursor.toArtist()) } }
     }
 
+    fun isArtistFavorite(id: String): Boolean = readableDatabase
+        .rawQuery("SELECT 1 FROM artist_favorites WHERE artist_id = ?", arrayOf(id))
+        .use { it.moveToFirst() }
+
+    fun setArtistFavorite(id: String, favorite: Boolean) {
+        val db = writableDatabase
+        if (favorite) {
+            db.insertWithOnConflict(
+                "artist_favorites",
+                null,
+                ContentValues().apply {
+                    put("artist_id", id)
+                    put("added_at", System.currentTimeMillis())
+                },
+                SQLiteDatabase.CONFLICT_REPLACE,
+            )
+        } else {
+            db.delete("artist_favorites", "artist_id = ?", arrayOf(id))
+        }
+    }
+
+    fun favoriteArtistIds(): Set<String> = readableDatabase
+        .rawQuery("SELECT artist_id FROM artist_favorites", null)
+        .use { cursor ->
+            val out = mutableSetOf<String>()
+            while (cursor.moveToNext()) out.add(cursor.getString(0))
+            out
+        }
+
+    fun addTrackException(id: String) {
+        writableDatabase.insertWithOnConflict(
+            "artist_favorite_exceptions",
+            null,
+            ContentValues().apply {
+                put("track_id", id)
+                put("added_at", System.currentTimeMillis())
+            },
+            SQLiteDatabase.CONFLICT_REPLACE,
+        )
+    }
+
+    fun removeTrackException(id: String) {
+        writableDatabase.delete("artist_favorite_exceptions", "track_id = ?", arrayOf(id))
+    }
+
+    fun trackExceptions(): Set<String> = readableDatabase
+        .rawQuery("SELECT track_id FROM artist_favorite_exceptions", null)
+        .use { cursor ->
+            val out = mutableSetOf<String>()
+            while (cursor.moveToNext()) out.add(cursor.getString(0))
+            out
+        }
+
     private fun count(table: String): Int = readableDatabase
         .rawQuery("SELECT COUNT(*) FROM $table", null)
         .use { cursor -> if (cursor.moveToFirst()) cursor.getInt(0) else 0 }
@@ -546,7 +608,7 @@ class LibraryDb private constructor(context: Context) :
     }
 
     companion object {
-        private const val DB_VERSION = 1
+        private const val DB_VERSION = 2
         private val STAGED_TABLES = listOf("tracks", "albums", "artists", "genres")
         private const val KEY_LAST_SYNC = "last_sync"
         private const val KEY_SERVER_TRACKS = "server_tracks"

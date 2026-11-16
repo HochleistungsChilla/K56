@@ -43,6 +43,7 @@ import app.k56.player.core.model.ArtistDetails
 import app.k56.player.core.model.Track
 import app.k56.player.data.MediaRepository
 import app.k56.player.data.library.LibraryDb
+import app.k56.player.data.library.SyncLog
 import app.k56.player.ui.appViewModel
 import app.k56.player.ui.components.AlbumCard
 import app.k56.player.ui.components.Artwork
@@ -71,6 +72,10 @@ class ArtistViewModel(
         private set
 
     private val libraryDb = LibraryDb.get(appContext)
+    private var favoriteArtistIds by mutableStateOf(libraryDb.favoriteArtistIds())
+
+    val artistIsFavorite: Boolean
+        get() = details?.artist?.let { it.isFavorite || it.id in favoriteArtistIds } == true
 
     init {
         load()
@@ -106,20 +111,18 @@ class ArtistViewModel(
     fun toggleFavorite() {
         val current = details ?: return
         val artist = current.artist
-        val wanted = !artist.isFavorite
+        val wanted = !artistIsFavorite
+        libraryDb.setArtistFavorite(artist.id, wanted)
+        favoriteArtistIds = libraryDb.favoriteArtistIds()
         details = current.copy(artist = artist.copy(isFavorite = wanted))
         viewModelScope.launch {
             try {
-                val actual = repository.setFavorite(artist.id, wanted)
-                val latest = details
-                if (latest != null && latest.artist.id == artist.id && actual != wanted) {
-                    details = latest.copy(artist = latest.artist.copy(isFavorite = actual))
-                }
+                repository.setFavorite(artist.id, wanted)
+                SyncLog.info("Interpret-Favorit \"${artist.name}\" gesetzt (lokal + Server)")
             } catch (e: Exception) {
-                val latest = details
-                if (latest != null && latest.artist.id == artist.id) {
-                    details = latest.copy(artist = latest.artist.copy(isFavorite = !wanted))
-                }
+                SyncLog.info(
+                    "Interpret-Favorit \"${artist.name}\": Server nicht unterstützt (${e.javaClass.simpleName})",
+                )
             }
         }
     }
@@ -173,7 +176,7 @@ fun ArtistScreen(
                         onShuffle = {
                             if (details.topTracks.isNotEmpty()) onPlay(details.topTracks.shuffled(), 0)
                         },
-                        isFavorite = details.artist.isFavorite,
+                        isFavorite = vm.artistIsFavorite,
                         onToggleFavorite = { vm.toggleFavorite() },
                     )
                 }

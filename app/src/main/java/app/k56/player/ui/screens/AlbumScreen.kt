@@ -79,6 +79,12 @@ class AlbumViewModel(
         private set
 
     private val libraryDb = LibraryDb.get(appContext)
+    private val favoriteArtistIds = libraryDb.favoriteArtistIds()
+
+    val albumIsFavorite: Boolean
+        get() = details?.album?.let { album ->
+            album.isFavorite || (album.artistId != null && album.artistId in favoriteArtistIds)
+        } == true
 
     init {
         load()
@@ -192,7 +198,7 @@ fun AlbumScreen(
                         onShuffle = {
                             if (details.tracks.isNotEmpty()) onPlay(details.tracks.shuffled(), 0)
                         },
-                        isFavorite = details.album.isFavorite,
+                        isFavorite = vm.albumIsFavorite,
                         onToggleFavorite = { vm.toggleFavorite() },
                     )
                 }

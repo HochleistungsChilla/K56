@@ -80,6 +80,7 @@ import app.k56.player.data.SettingsStore
 import app.k56.player.data.offline.OfflineStore
 import app.k56.player.data.offline.DownloadRequest
 import app.k56.player.data.library.LibraryDb
+import app.k56.player.data.library.SyncLog
 import app.k56.player.ui.appViewModel
 import app.k56.player.ui.components.AlbumCard
 import app.k56.player.ui.components.ArtistCard
@@ -137,6 +138,12 @@ class LibraryViewModel(
 
     private val libraryDb = LibraryDb.get(appContext)
     val indexLastSync: Long get() = libraryDb.lastSync()
+
+    var favoriteArtistIds by mutableStateOf(libraryDb.favoriteArtistIds())
+        private set
+    var trackExceptionIds by mutableStateOf(libraryDb.trackExceptions())
+        private set
+    private var serverFavorites by mutableStateOf<List<Track>>(emptyList())
 
     init {
         load()
@@ -252,18 +259,55 @@ class LibraryViewModel(
         }
     }
 
-    /** Toggle a track's favourite flag on the server and update the local list. */
-    fun toggleTrackFavorite(track: Track) {
-        val wanted = !track.isFavorite
-        songs = songs.map { if (it.id == track.id) it.copy(isFavorite = wanted) else it }
-        // Favourites live in their own list so the tab is not limited to the
-        // songs the library page happened to load.
-        favorites = if (wanted) {
-            (favorites.filterNot { it.id == track.id } + track.copy(isFavorite = true))
-                .sortedBy { it.title.lowercase() }
-        } else {
-            favorites.filterNot { it.id == track.id }
+    private fun trackArtistId(track: Track): String? =
+        track.artistName?.let { name -> artists.firstOrNull { it.name == name }?.id }
+
+    fun effectiveTrackFavorite(track: Track): Boolean {
+        if (track.isFavorite) return true
+        val artistId = trackArtistId(track) ?: return false
+        return artistId in favoriteArtistIds && track.id !in trackExceptionIds
+    }
+
+    fun effectiveAlbumFavorite(album: Album): Boolean =
+        album.isFavorite || (album.artistId != null && album.artistId in favoriteArtistIds)
+
+    fun effectiveArtistFavorite(artist: Artist): Boolean =
+        artist.isFavorite || artist.id in favoriteArtistIds
+
+    /** Rebuilds the favourites tab: own favourites plus artist-derived ones. */
+    private fun refreshFavorites() {
+        val derived = songs.filter { track ->
+            !track.isFavorite &&
+                trackArtistId(track)?.let { it in favoriteArtistIds } == true &&
+                track.id !in trackExceptionIds
         }
+        val merged = linkedMapOf<String, Track>()
+        (serverFavorites + derived).forEach { merged[it.id] = it }
+        favorites = merged.values.sortedBy { it.title.lowercase() }
+    }
+
+    /** Toggle a track's favourite flag; artist-derived favourites use a local exception. */
+    fun toggleTrackFavorite(track: Track) {
+        val artistFavorited = trackArtistId(track)?.let { it in favoriteArtistIds } == true
+        val wanted = !effectiveTrackFavorite(track)
+
+        // A track that is favourite only because its artist is: toggle the
+        // exception locally instead of writing the server flag.
+        if (artistFavorited && !track.isFavorite) {
+            if (wanted) libraryDb.removeTrackException(track.id)
+            else libraryDb.addTrackException(track.id)
+            trackExceptionIds = libraryDb.trackExceptions()
+            refreshFavorites()
+            return
+        }
+
+        songs = songs.map { if (it.id == track.id) it.copy(isFavorite = wanted) else it }
+        serverFavorites = if (wanted) {
+            (serverFavorites.filterNot { it.id == track.id } + track.copy(isFavorite = true))
+        } else {
+            serverFavorites.filterNot { it.id == track.id }
+        }
+        refreshFavorites()
         viewModelScope.launch {
             try {
                 val actual = repository.setFavorite(track.id, wanted)
@@ -294,12 +338,12 @@ class LibraryViewModel(
 
     private fun applyFavorite(track: Track, favorite: Boolean) {
         songs = songs.map { if (it.id == track.id) it.copy(isFavorite = favorite) else it }
-        favorites = if (favorite) {
-            (favorites.filterNot { it.id == track.id } + track.copy(isFavorite = true))
-                .sortedBy { it.title.lowercase() }
+        serverFavorites = if (favorite) {
+            (serverFavorites.filterNot { it.id == track.id } + track.copy(isFavorite = true))
         } else {
-            favorites.filterNot { it.id == track.id }
+            serverFavorites.filterNot { it.id == track.id }
         }
+        refreshFavorites()
     }
 
     fun toggleAlbumFavorite(album: Album) {
@@ -319,17 +363,19 @@ class LibraryViewModel(
     }
 
     fun toggleArtistFavorite(artist: Artist) {
-        val wanted = !artist.isFavorite
+        val wanted = !effectiveArtistFavorite(artist)
+        libraryDb.setArtistFavorite(artist.id, wanted)
+        favoriteArtistIds = libraryDb.favoriteArtistIds()
         artists = artists.map { if (it.id == artist.id) it.copy(isFavorite = wanted) else it }
+        refreshFavorites()
         viewModelScope.launch {
             try {
-                val actual = repository.setFavorite(artist.id, wanted)
-                if (actual != wanted) {
-                    artists = artists.map { if (it.id == artist.id) it.copy(isFavorite = actual) else it }
-                }
+                repository.setFavorite(artist.id, wanted)
+                SyncLog.info("Interpret-Favorit \"${artist.name}\" gesetzt (lokal + Server)")
             } catch (e: Exception) {
-                artists = artists.map { if (it.id == artist.id) it.copy(isFavorite = !wanted) else it }
-                error = e.userMessage(appContext)
+                SyncLog.info(
+                    "Interpret-Favorit \"${artist.name}\": Server nicht unterstützt (${e.javaClass.simpleName})",
+                )
             }
         }
     }
@@ -369,7 +415,7 @@ class LibraryViewModel(
                     val favoritesJob = async { repository.favoriteTracks(-1) }
                     val playlistsJob = async { repository.playlists() }
                     val countsJob = async { repository.libraryCounts(libraryId) }
-                    favorites = favoritesJob.await()
+                    serverFavorites = favoritesJob.await()
                     playlists = playlistsJob.await()
                     val serverCounts = countsJob.await()
                     if (serverCounts.songs > 0) counts = serverCounts
@@ -403,6 +449,7 @@ class LibraryViewModel(
                     offlineCopy = true
                 }
             } finally {
+                refreshFavorites()
                 loading = false
             }
         }
@@ -415,6 +462,7 @@ class LibraryViewModel(
         songs = libraryDb.allTracks()
         genres = libraryDb.allGenres()
         counts = libraryDb.counts()
+        refreshFavorites()
     }
 }
 
@@ -688,7 +736,7 @@ fun LibraryScreen(
                                 if (!selectedAlbums.remove(album.id)) selectedAlbums.add(album.id)
                             },
                             selected = album.id in selectedAlbums,
-                            isFavorite = album.isFavorite,
+                            isFavorite = vm.effectiveAlbumFavorite(album),
                             onToggleFavorite = { vm.toggleAlbumFavorite(album) },
                             offlineCount = albumOfflineCount[album.id],
                             trackCount = album.trackCount,
@@ -775,7 +823,7 @@ fun LibraryScreen(
                                 if (!selectedArtists.remove(artist.id)) selectedArtists.add(artist.id)
                             },
                             selected = artist.id in selectedArtists,
-                            isFavorite = artist.isFavorite,
+                            isFavorite = vm.effectiveArtistFavorite(artist),
                             onToggleFavorite = { vm.toggleArtistFavorite(artist) },
                             onMenu = { contextArtist = artist },
                         )
@@ -859,7 +907,7 @@ fun LibraryScreen(
                             selected = track.id in selectedTracks,
                             index = if (showTrackNumbers) index + 1 else null,
                             showSubtitle = showSubtitle,
-                            isFavorite = track.isFavorite,
+                            isFavorite = vm.effectiveTrackFavorite(track),
                             onToggleFavorite = { vm.toggleTrackFavorite(track) },
                             isDownloaded = track.id in downloadedIds,
                             isCached = track.id in cachedIds,
