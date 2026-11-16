@@ -202,6 +202,8 @@ fun LibraryScreen(
     columns: Int = 0,
     wifiOnlyDownloads: Boolean = false,
     ignoreArticles: Boolean = true,
+    showSubtitle: Boolean = true,
+    showItemCount: Boolean = false,
 ) {
     val context = LocalContext.current
     val vm = appViewModel { LibraryViewModel(repository, context.applicationContext, offlineStore, settingsStore) }
@@ -282,6 +284,20 @@ fun LibraryScreen(
                     text = { Text(label) },
                 )
             }
+        }
+
+        if (showItemCount && !vm.loading) {
+            Text(
+                text = when (tab) {
+                    0 -> context.resources.getQuantityString(R.plurals.plural_albums, vm.albums.size, vm.albums.size)
+                    1 -> context.resources.getQuantityString(R.plurals.plural_artists, vm.artists.size, vm.artists.size)
+                    2 -> context.resources.getQuantityString(R.plurals.plural_tracks, vm.songs.size, vm.songs.size)
+                    else -> context.resources.getQuantityString(R.plurals.plural_tracks, vm.favorites.size, vm.favorites.size)
+                },
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+            )
         }
 
         if (tab >= 2) {
@@ -394,6 +410,7 @@ fun LibraryScreen(
                             onLongClick = { toggleTrack(track.id) },
                             selected = track.id in selectedTracks,
                             index = if (showTrackNumbers) index + 1 else null,
+                            showSubtitle = showSubtitle,
                             isFavorite = track.isFavorite,
                             onToggleFavorite = { vm.toggleTrackFavorite(track) },
                             isDownloaded = track.id in downloadedIds,
@@ -514,6 +531,7 @@ fun LibraryScreen(
                                     onLongClick = { toggleTrack(track.id) },
                                     selected = track.id in selectedTracks,
                                     index = if (showTrackNumbers) index + 1 else null,
+                                    showSubtitle = showSubtitle,
                                     isFavorite = true,
                                     onToggleFavorite = { vm.toggleTrackFavorite(track) },
                                     isDownloaded = track.id in downloadedIds,

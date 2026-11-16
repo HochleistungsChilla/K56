@@ -201,6 +201,7 @@ fun TrackRow(
     modifier: Modifier = Modifier,
     index: Int? = null,
     showArtwork: Boolean = true,
+    showSubtitle: Boolean = true,
     isFavorite: Boolean = false,
     onToggleFavorite: (() -> Unit)? = null,
     /** true: file is on disk and plays without a server. */
@@ -250,16 +251,18 @@ fun TrackRow(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            Text(
-                text = listOfNotNull(
-                    track.artistName?.takeIf { it.isNotBlank() },
-                    track.albumName?.takeIf { it.isNotBlank() },
-                ).joinToString(" · "),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
+            if (showSubtitle) {
+                Text(
+                    text = listOfNotNull(
+                        track.artistName?.takeIf { it.isNotBlank() },
+                        track.albumName?.takeIf { it.isNotBlank() },
+                    ).joinToString(" · "),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
         }
         Spacer(Modifier.width(12.dp))
         if (downloadProgress != null) {

@@ -111,6 +111,10 @@
         <item quantity="one">%1$d Album</item>
         <item quantity="other">%1$d Alben</item>
     </plurals>
+    <plurals name="plural_artists">
+        <item quantity="one">%1$d Interpret</item>
+        <item quantity="other">%1$d Interpreten</item>
+    </plurals>
     <plurals name="plural_tracks">
         <item quantity="one">%1$d Titel</item>
         <item quantity="other">%1$d Titel</item>
@@ -258,6 +262,10 @@
     <string name="display_numbers_body">Position vor jedem Titel anzeigen.</string>
     <string name="display_columns">Spalten in der Bibliothek</string>
     <string name="display_columns_auto">Auto</string>
+    <string name="display_subtitle">Titel-Infozeile</string>
+    <string name="display_subtitle_body">Zeigt Interpret und Album unter jedem Titel.</string>
+    <string name="display_item_count">Anzahl anzeigen</string>
+    <string name="display_item_count_body">Zeigt die Anzahl der Einträge in jeder Liste.</string>
 
     <string name="np_options_title">Jetzt läuft</string>
     <string name="np_hide_favorite">Favorit-Button zeigen</string>

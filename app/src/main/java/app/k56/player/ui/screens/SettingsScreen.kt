@@ -75,6 +75,8 @@ fun SettingsScreen(
     val compactControls by settingsStore.compactControls.collectAsStateWithLifecycle()
     val keepScreenOn by settingsStore.keepScreenOn.collectAsStateWithLifecycle()
     val showTrackNumbers by settingsStore.showTrackNumbers.collectAsStateWithLifecycle()
+    val showTrackSubtitle by settingsStore.showTrackSubtitle.collectAsStateWithLifecycle()
+    val showItemCount by settingsStore.showItemCount.collectAsStateWithLifecycle()
     val libraryColumns by settingsStore.libraryColumns.collectAsStateWithLifecycle()
     val wifiOnlyDownloads by settingsStore.wifiOnlyDownloads.collectAsStateWithLifecycle()
     val autoCacheFavorites by settingsStore.autoCacheFavorites.collectAsStateWithLifecycle()
@@ -555,6 +557,34 @@ fun SettingsScreen(
                     Switch(
                         checked = showTrackNumbers,
                         onCheckedChange = { settingsStore.setShowTrackNumbers(it) },
+                    )
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text(stringResource(R.string.display_subtitle), style = MaterialTheme.typography.titleMedium)
+                        Text(
+                            stringResource(R.string.display_subtitle_body),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    Switch(
+                        checked = showTrackSubtitle,
+                        onCheckedChange = { settingsStore.setShowTrackSubtitle(it) },
+                    )
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text(stringResource(R.string.display_item_count), style = MaterialTheme.typography.titleMedium)
+                        Text(
+                            stringResource(R.string.display_item_count_body),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    Switch(
+                        checked = showItemCount,
+                        onCheckedChange = { settingsStore.setShowItemCount(it) },
                     )
                 }
                 Spacer(Modifier.height(8.dp))

@@ -78,6 +78,8 @@ private fun MainShell(container: AppContainer) {
     val repository: MediaRepository = container.repository
     val keepScreenOn by container.settingsStore.keepScreenOn.collectAsStateWithLifecycle()
     val showTrackNumbers by container.settingsStore.showTrackNumbers.collectAsStateWithLifecycle()
+    val showTrackSubtitle by container.settingsStore.showTrackSubtitle.collectAsStateWithLifecycle()
+    val showItemCount by container.settingsStore.showItemCount.collectAsStateWithLifecycle()
     val libraryColumns by container.settingsStore.libraryColumns.collectAsStateWithLifecycle()
     val wifiOnlyDownloads by container.settingsStore.wifiOnlyDownloads.collectAsStateWithLifecycle()
     val ignoreArticles by container.settingsStore.ignoreArticles.collectAsStateWithLifecycle()
@@ -238,6 +240,8 @@ private fun MainShell(container: AppContainer) {
                     columns = libraryColumns,
                     wifiOnlyDownloads = wifiOnlyDownloads,
                     ignoreArticles = ignoreArticles,
+                    showSubtitle = showTrackSubtitle,
+                    showItemCount = showItemCount,
                 )
             }
             composable("cache") {

@@ -120,6 +120,10 @@
         <item quantity="one">%1$d album</item>
         <item quantity="other">%1$d albums</item>
     </plurals>
+    <plurals name="plural_artists">
+        <item quantity="one">%1$d artist</item>
+        <item quantity="other">%1$d artists</item>
+    </plurals>
     <plurals name="plural_tracks">
         <item quantity="one">%1$d track</item>
         <item quantity="other">%1$d tracks</item>
@@ -268,6 +272,10 @@
     <string name="display_numbers_body">Show the position in front of each title.</string>
     <string name="display_columns">Library columns</string>
     <string name="display_columns_auto">Auto</string>
+    <string name="display_subtitle">Track info line</string>
+    <string name="display_subtitle_body">Show artist and album under each title.</string>
+    <string name="display_item_count">Item count</string>
+    <string name="display_item_count_body">Show the number of items in each list.</string>
 
     <string name="np_options_title">Now playing</string>
     <string name="np_hide_favorite">Show favorite button</string>
