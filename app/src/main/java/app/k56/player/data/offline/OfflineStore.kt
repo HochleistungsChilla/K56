@@ -22,6 +22,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
@@ -279,22 +280,45 @@ class OfflineStore(
                         val entry = _entries.value.firstOrNull { it.trackId == trackId }
                             ?: return@withPermit
                         if (entry.state != DownloadState.QUEUED) return@withPermit
-                        waitForAllowed(version)
-                        if (version != queueVersion) return@withPermit
-                        setState(trackId, DownloadState.ACTIVE)
-                        refreshAggregate()
-                        val result = downloadWithAttempts(entry.toRequest())
-                        if (result != null) {
-                            setState(trackId, DownloadState.DONE) {
-                                it.copy(bytes = result.bytes, attempts = it.attempts + 1)
-                            }
-                        } else {
-                            setState(trackId, DownloadState.FAILED) {
-                                it.copy(attempts = it.attempts + 1)
+                        while (version == queueVersion) {
+                            waitForAllowed(version)
+                            if (version != queueVersion) return@withPermit
+                            setState(trackId, DownloadState.ACTIVE)
+                            refreshAggregate()
+                            when (val result = downloadWithAttempts(entry.toRequest())) {
+                                is AttemptResult.Ok -> {
+                                    setState(trackId, DownloadState.DONE) {
+                                        it.copy(bytes = result.track.bytes, attempts = it.attempts + 1)
+                                    }
+                                    persistQueue()
+                                    refreshAggregate()
+                                    return@withPermit
+                                }
+
+                                AttemptResult.Cancelled -> return@withPermit
+
+                                // The transfer died because the network went away: park the
+                                // entry and let waitForAllowed resume it once it is back.
+                                AttemptResult.NetworkError -> {
+                                    setState(trackId, DownloadState.QUEUED) {
+                                        it.copy(bytes = 0, totalBytes = 0)
+                                    }
+                                    persistQueue()
+                                    refreshAggregate()
+                                    delay(500)
+                                    continue
+                                }
+
+                                AttemptResult.Failed -> {
+                                    setState(trackId, DownloadState.FAILED) {
+                                        it.copy(attempts = it.attempts + 1)
+                                    }
+                                    persistQueue()
+                                    refreshAggregate()
+                                    return@withPermit
+                                }
                             }
                         }
-                        persistQueue()
-                        refreshAggregate()
                     }
                 } finally {
                     processingIds.remove(trackId)
@@ -366,28 +390,47 @@ class OfflineStore(
         refreshAggregate()
     }
 
-    /** Three attempts, so a transient error does not fail the batch. */
-    private suspend fun downloadWithAttempts(request: DownloadRequest): OfflineTrack? {
+    /**
+     * One transfer, retried for transient non-network errors. A network error is
+     * reported as such so the caller can wait for connectivity instead of
+     * marking the track as permanently failed.
+     */
+    private suspend fun downloadWithAttempts(request: DownloadRequest): AttemptResult {
         repeat(MAX_ATTEMPTS) {
-            val result = try {
-                download(request.track, request.url, request.headers)
+            try {
+                val result = download(request.track, request.url, request.headers)
+                if (result != null) return AttemptResult.Ok(result)
+                if (request.track.id in cancelled) return AttemptResult.Cancelled
+            } catch (_: java.io.IOException) {
+                return AttemptResult.NetworkError
             } catch (_: Exception) {
-                null
+                // HTTP or filesystem problem: worth one more attempt.
             }
-            if (result != null) return result
-            if (request.track.id in cancelled) return null
+            if (request.track.id in cancelled) return AttemptResult.Cancelled
         }
-        return null
+        return AttemptResult.Failed
+    }
+
+    private sealed interface AttemptResult {
+        data class Ok(val track: OfflineTrack) : AttemptResult
+        data object Cancelled : AttemptResult
+        data object NetworkError : AttemptResult
+        data object Failed : AttemptResult
     }
 
     /** Waits until downloads are allowed: not paused, and Wi-Fi if the rule is on. */
     private suspend fun waitForAllowed(version: Int) {
         while (version == queueVersion) {
-            val status = networkMonitor.status.value
+            // Ask the system directly: callbacks can be missed when a network
+            // disappears, and a stale "Wi-Fi is fine" would spin the worker.
+            val status = networkMonitor.refresh()
             if (!_paused.value && networkAllows(status)) return
-            // React to a pause-toggle or a network change without polling.
-            combine(_paused, networkMonitor.status) { p, s -> p to s }
-                .first { (p, s) -> !p && networkAllows(s) }
+            // Wake on a pause-toggle or a real network change; the timeout is
+            // only a fallback so a missed callback cannot park the queue.
+            withTimeoutOrNull(1_000) {
+                combine(_paused, networkMonitor.status) { p, s -> p to s }
+                    .first { (p, s) -> !p && networkAllows(s) }
+            }
         }
     }
 

@@ -60,6 +60,17 @@ class NetworkMonitor(context: Context) {
         }
     }
 
+    /**
+     * Re-reads the status on demand. Network callbacks can lag or be missed
+     * (for example when Wi-Fi disappears on an emulator), so callers that are
+     * about to depend on connectivity refresh first.
+     */
+    fun refresh(): NetworkStatus {
+        val current = readStatus()
+        if (current != _status.value) _status.value = current
+        return current
+    }
+
     private fun readStatus(): NetworkStatus {
         val active = connectivityManager.activeNetwork
             ?: return NetworkStatus(NetworkTransport.OFFLINE, online = false)
