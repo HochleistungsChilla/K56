@@ -74,6 +74,18 @@ private fun MainShell(container: AppContainer) {
     val connection = remember { PlaybackConnection(context) }
     val controller by connection.controller.collectAsStateWithLifecycle()
 
+    // Subtle notice when a restart resumed queued downloads.
+    val resumedDownloads by container.offlineStore.resumed.collectAsStateWithLifecycle()
+    LaunchedEffect(resumedDownloads) {
+        if (resumedDownloads) {
+            android.widget.Toast.makeText(
+                context,
+                R.string.download_queue_resumed,
+                android.widget.Toast.LENGTH_SHORT,
+            ).show()
+        }
+    }
+
     DisposableEffect(Unit) {
         onDispose { connection.release() }
     }

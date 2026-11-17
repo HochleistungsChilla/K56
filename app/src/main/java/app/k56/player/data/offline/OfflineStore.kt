@@ -165,6 +165,10 @@ class OfflineStore(
     private val _paused = MutableStateFlow(false)
     val paused: StateFlow<Boolean> = _paused.asStateFlow()
 
+    /** Set when a restart resumed queued work — drives a subtle startup notice. */
+    private val _resumed = MutableStateFlow(false)
+    val resumed: StateFlow<Boolean> = _resumed.asStateFlow()
+
     private val _queue = MutableStateFlow(DownloadQueueState())
     val queue: StateFlow<DownloadQueueState> = _queue.asStateFlow()
 
@@ -255,7 +259,10 @@ class OfflineStore(
         persistQueue()
         refreshAggregate()
         val toResume = reconciled.filter { it.state == DownloadState.QUEUED }
-        if (toResume.isNotEmpty()) pump(toResume.map { it.trackId })
+        if (toResume.isNotEmpty()) {
+            _resumed.value = true
+            pump(toResume.map { it.trackId })
+        }
     }
 
     /** Launches a worker per queued id, capped by the concurrency setting. */

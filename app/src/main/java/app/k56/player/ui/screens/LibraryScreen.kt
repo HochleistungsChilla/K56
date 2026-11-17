@@ -558,7 +558,6 @@ fun LibraryScreen(
     val offline by offlineStore.tracks.collectAsState()
     val downloads by offlineStore.progress.collectAsState()
     val downloadQueue by offlineStore.queue.collectAsState()
-    val downloadPaused by offlineStore.paused.collectAsState()
     val downloadedIds = remember(offline) { offline.map { it.id }.toSet() }
     val streamed by offlineStore.streamed.collectAsState()
     val cachedIds = remember(streamed, downloadedIds) { streamed - downloadedIds }
@@ -1014,48 +1013,22 @@ fun LibraryScreen(
                                     Text(stringResource(R.string.offline_download_all, missing))
                                 }
                             }
-                            if (downloadQueue.running || downloadQueue.failed > 0 || downloadQueue.done > 0) {
+                            if (downloadQueue.running) {
                                 Spacer(Modifier.height(8.dp))
-                                Column {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Text(
-                                            stringResource(
-                                                R.string.download_queue_progress,
-                                                downloadQueue.done,
-                                                downloadQueue.total,
-                                                downloadQueue.active,
-                                            ),
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            modifier = Modifier.weight(1f),
-                                        )
-                                        TextButton(onClick = { offlineStore.cancelAll() }) {
-                                            Text(stringResource(R.string.download_queue_cancel))
-                                        }
-                                    }
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        TextButton(
-                                            onClick = {
-                                                if (downloadPaused) offlineStore.resume() else offlineStore.pause()
-                                            },
-                                        ) {
-                                            Text(
-                                                stringResource(
-                                                    if (downloadPaused) R.string.download_queue_resume
-                                                    else R.string.download_queue_pause,
-                                                ),
-                                            )
-                                        }
-                                        if (downloadQueue.failed > 0) {
-                                            TextButton(onClick = { offlineStore.retryFailed() }) {
-                                                Text(stringResource(R.string.download_queue_retry))
-                                            }
-                                        }
-                                        if (downloadQueue.done > 0) {
-                                            TextButton(onClick = { offlineStore.clearFinished() }) {
-                                                Text(stringResource(R.string.download_queue_clear_finished))
-                                            }
-                                        }
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        stringResource(
+                                            R.string.download_queue_progress,
+                                            downloadQueue.done,
+                                            downloadQueue.total,
+                                            downloadQueue.active,
+                                        ),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.weight(1f),
+                                    )
+                                    TextButton(onClick = { offlineStore.cancelAll() }) {
+                                        Text(stringResource(R.string.download_queue_cancel))
                                     }
                                 }
                             }

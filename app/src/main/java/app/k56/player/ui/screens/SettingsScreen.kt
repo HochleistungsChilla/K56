@@ -60,6 +60,7 @@ import app.k56.player.data.StorageLocation
 import app.k56.player.data.library.LibraryDb
 import app.k56.player.data.library.LibrarySync
 import app.k56.player.data.offline.OfflineStore
+import app.k56.player.data.offline.DownloadState
 import app.k56.player.dsp.DspState
 import kotlinx.coroutines.launch
 import app.k56.player.ui.formatBytes
@@ -94,6 +95,10 @@ fun SettingsScreen(
     }
     val session by repository.sessionFlow.collectAsStateWithLifecycle()
     val offlineTracks by offlineStore.tracks.collectAsStateWithLifecycle()
+    val downloadQueue by offlineStore.queue.collectAsStateWithLifecycle()
+    val downloadPaused by offlineStore.paused.collectAsStateWithLifecycle()
+    val queueEntries by offlineStore.entries.collectAsStateWithLifecycle()
+    val downloads by offlineStore.progress.collectAsStateWithLifecycle()
     val syncState by librarySync.state.collectAsStateWithLifecycle()
     val storageLocation by settingsStore.storageLocation.collectAsStateWithLifecycle()
     val cacheLimitMb by settingsStore.cacheLimitMb.collectAsStateWithLifecycle()
@@ -405,6 +410,77 @@ fun SettingsScreen(
                 Spacer(Modifier.height(8.dp))
                 InfoRow(stringResource(R.string.offline_tracks), offlineTracks.size.toString())
                 InfoRow("Speicher", formatBytes(offlineTracks.sumOf { it.bytes }))
+
+                if (queueEntries.isNotEmpty() || downloadQueue.running) {
+                    Spacer(Modifier.height(12.dp))
+                    Text(stringResource(R.string.download_queue_title), style = MaterialTheme.typography.titleMedium)
+                    Spacer(Modifier.height(6.dp))
+                    val wifiWaiting = wifiOnlyDownloads &&
+                        networkStatus.transport != NetworkTransport.WIFI &&
+                        networkStatus.transport != NetworkTransport.ETHERNET
+                    val pausedLabel = when {
+                        downloadPaused -> stringResource(R.string.download_queue_paused)
+                        wifiWaiting && downloadQueue.running -> stringResource(R.string.download_queue_waiting_wifi)
+                        else -> null
+                    }
+                    Text(
+                        buildString {
+                            append(
+                                stringResource(
+                                    R.string.download_queue_progress,
+                                    downloadQueue.done,
+                                    downloadQueue.total,
+                                    downloadQueue.active,
+                                ),
+                            )
+                            if (pausedLabel != null) append(" · ").append(pausedLabel)
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Spacer(Modifier.height(6.dp))
+                    queueEntries.forEach { entry ->
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 3.dp),
+                        ) {
+                            Column(Modifier.weight(1f)) {
+                                Text(entry.title, maxLines = 1, style = MaterialTheme.typography.bodyMedium)
+                                Text(
+                                    queueStateLabel(entry.state),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                            if (entry.state == DownloadState.ACTIVE) {
+                                LinearProgressIndicator(
+                                    progress = { downloads[entry.trackId] ?: 0f },
+                                    modifier = Modifier
+                                        .width(64.dp)
+                                        .height(4.dp),
+                                )
+                            }
+                        }
+                    }
+                    Spacer(Modifier.height(4.dp))
+                    Row {
+                        TextButton(onClick = { if (downloadPaused) offlineStore.resume() else offlineStore.pause() }) {
+                            Text(stringResource(if (downloadPaused) R.string.download_queue_resume else R.string.download_queue_pause))
+                        }
+                        if (downloadQueue.failed > 0) {
+                            TextButton(onClick = { offlineStore.retryFailed() }) {
+                                Text(stringResource(R.string.download_queue_retry))
+                            }
+                        }
+                        if (downloadQueue.done > 0) {
+                            TextButton(onClick = { offlineStore.clearFinished() }) {
+                                Text(stringResource(R.string.download_queue_clear_finished))
+                            }
+                        }
+                    }
+                }
 
                 Spacer(Modifier.height(12.dp))
                 Text(
@@ -1408,6 +1484,16 @@ private fun PlayerButtonSwitch(label: String, checked: Boolean, onChange: (Boole
         Switch(checked = checked, onCheckedChange = onChange)
     }
 }
+
+@Composable
+private fun queueStateLabel(state: DownloadState): String = stringResource(
+    when (state) {
+        DownloadState.QUEUED -> R.string.download_state_queued
+        DownloadState.ACTIVE -> R.string.download_state_active
+        DownloadState.DONE -> R.string.download_state_done
+        DownloadState.FAILED -> R.string.download_state_failed
+    },
+)
 
 @Composable
 private fun InfoRow(label: String, value: String) {
