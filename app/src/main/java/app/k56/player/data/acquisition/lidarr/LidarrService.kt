@@ -48,10 +48,14 @@ class LidarrException(message: String, cause: Throwable? = null) : Exception(mes
 class LidarrService(
     private val config: AcquisitionConfig,
 ) {
-    private val api: LidarrApi = LidarrApiFactory.create(
-        LidarrApiFactory.normalizeUrl(config.baseUrl),
-        config.apiKey,
-    )
+    // Built on first use: an unusable URL then surfaces as a LidarrException
+    // from call() instead of blowing up during composition.
+    private val api: LidarrApi by lazy {
+        LidarrApiFactory.create(
+            LidarrApiFactory.normalizeUrl(config.baseUrl),
+            config.apiKey,
+        )
+    }
 
     suspend fun test(): LidarrConnection = call {
         val status = api.status()
@@ -126,6 +130,8 @@ class LidarrService(
 
     suspend fun wanted(): LidarrAlbumPageDto = call { api.wantedMissing() }
 
+    suspend fun history(): LidarrHistoryPageDto = call { api.history() }
+
     private suspend fun <T> call(block: suspend () -> T): T = withContext(Dispatchers.IO) {
         try {
             block()
@@ -133,6 +139,9 @@ class LidarrService(
             throw LidarrException(httpMessage(e), e)
         } catch (e: IOException) {
             throw LidarrException("Lidarr is not reachable: ${e.message}", e)
+        } catch (e: IllegalArgumentException) {
+            // Retrofit rejects a base URL that is empty or malformed.
+            throw LidarrException("Invalid Lidarr URL", e)
         }
     }
 

@@ -58,4 +58,12 @@ interface LidarrApi {
         @Query("pageSize") pageSize: Int = 50,
         @Query("monitored") monitored: Boolean = true,
     ): LidarrAlbumPageDto
+
+    @GET("api/v1/history")
+    suspend fun history(
+        @Query("page") page: Int = 1,
+        @Query("pageSize") pageSize: Int = 50,
+        @Query("sortKey") sortKey: String = "date",
+        @Query("sortDirection") sortDirection: String = "descending",
+    ): LidarrHistoryPageDto
 }

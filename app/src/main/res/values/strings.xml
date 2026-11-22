@@ -453,4 +453,10 @@
     <string name="acquisition_sending">Requesting…</string>
     <string name="acquisition_cancel">Cancel</string>
     <string name="acquisition_close">Close</string>
+    <string name="acquisition_requests">Requests</string>
+    <string name="requests_wanted">Missing</string>
+    <string name="requests_queue">Queue</string>
+    <string name="requests_history">History</string>
+    <string name="requests_refresh">Refresh</string>
+    <string name="requests_empty">Nothing here.</string>
 </resources>

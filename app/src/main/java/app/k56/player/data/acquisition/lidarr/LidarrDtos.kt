@@ -111,6 +111,26 @@ data class LidarrAlbumPageDto(
 )
 
 @Serializable
+data class LidarrHistoryRecordDto(
+    val id: Int? = null,
+    val albumId: Int? = null,
+    val artistId: Int? = null,
+    val sourceTitle: String? = null,
+    val date: String? = null,
+    val eventType: String? = null,
+    val album: LidarrAlbumDto? = null,
+    val artist: LidarrArtistRefDto? = null,
+)
+
+@Serializable
+data class LidarrHistoryPageDto(
+    val page: Int = 1,
+    val pageSize: Int = 0,
+    val totalRecords: Int = 0,
+    val records: List<LidarrHistoryRecordDto> = emptyList(),
+)
+
+@Serializable
 data class LidarrCommandRequest(
     val name: String,
     val albumIds: List<Int>? = null,

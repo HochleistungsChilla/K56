@@ -443,4 +443,10 @@
     <string name="acquisition_sending">Wird angefordert…</string>
     <string name="acquisition_cancel">Abbrechen</string>
     <string name="acquisition_close">Schließen</string>
+    <string name="acquisition_requests">Anfragen</string>
+    <string name="requests_wanted">Fehlend</string>
+    <string name="requests_queue">Warteschlange</string>
+    <string name="requests_history">Verlauf</string>
+    <string name="requests_refresh">Aktualisieren</string>
+    <string name="requests_empty">Nichts vorhanden.</string>
 </resources>

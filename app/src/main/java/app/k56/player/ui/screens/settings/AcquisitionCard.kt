@@ -79,6 +79,7 @@ fun AcquisitionCard(modifier: Modifier = Modifier) {
     var message by remember { mutableStateOf<String?>(null) }
     var isError by remember { mutableStateOf(false) }
     var searchOpen by remember { mutableStateOf(false) }
+    var requestsOpen by remember { mutableStateOf(false) }
 
     fun draft() = AcquisitionConfig(
         enabled = enabled,
@@ -240,6 +241,12 @@ fun AcquisitionCard(modifier: Modifier = Modifier) {
                 ) {
                     Text(stringResource(R.string.acquisition_search))
                 }
+                OutlinedButton(
+                    enabled = url.isNotBlank() && apiKey.isNotBlank(),
+                    onClick = { requestsOpen = true },
+                ) {
+                    Text(stringResource(R.string.acquisition_requests))
+                }
             }
         }
     }
@@ -248,6 +255,13 @@ fun AcquisitionCard(modifier: Modifier = Modifier) {
         SearchDialog(
             config = draft(),
             onDismiss = { searchOpen = false },
+        )
+    }
+
+    if (requestsOpen) {
+        RequestsDialog(
+            config = draft(),
+            onDismiss = { requestsOpen = false },
         )
     }
 }
