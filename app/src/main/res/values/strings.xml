@@ -186,6 +186,7 @@
     <string name="offline_favorites_status">%1$d of %2$d available offline</string>
     <string name="offline_section">Offline</string>
     <string name="offline_tracks">Tracks on this device</string>
+    <string name="offline_storage">Storage</string>
     <string name="offline_clear">Delete all downloads</string>
     <string name="offline_empty">No downloads yet. Open Favorites and download tracks.</string>
 
