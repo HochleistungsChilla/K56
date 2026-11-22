@@ -8,10 +8,7 @@ import androidx.compose.material.icons.rounded.LibraryMusic
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.Icon
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -41,6 +38,7 @@ import app.k56.player.data.MediaRepository
 import app.k56.player.di.AppContainer
 import app.k56.player.playback.PlaybackConnection
 import app.k56.player.playback.PlaybackQueue
+import app.k56.player.ui.components.K56NavigationBar
 import app.k56.player.ui.components.MiniPlayer
 import app.k56.player.ui.screens.AlbumScreen
 import app.k56.player.ui.screens.ArtistScreen
@@ -352,36 +350,32 @@ private fun MainShell(container: AppContainer) {
             if (showBars) {
                 Column {
                     MiniPlayer(controller) { navController.navigate("player") }
-                    NavigationBar {
-                        val destinations = listOf(
-                            BottomDestination("home", stringResource(R.string.nav_home), Icons.Rounded.Home),
-                            BottomDestination(
-                                "library",
-                                stringResource(R.string.nav_library),
-                                Icons.Rounded.LibraryMusic,
-                            ),
-                            BottomDestination("search", stringResource(R.string.nav_search), Icons.Rounded.Search),
-                            BottomDestination(
-                                "settings",
-                                stringResource(R.string.nav_settings),
-                                Icons.Rounded.Settings,
-                            ),
-                        )
-                        destinations.forEach { destination ->
-                            NavigationBarItem(
-                                selected = route == destination.route,
-                                onClick = {
-                                    navController.navigate(destination.route) {
-                                        popUpTo(navController.graph.startDestinationId) { saveState = true }
-                                        launchSingleTop = true
-                                        restoreState = true
-                                    }
-                                },
-                                icon = { Icon(destination.icon, contentDescription = null) },
-                                label = { Text(destination.label) },
-                            )
-                        }
-                    }
+                    val destinations = listOf(
+                        BottomDestination("home", stringResource(R.string.nav_home), Icons.Rounded.Home),
+                        BottomDestination(
+                            "library",
+                            stringResource(R.string.nav_library),
+                            Icons.Rounded.LibraryMusic,
+                        ),
+                        BottomDestination("search", stringResource(R.string.nav_search), Icons.Rounded.Search),
+                        BottomDestination(
+                            "settings",
+                            stringResource(R.string.nav_settings),
+                            Icons.Rounded.Settings,
+                        ),
+                    )
+                    K56NavigationBar(
+                        items = destinations.map { it.icon to it.label },
+                        selectedIndex = destinations.indexOfFirst { it.route == route }
+                            .coerceAtLeast(0),
+                        onSelect = { index ->
+                            navController.navigate(destinations[index].route) {
+                                popUpTo(navController.graph.startDestinationId) { saveState = true }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        },
+                    )
                 }
             }
         },
