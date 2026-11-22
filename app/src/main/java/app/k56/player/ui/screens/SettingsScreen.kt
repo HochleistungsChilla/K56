@@ -52,6 +52,7 @@ import app.k56.player.data.MediaRepository
 import app.k56.player.data.BackupCrypto
 import app.k56.player.data.DownloadFormat
 import app.k56.player.data.DownloadQuality
+import app.k56.player.data.HomeGreeting
 import app.k56.player.data.PlayerBackground
 import app.k56.player.data.PlayerStyle
 import app.k56.player.data.ScreenOrientation
@@ -124,6 +125,7 @@ fun SettingsScreen(
     val showItemCount by settingsStore.showItemCount.collectAsStateWithLifecycle()
     val screenOrientation by settingsStore.screenOrientation.collectAsStateWithLifecycle()
     val gridSpacing by settingsStore.gridSpacing.collectAsStateWithLifecycle()
+    val homeGreeting by settingsStore.homeGreeting.collectAsStateWithLifecycle()
     val libraryColumns by settingsStore.libraryColumns.collectAsStateWithLifecycle()
     val wifiOnlyDownloads by settingsStore.wifiOnlyDownloads.collectAsStateWithLifecycle()
     val concurrentDownloads by settingsStore.concurrentDownloads.collectAsStateWithLifecycle()
@@ -1223,6 +1225,34 @@ fun SettingsScreen(
             modifier = Modifier.fillMaxWidth(),
         ) {
             Column(Modifier.padding(16.dp)) {
+                Text(
+                    stringResource(R.string.settings_home_greeting),
+                    style = MaterialTheme.typography.titleMedium,
+                )
+                Spacer(Modifier.height(10.dp))
+                Row(
+                    modifier = Modifier.horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    HomeGreeting.entries.forEach { entry ->
+                        FilterChip(
+                            selected = homeGreeting == entry,
+                            onClick = { settingsStore.setHomeGreeting(entry) },
+                            label = { Text(stringResource(homeGreetingLabel(entry))) },
+                        )
+                    }
+                }
+            }
+        }
+
+        Spacer(Modifier.height(14.dp))
+
+        Surface(
+            color = MaterialTheme.colorScheme.surfaceContainer,
+            shape = RoundedCornerShape(20.dp),
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Column(Modifier.padding(16.dp)) {
                 Text(stringResource(R.string.dsp_title), style = MaterialTheme.typography.titleLarge)
                 Text(
                     stringResource(R.string.dsp_settings_body),
@@ -1406,6 +1436,13 @@ private fun EditConnectionDialog(
             }
         },
     )
+}
+
+private fun homeGreetingLabel(mode: HomeGreeting): Int = when (mode) {
+    HomeGreeting.OFF -> R.string.home_greeting_off
+    HomeGreeting.PLAIN -> R.string.home_greeting_plain
+    HomeGreeting.SERVER -> R.string.home_greeting_server
+    HomeGreeting.PERSONAL -> R.string.home_greeting_personal_label
 }
 
 private fun themeLabel(mode: ThemeMode): Int = when (mode) {

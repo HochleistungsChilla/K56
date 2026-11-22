@@ -43,6 +43,16 @@
     <string name="login_footer_compat">Android 9+ · Jellyfin ab %1$s · GPL-3.0</string>
 
     <string name="home_greeting">Servus</string>
+    <string name="home_greeting_personal">%1$s, %2$s</string>
+    <string name="home_greeting_morning">Guten Morgen</string>
+    <string name="home_greeting_day">Servus</string>
+    <string name="home_greeting_evening">Guten Abend</string>
+    <string name="home_greeting_night">Gute Nacht</string>
+    <string name="settings_home_greeting">Begrüßung am Start</string>
+    <string name="home_greeting_off">Aus</string>
+    <string name="home_greeting_plain">Servus</string>
+    <string name="home_greeting_server">Servername</string>
+    <string name="home_greeting_personal_label">Persönlich</string>
     <string name="home_recently_added">Zuletzt hinzugefügt</string>
     <string name="home_empty_title">Bibliothek ist leer</string>
     <string name="home_empty_body">Auf dem Jellyfin-Server wurde noch keine Musik gefunden.</string>

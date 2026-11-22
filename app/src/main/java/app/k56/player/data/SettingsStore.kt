@@ -31,6 +31,9 @@ enum class PlayerStyle { STANDARD, LARGE_COVER }
 /** Now-playing background. */
 enum class PlayerBackground { GRADIENT, SOLID, ALBUM_COLOR }
 
+/** What the home screen shows as its headline. */
+enum class HomeGreeting { OFF, PLAIN, SERVER, PERSONAL }
+
 class SettingsStore(context: Context) {
 
     private val appContext = context.applicationContext
@@ -88,6 +91,10 @@ class SettingsStore(context: Context) {
 
     private val _wifiOnlyDownloads = MutableStateFlow(prefs.getBoolean(KEY_WIFI_ONLY, true))
     val wifiOnlyDownloads: StateFlow<Boolean> = _wifiOnlyDownloads.asStateFlow()
+
+    /** Home headline: off, plain greeting, server name, or greeting + user name. */
+    private val _homeGreeting = MutableStateFlow(homeGreetingFrom(prefs))
+    val homeGreeting: StateFlow<HomeGreeting> = _homeGreeting.asStateFlow()
 
     /** Number of downloads that run at the same time (1–5). */
     private val _concurrentDownloads = MutableStateFlow(prefs.getInt(KEY_CONCURRENT_DOWNLOADS, 3).coerceIn(1, 5))
@@ -282,6 +289,7 @@ class SettingsStore(context: Context) {
         _showTrackSubtitle.value = prefs.getBoolean(KEY_SHOW_SUBTITLE, true)
         _showItemCount.value = prefs.getBoolean(KEY_SHOW_ITEM_COUNT, false)
         _wifiOnlyDownloads.value = prefs.getBoolean(KEY_WIFI_ONLY, true)
+        _homeGreeting.value = homeGreetingFrom(prefs)
         _concurrentDownloads.value = prefs.getInt(KEY_CONCURRENT_DOWNLOADS, 3).coerceIn(1, 5)
         _autoCacheFavorites.value = prefs.getBoolean(KEY_AUTO_CACHE_FAVORITES, false)
         _ignoreArticles.value = prefs.getBoolean(KEY_IGNORE_ARTICLES, true)
@@ -314,6 +322,11 @@ class SettingsStore(context: Context) {
     fun setWifiOnlyDownloads(value: Boolean) {
         prefs.edit().putBoolean(KEY_WIFI_ONLY, value).apply()
         _wifiOnlyDownloads.value = value
+    }
+
+    fun setHomeGreeting(value: HomeGreeting) {
+        prefs.edit().putString(KEY_HOME_GREETING, value.name).apply()
+        _homeGreeting.value = value
     }
 
     fun setConcurrentDownloads(value: Int) {
@@ -459,6 +472,7 @@ class SettingsStore(context: Context) {
         private const val KEY_COLUMNS = "library_columns"
         private const val KEY_HOME_SECTIONS = "home_sections"
         private const val KEY_WIFI_ONLY = "wifi_only_downloads"
+        private const val KEY_HOME_GREETING = "home_greeting"
         private const val KEY_CONCURRENT_DOWNLOADS = "concurrent_downloads"
         private const val KEY_AUTO_CACHE_FAVORITES = "auto_cache_favorites"
         private const val KEY_IGNORE_ARTICLES = "ignore_articles"
@@ -482,6 +496,10 @@ class SettingsStore(context: Context) {
         private const val KEY_AUTO_SYNC = "auto_sync"
 
         val DEFAULT_HOME_SECTIONS = "recent,random_albums,random_artists"
+
+        private fun homeGreetingFrom(prefs: android.content.SharedPreferences): HomeGreeting =
+            runCatching { HomeGreeting.valueOf(prefs.getString(KEY_HOME_GREETING, null) ?: "PLAIN") }
+                .getOrDefault(HomeGreeting.PLAIN)
 
         /** The removable card, or null when the device has none. */
         fun externalRoot(context: Context): File? {

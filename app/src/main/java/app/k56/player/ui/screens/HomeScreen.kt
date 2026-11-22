@@ -64,6 +64,7 @@ import app.k56.player.core.model.Artist
 import app.k56.player.core.model.Playlist
 import app.k56.player.core.model.Track
 import app.k56.player.core.net.NetworkTransport
+import app.k56.player.data.HomeGreeting
 import app.k56.player.data.MediaRepository
 import app.k56.player.data.ResumeStore
 import app.k56.player.data.SettingsStore
@@ -116,6 +117,7 @@ class HomeViewModel(
 
     val serverName: String =
         repository.sessionFlow.value?.serverName ?: appContext.getString(R.string.settings_server)
+    val userName: String = repository.sessionFlow.value?.userName.orEmpty()
     val serverVersion: String = repository.sessionFlow.value?.serverVersion.orEmpty()
     val backendLabel: String =
         repository.sessionFlow.value?.backend?.label ?: appContext.getString(R.string.settings_server)
@@ -304,12 +306,34 @@ fun HomeScreen(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Column(Modifier.weight(1f)) {
+                        val greeting by settingsStore.homeGreeting.collectAsStateWithLifecycle()
+                        val headline: String? = when (greeting) {
+                            HomeGreeting.OFF -> null
+                            HomeGreeting.PLAIN -> stringResource(R.string.home_greeting)
+                            HomeGreeting.SERVER -> vm.serverName
+                            HomeGreeting.PERSONAL -> if (vm.userName.isBlank()) {
+                                stringResource(R.string.home_greeting)
+                            } else {
+                                stringResource(
+                                    R.string.home_greeting_personal,
+                                    stringResource(timeOfDayGreeting()),
+                                    vm.userName,
+                                )
+                            }
+                        }
+                        if (headline != null) {
+                            Text(
+                                headline,
+                                style = MaterialTheme.typography.headlineMedium,
+                            )
+                        }
+                        val subtitle = if (greeting == HomeGreeting.SERVER) {
+                            "${vm.backendLabel} ${vm.serverVersion}"
+                        } else {
+                            "${vm.serverName} · ${vm.backendLabel} ${vm.serverVersion}"
+                        }
                         Text(
-                            stringResource(R.string.home_greeting),
-                            style = MaterialTheme.typography.headlineMedium,
-                        )
-                        Text(
-                            "${vm.serverName} · ${vm.backendLabel} ${vm.serverVersion}",
+                            subtitle,
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -830,5 +854,16 @@ private fun HomeSelectionAction(
             Icon(icon, contentDescription = label)
         }
         Text(label, style = MaterialTheme.typography.labelSmall)
+    }
+}
+
+/** Greeting that fits the current local hour. */
+private fun timeOfDayGreeting(): Int {
+    val hour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
+    return when (hour) {
+        in 5..10 -> R.string.home_greeting_morning
+        in 11..17 -> R.string.home_greeting_day
+        in 18..22 -> R.string.home_greeting_evening
+        else -> R.string.home_greeting_night
     }
 }

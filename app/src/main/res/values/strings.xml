@@ -48,6 +48,16 @@
 
     <!-- home -->
     <string name="home_greeting">Hi</string>
+    <string name="home_greeting_personal">%1$s, %2$s</string>
+    <string name="home_greeting_morning">Good morning</string>
+    <string name="home_greeting_day">Hi</string>
+    <string name="home_greeting_evening">Good evening</string>
+    <string name="home_greeting_night">Good night</string>
+    <string name="settings_home_greeting">Home greeting</string>
+    <string name="home_greeting_off">Off</string>
+    <string name="home_greeting_plain">Hi</string>
+    <string name="home_greeting_server">Server name</string>
+    <string name="home_greeting_personal_label">Personal</string>
     <string name="home_recently_added">Recently added</string>
     <string name="home_empty_title">Library is empty</string>
     <string name="home_empty_body">No music has been found on the Jellyfin server yet.</string>
