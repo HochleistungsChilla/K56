@@ -13,6 +13,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -43,7 +44,10 @@ import app.k56.player.data.acquisition.lidarr.LidarrException
 import app.k56.player.data.acquisition.lidarr.LidarrHistoryRecordDto
 import app.k56.player.data.acquisition.lidarr.LidarrQueueRecordDto
 import app.k56.player.data.acquisition.lidarr.LidarrService
+import app.k56.player.data.library.LibraryDb
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 private enum class RequestsTab(val label: Int) {
     WANTED(R.string.requests_wanted),
@@ -72,6 +76,27 @@ fun RequestsDialog(
     var history by remember { mutableStateOf<List<LidarrHistoryRecordDto>>(emptyList()) }
     var reloadKey by remember { mutableIntStateOf(0) }
     var importedCount by remember { mutableIntStateOf(0) }
+    // C1a: show only the gaps of artists that are already in the local library.
+    var onlyMine by remember { mutableStateOf(true) }
+    var myArtists by remember { mutableStateOf<Set<String>?>(null) }
+    val libraryDb = remember { LibraryDb.get(context.applicationContext) }
+
+    LaunchedEffect(Unit) {
+        myArtists = withContext(Dispatchers.IO) {
+            runCatching {
+                libraryDb.allArtists().mapNotNull { it.name.trim().lowercase().ifBlank { null } }.toSet()
+            }.getOrDefault(emptySet())
+        }
+    }
+
+    val shownWanted = remember(wanted, onlyMine, myArtists) {
+        val names = myArtists
+        if (!onlyMine || names == null) wanted
+        else wanted.filter { album ->
+            val artist = album.artist?.artistName?.trim()?.lowercase() ?: return@filter false
+            artist in names
+        }
+    }
 
     LaunchedEffect(tab, reloadKey) {
         loading = true
@@ -164,8 +189,26 @@ fun RequestsDialog(
                     }
                 }
 
+                if (RequestsTab.entries[tab] == RequestsTab.WANTED && wanted.isNotEmpty()) {
+                    Spacer(Modifier.height(8.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        FilterChip(
+                            selected = onlyMine,
+                            onClick = { onlyMine = !onlyMine },
+                            // TODO(i18n): move to strings.xml once the UI session has committed its strings.
+                            label = { Text("Only my artists") },
+                        )
+                        Spacer(Modifier.size(8.dp))
+                        Text(
+                            "${shownWanted.size} / ${wanted.size}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+
                 val empty = when (RequestsTab.entries[tab]) {
-                    RequestsTab.WANTED -> wanted.isEmpty()
+                    RequestsTab.WANTED -> shownWanted.isEmpty()
                     RequestsTab.QUEUE -> queue.isEmpty()
                     RequestsTab.HISTORY -> history.isEmpty()
                 }
@@ -184,7 +227,7 @@ fun RequestsDialog(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     when (RequestsTab.entries[tab]) {
-                        RequestsTab.WANTED -> items(wanted, key = { it.id ?: -1 }) { album ->
+                        RequestsTab.WANTED -> items(shownWanted, key = { it.id ?: -1 }) { album ->
                             WantedRow(album)
                         }
                         RequestsTab.QUEUE -> items(queue, key = { it.id ?: -1 }) { record ->
