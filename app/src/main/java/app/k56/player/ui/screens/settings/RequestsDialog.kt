@@ -195,8 +195,7 @@ fun RequestsDialog(
                         FilterChip(
                             selected = onlyMine,
                             onClick = { onlyMine = !onlyMine },
-                            // TODO(i18n): move to strings.xml once the UI session has committed its strings.
-                            label = { Text("Only my artists") },
+                            label = { Text(stringResource(R.string.requests_only_my_artists)) },
                         )
                         Spacer(Modifier.size(8.dp))
                         Text(

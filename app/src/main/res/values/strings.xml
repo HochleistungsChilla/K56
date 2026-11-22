@@ -507,4 +507,5 @@
     <string name="download_client_send">Send</string>
     <string name="download_client_sent">Sent to the client</string>
     <string name="download_client_rejected">The client did not accept it</string>
+    <string name="requests_only_my_artists">Only my artists</string>
 </resources>

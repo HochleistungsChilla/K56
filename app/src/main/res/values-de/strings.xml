@@ -497,4 +497,5 @@
     <string name="download_client_send">Senden</string>
     <string name="download_client_sent">An den Client gesendet</string>
     <string name="download_client_rejected">Der Client hat es nicht angenommen</string>
+    <string name="requests_only_my_artists">Nur meine Interpreten</string>
 </resources>
