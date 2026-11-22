@@ -430,4 +430,15 @@
     <string name="err_offline_not_downloaded">Offline — this title is not downloaded</string>
     <string name="album_download">Download album</string>
     <string name="artist_download_all">Download all</string>
+    <string name="acquisition_title">Acquisition (Lidarr)</string>
+    <string name="acquisition_body">Ask Lidarr for albums that are not in your library yet.</string>
+    <string name="acquisition_url">Lidarr URL</string>
+    <string name="acquisition_api_key">API key</string>
+    <string name="acquisition_test">Test connection</string>
+    <string name="acquisition_connected">Connected · Lidarr %1$s</string>
+    <string name="acquisition_quality_profile">Quality profile</string>
+    <string name="acquisition_metadata_profile">Metadata profile</string>
+    <string name="acquisition_root_folder">Root folder</string>
+    <string name="acquisition_save">Save</string>
+    <string name="acquisition_saved">Saved</string>
 </resources>
