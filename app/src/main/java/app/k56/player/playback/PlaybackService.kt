@@ -90,8 +90,13 @@ class PlaybackService : MediaSessionService() {
                 if (id != currentItemId) {
                     rememberSeed(id)
                     currentItemId = id
-                    appContainer.offlineStore.markStreamed(id)
-                    appContainer.libraryDb.recordPlay(id)
+                    // Bookkeeping only: a large library can hold the write lock
+                    // for a while during a sync, and this listener runs on the
+                    // main thread.
+                    serviceScope.launch {
+                        appContainer.offlineStore.markStreamed(id)
+                        appContainer.libraryDb.recordPlay(id)
+                    }
                     resumeIfAvailable(id)
                     reportStart(id)
                     extendWithSimilar(autoStart = false)

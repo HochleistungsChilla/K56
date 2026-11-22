@@ -33,6 +33,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -49,6 +50,7 @@ import android.widget.Toast
 import app.k56.player.R
 import app.k56.player.BuildConfig
 import app.k56.player.core.model.BackendKind
+import app.k56.player.core.model.LibraryCounts
 import app.k56.player.core.net.NetworkTransport
 import app.k56.player.data.MediaRepository
 import app.k56.player.data.BackupCrypto
@@ -65,7 +67,9 @@ import app.k56.player.data.library.LibrarySync
 import app.k56.player.data.offline.OfflineStore
 import app.k56.player.data.offline.DownloadState
 import app.k56.player.dsp.DspState
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import app.k56.player.ui.formatBytes
 import app.k56.player.ui.theme.ThemeController
 import app.k56.player.ui.theme.ThemeMode
@@ -104,6 +108,20 @@ fun SettingsScreen(
     val queueEntries by offlineStore.entries.collectAsStateWithLifecycle()
     val downloads by offlineStore.progress.collectAsStateWithLifecycle()
     val syncState by librarySync.state.collectAsStateWithLifecycle()
+
+    // Counting rows on a 60k-track database takes seconds and used to block the
+    // composition; load it off the main thread and refresh when a sync ends.
+    var libraryCounts by remember { mutableStateOf<LibraryCounts?>(null) }
+    var libraryServerCounts by remember { mutableStateOf<LibraryCounts?>(null) }
+    var lastSyncAt by remember { mutableStateOf(0L) }
+    LaunchedEffect(syncState.running) {
+        val snapshot = withContext(Dispatchers.IO) {
+            Triple(libraryDb.counts(), libraryDb.serverCounts(), libraryDb.lastSync())
+        }
+        libraryCounts = snapshot.first
+        libraryServerCounts = snapshot.second
+        lastSyncAt = snapshot.third
+    }
     val storageLocation by settingsStore.storageLocation.collectAsStateWithLifecycle()
     val cacheLimitMb by settingsStore.cacheLimitMb.collectAsStateWithLifecycle()
     val autoplay by settingsStore.autoplay.collectAsStateWithLifecycle()
@@ -283,26 +301,28 @@ fun SettingsScreen(
             Column(Modifier.padding(16.dp)) {
                 Text(stringResource(R.string.sync_title), style = MaterialTheme.typography.titleLarge)
                 Spacer(Modifier.height(8.dp))
-                val counts = libraryDb.counts()
-                val serverCounts = libraryDb.serverCounts()
-                Text(
-                    text = stringResource(
-                        R.string.sync_counts,
-                        counts.songs,
-                        counts.albums,
-                        counts.artists,
-                    ),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                if (serverCounts.songs > 0 && serverCounts.songs != counts.songs) {
+                val counts = libraryCounts
+                val serverCounts = libraryServerCounts
+                if (counts != null && serverCounts != null) {
                     Text(
-                        text = stringResource(R.string.sync_status, counts.songs, serverCounts.songs),
-                        style = MaterialTheme.typography.bodySmall,
+                        text = stringResource(
+                            R.string.sync_counts,
+                            counts.songs,
+                            counts.albums,
+                            counts.artists,
+                        ),
+                        style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
+                    if (serverCounts.songs > 0 && serverCounts.songs != counts.songs) {
+                        Text(
+                            text = stringResource(R.string.sync_status, counts.songs, serverCounts.songs),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                 }
-                val lastSync = libraryDb.lastSync()
+                val lastSync = lastSyncAt
                 if (lastSync > 0) {
                     Text(
                         text = stringResource(
