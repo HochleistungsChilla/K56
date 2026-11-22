@@ -16,7 +16,7 @@ Legende: **offen** · **läuft** · **erledigt** · **verworfen** · **Frage**
 | 1 | Persistente Download-Queue (übersteht App-Kill + Netzwerkwechsel, `.part`-Recovery, Netz-Gate, 3 Versuche, UI) | **erledigt** | `fb39914`, `e0813ba`, `73df5b0`, `34fa031`, `2985509` |
 | 2 | Begrüßung am Start einstellbar (Aus / Hi / Servername / Persönlich) | **erledigt** | `3e50745` |
 | 3 | Roadmap statt Symfonium-Paritätsliste | **erledigt** | `7b142e8`, `7dbe58b` |
-| 4 | **Lidarr + andere Downloader** unterstützen | **läuft** | A0 `847eb71`/`696c869`, A1 `274ec1e`, A2 `276ad43` |
+| 4 | **Lidarr + andere Downloader** unterstützen | **läuft** | A0 `847eb71`/`696c869`, A1 `274ec1e`, A2 `276ad43`, A3 `ca97456` |
 | 5 | Backlog mitschreiben (diese Datei) | **erledigt** | `docs/BACKLOG.md` |
 | 6 | K56-App im Emulator zeigen | **erledigt** | Fenster-Emulator, echter Server verbunden |
 | 7 | `codegraph` nutzen (K56 + symfonik-re, zweiterer nur Inspiration) | **erledigt** | beide Indizes gesynct |
@@ -57,10 +57,10 @@ Legende: **offen** · **läuft** · **erledigt** · **verworfen** · **Frage**
 
 ## Nächste Schritte (meine Sicht)
 
-1. **A3** — Lidarr meldet fertig → Bibliotheks-Sync + Hinweis (nur lesend, automatischer Abgleich bleibt opt-in)
-2. **B1** — `DownloadClient`-Schnittstelle + qBittorrent
-3. **DB-Indizes** (`artists(name)`, `artist_favorites`, `tracks(artist_name)`) — braucht Freigabe für `LibraryDb`
-4. Such-Paging für große Bibliotheken
+1. **B1** — `DownloadClient`-Schnittstelle + qBittorrent (A3 is erledigt: Import-Hinweis + „Bibliothek aktualisieren")
+2. **DB-Indizes** (`artists(name)`, `artist_favorites`, `tracks(artist_name)`) — braucht Freigabe für `LibraryDb`
+3. Such-Paging für große Bibliotheken
+4. A2/A3 mit echtem API-Key gegenprüfen (bisher nur Fehlerpfad 401 verifiziert)
 
 ---
 
