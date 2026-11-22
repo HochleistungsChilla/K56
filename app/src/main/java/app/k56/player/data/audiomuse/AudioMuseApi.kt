@@ -23,7 +23,7 @@ data class AudioMuseConfig(
     val token: String = "",
 ) {
     val isComplete: Boolean
-        get() = baseUrl.isNotBlank()
+        get() = baseUrl.isNotBlank() && token.isNotBlank()
 }
 
 /** One track returned by AudioMuse. [itemId] is the media server item id. */
@@ -51,7 +51,8 @@ data class AudioMuseStats(
 class AudioMuseException(
     message: String,
     val statusCode: Int? = null,
-) : Exception(message) {
+    cause: Throwable? = null,
+) : Exception(message, cause) {
     val isAuthFailure: Boolean get() = statusCode == 401 || statusCode == 403
 }
 
@@ -79,9 +80,16 @@ class AudioMuseApi(private val config: AudioMuseConfig) {
         .build()
 
     private fun base(): String {
-        val raw = config.baseUrl.trim().trimEnd('/')
+        val raw = config.baseUrl.trim()
         if (raw.isBlank()) throw AudioMuseException("AudioMuse URL is empty")
-        return if (raw.startsWith("http://") || raw.startsWith("https://")) raw else "http://$raw"
+        val withScheme = if (raw.contains("://")) raw else "http://$raw"
+        // Only drop trailing slashes when a host is actually there: "http://"
+        // must stay broken so it reaches the URL check in [call].
+        return if (withScheme.length > withScheme.indexOf("://") + 3) {
+            withScheme.trimEnd('/')
+        } else {
+            withScheme
+        }
     }
 
     private suspend fun get(path: String, query: Map<String, String> = emptyMap()): String =
@@ -94,20 +102,32 @@ class AudioMuseApi(private val config: AudioMuseConfig) {
         query: Map<String, String>,
         body: JsonObject?,
     ): String = withContext(Dispatchers.IO) {
-        if (config.token.isBlank()) throw AudioMuseException("AudioMuse token is empty")
-        val url = (base() + path).toHttpUrl().newBuilder()
-            .apply { query.forEach { (k, v) -> addQueryParameter(k, v) } }
-            .build()
-        val request = Request.Builder()
-            .url(url)
-            .header("Authorization", "Bearer ${config.token}")
-            .header("Accept", "application/json")
-            .apply {
-                if (body != null) {
-                    post(body.toString().toRequestBody(JSON_MEDIA))
+        val token = config.token.trim()
+        if (token.isBlank()) throw AudioMuseException("AudioMuse token is empty")
+        // The URL field is free text: `toHttpUrl` throws IllegalArgumentException
+        // on a typo like "http://" or a space in the host. That must surface as
+        // a message in the card, never escape from a coroutine.
+        val request = try {
+            // Parse the base on its own first: appending a path to a broken
+            // base like "http://" would otherwise yield "http:///api/…", which
+            // OkHttp happily reads as host "api" instead of failing.
+            val url = base().toHttpUrl().newBuilder()
+                .addPathSegments(path.trimStart('/'))
+                .apply { query.forEach { (k, v) -> addQueryParameter(k, v) } }
+                .build()
+            Request.Builder()
+                .url(url)
+                .header("Authorization", "Bearer $token")
+                .header("Accept", "application/json")
+                .apply {
+                    if (body != null) {
+                        post(body.toString().toRequestBody(JSON_MEDIA))
+                    }
                 }
-            }
-            .build()
+                .build()
+        } catch (e: IllegalArgumentException) {
+            throw AudioMuseException("AudioMuse URL is not valid", null, e)
+        }
         try {
             http.newCall(request).execute().use { response ->
                 val text = response.body?.string().orEmpty()

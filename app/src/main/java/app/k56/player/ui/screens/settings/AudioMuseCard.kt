@@ -66,7 +66,7 @@ fun AudioMuseCard(modifier: Modifier = Modifier) {
     var results by remember { mutableStateOf<List<AudioMuseTrack>>(emptyList()) }
     var searched by remember { mutableStateOf(false) }
 
-    fun draft() = AudioMuseConfig(baseUrl = url.trim(), token = token)
+    fun draft() = AudioMuseConfig(baseUrl = url.trim(), token = token.trim())
 
     Surface(
         color = MaterialTheme.colorScheme.surfaceContainer,

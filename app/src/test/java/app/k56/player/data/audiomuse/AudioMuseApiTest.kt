@@ -188,6 +188,59 @@ class AudioMuseApiTest {
     }
 
     @Test
+    fun brokenUrlIsReportedInsteadOfThrown() = runBlocking {
+        // "http://" has no host; toHttpUrl throws IllegalArgumentException.
+        // This used to escape from the coroutine and take the process down.
+        val broken = AudioMuseApi(AudioMuseConfig("http://", "good-token"))
+        try {
+            broken.stats()
+            fail("expected AudioMuseException")
+        } catch (e: AudioMuseException) {
+            assertTrue(e.message!!.contains("URL is not valid"))
+            assertNull(e.statusCode)
+        }
+    }
+
+    @Test
+    fun hostWithASpaceIsAlsoReported() = runBlocking {
+        val broken = AudioMuseApi(AudioMuseConfig("http://192.168.0.9 3:8090", "good-token"))
+        try {
+            broken.stats()
+            fail("expected AudioMuseException")
+        } catch (e: AudioMuseException) {
+            assertTrue(e.message!!.contains("URL is not valid"))
+        }
+    }
+
+    @Test
+    fun aBareHostNameIsNotACrash() = runBlocking {
+        val bare = AudioMuseApi(AudioMuseConfig("nonsense", "good-token"))
+        try {
+            bare.stats()
+            fail("expected AudioMuseException")
+        } catch (e: AudioMuseException) {
+            // Either the resolver says "not reachable" or the lookup fails;
+            // both are handled messages, not an escaping IllegalArgumentException.
+            assertNull(e.statusCode)
+            assertTrue(e.message!!.isNotBlank())
+        }
+    }
+
+    @Test
+    fun whitespaceAroundTheTokenIsIgnored() = runBlocking {
+        val tracks = api(token = "  good-token  ").search("calm piano", limit = 1)
+        assertEquals(2, tracks.size) // the stub always answers two rows
+    }
+
+    @Test
+    fun anIncompleteConfigIsIncomplete() {
+        assertTrue(AudioMuseConfig("http://host:8090", "x").isComplete)
+        assertTrue(!AudioMuseConfig("", "x").isComplete)
+        assertTrue(!AudioMuseConfig("http://host:8090", "").isComplete)
+        assertTrue(!AudioMuseConfig("http://host:8090", "   ").isComplete)
+    }
+
+    @Test
     fun emptyTokenIsRejectedBeforeAnyRequest() = runBlocking {
         try {
             api(token = "").stats()

@@ -20,10 +20,13 @@ class AudioMuseStore(context: Context) {
 
     fun save(config: AudioMuseConfig) {
         prefs.edit()
-            .putString(KEY_URL, config.baseUrl)
-            .putString(KEY_TOKEN, config.token)
+            .putString(KEY_URL, config.baseUrl.trim())
+            .putString(KEY_TOKEN, config.token.trim())
             .apply()
-        _config.value = config
+        _config.value = config.copy(
+            baseUrl = config.baseUrl.trim(),
+            token = config.token.trim(),
+        )
     }
 
     fun reload() {
@@ -39,7 +42,7 @@ class AudioMuseStore(context: Context) {
 
     private fun read() = AudioMuseConfig(
         baseUrl = prefs.getString(KEY_URL, "").orEmpty(),
-        token = prefs.getString(KEY_TOKEN, "").orEmpty(),
+        token = (prefs.getString(KEY_TOKEN, "") ?: "").trim(),
     )
 
     private companion object {
