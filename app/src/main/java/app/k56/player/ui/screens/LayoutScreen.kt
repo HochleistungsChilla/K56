@@ -41,6 +41,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.k56.player.R
+import app.k56.player.data.LibraryDisplay
 import app.k56.player.data.PlayerBackground
 import app.k56.player.data.PlayerStyle
 import app.k56.player.data.SettingsStore
@@ -63,6 +64,9 @@ fun LayoutScreen(
     val context = LocalContext.current
     val spacing by settingsStore.gridSpacing.collectAsStateWithLifecycle()
     val columns by settingsStore.libraryColumns.collectAsStateWithLifecycle()
+    val display by settingsStore.libraryDisplay.collectAsStateWithLifecycle()
+    val showFavoriteBadge by settingsStore.showFavoriteBadge.collectAsStateWithLifecycle()
+    val showOfflineBadge by settingsStore.showOfflineBadge.collectAsStateWithLifecycle()
     val showNumbers by settingsStore.showTrackNumbers.collectAsStateWithLifecycle()
     val showSubtitle by settingsStore.showTrackSubtitle.collectAsStateWithLifecycle()
     val showItemCount by settingsStore.showItemCount.collectAsStateWithLifecycle()
@@ -117,6 +121,7 @@ fun LayoutScreen(
         LayoutPreview(
             spacing = spacing,
             columns = columns,
+            listMode = display == LibraryDisplay.LIST,
             coverRadius = coverRadius,
             coverMargin = coverMargin,
             compactControls = compactControls,
@@ -199,6 +204,21 @@ fun LayoutScreen(
         }
 
         SettingsSection(title = stringResource(R.string.layout_library)) {
+            Text(stringResource(R.string.layout_mode), style = MaterialTheme.typography.titleMedium)
+            Spacer(Modifier.height(6.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                FilterChip(
+                    selected = display == LibraryDisplay.GRID,
+                    onClick = { settingsStore.setLibraryDisplay(LibraryDisplay.GRID) },
+                    label = { Text(stringResource(R.string.layout_mode_grid)) },
+                )
+                FilterChip(
+                    selected = display == LibraryDisplay.LIST,
+                    onClick = { settingsStore.setLibraryDisplay(LibraryDisplay.LIST) },
+                    label = { Text(stringResource(R.string.layout_mode_list)) },
+                )
+            }
+            Spacer(Modifier.height(14.dp))
             Text(stringResource(R.string.display_columns), style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.height(6.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -241,6 +261,21 @@ fun LayoutScreen(
                     )
                 }
             }
+        }
+
+        SettingsSection(title = stringResource(R.string.layout_covers)) {
+            LayoutSwitch(
+                title = stringResource(R.string.layout_badge_favorite),
+                body = stringResource(R.string.layout_badge_favorite_body),
+                checked = showFavoriteBadge,
+                onChange = { settingsStore.setShowFavoriteBadge(it) },
+            )
+            LayoutSwitch(
+                title = stringResource(R.string.layout_badge_offline),
+                body = stringResource(R.string.layout_badge_offline_body),
+                checked = showOfflineBadge,
+                onChange = { settingsStore.setShowOfflineBadge(it) },
+            )
         }
 
         SettingsSection(title = stringResource(R.string.layout_lists)) {
@@ -327,6 +362,9 @@ fun LayoutScreen(
             onClick = {
                 settingsStore.setLibraryColumns(0)
                 settingsStore.setGridSpacing(12)
+                settingsStore.setLibraryDisplay(LibraryDisplay.GRID)
+                settingsStore.setShowFavoriteBadge(true)
+                settingsStore.setShowOfflineBadge(true)
                 settingsStore.setShowTrackNumbers(true)
                 settingsStore.setShowTrackSubtitle(true)
                 settingsStore.setShowItemCount(false)
@@ -353,6 +391,7 @@ fun LayoutScreen(
 private fun LayoutPreview(
     spacing: Int,
     columns: Int,
+    listMode: Boolean,
     coverRadius: Int,
     coverMargin: Int,
     compactControls: Boolean,
@@ -386,6 +425,41 @@ private fun LayoutPreview(
             style = MaterialTheme.typography.titleSmall,
         )
         Spacer(Modifier.height(6.dp))
+        if (listMode) {
+            repeat(3) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 3.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Box(
+                        Modifier
+                            .size(36.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(MaterialTheme.colorScheme.surfaceContainerHigh),
+                    )
+                    Spacer(Modifier.width(10.dp))
+                    Column(Modifier.weight(1f)) {
+                        Box(
+                            Modifier
+                                .fillMaxWidth(0.7f)
+                                .height(9.dp)
+                                .clip(RoundedCornerShape(5.dp))
+                                .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f)),
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        Box(
+                            Modifier
+                                .fillMaxWidth(0.45f)
+                                .height(7.dp)
+                                .clip(RoundedCornerShape(4.dp))
+                                .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.22f)),
+                        )
+                    }
+                }
+            }
+        } else {
         Row(horizontalArrangement = Arrangement.spacedBy(spacing.dp)) {
             repeat(tiles) {
                 Box(
@@ -405,6 +479,7 @@ private fun LayoutPreview(
                     )
                 }
             }
+        }
         }
         Spacer(Modifier.height(10.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(spacing.dp)) {

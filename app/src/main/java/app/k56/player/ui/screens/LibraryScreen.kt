@@ -76,6 +76,7 @@ import app.k56.player.core.model.Playlist
 import app.k56.player.core.model.Track
 import app.k56.player.core.net.NetworkTransport
 import app.k56.player.data.MediaRepository
+import app.k56.player.data.LibraryDisplay
 import app.k56.player.data.SettingsStore
 import app.k56.player.data.offline.OfflineStore
 import app.k56.player.data.offline.DownloadRequest
@@ -500,7 +501,11 @@ fun LibraryScreen(
     showSubtitle: Boolean = true,
     showItemCount: Boolean = false,
     gridSpacing: Int = 12,
+    displayMode: LibraryDisplay = LibraryDisplay.GRID,
+    showFavoriteBadge: Boolean = true,
+    showOfflineBadge: Boolean = true,
 ) {
+    val listMode = displayMode == LibraryDisplay.LIST
     val context = LocalContext.current
     val syncState by librarySync.state.collectAsStateWithLifecycle()
     val vm = appViewModel { LibraryViewModel(repository, context.applicationContext, offlineStore, settingsStore) }
@@ -725,13 +730,17 @@ fun LibraryScreen(
             error != null -> ErrorState(error, vm::load, Modifier.weight(1f))
 
             tab == 0 -> LazyVerticalGrid(
-                columns = if (columns > 0) GridCells.Fixed(columns) else GridCells.Adaptive(148.dp),
+                columns = when {
+                    listMode -> GridCells.Fixed(1)
+                    columns > 0 -> GridCells.Fixed(columns)
+                    else -> GridCells.Adaptive(148.dp)
+                },
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth(),
                 contentPadding = PaddingValues(16.dp),
                 horizontalArrangement = Arrangement.spacedBy(gridSpacing.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
+                verticalArrangement = Arrangement.spacedBy(if (listMode) 2.dp else 16.dp),
             ) {
                 items(vm.albums, key = { it.id }) { album ->
                     Box {
@@ -753,6 +762,9 @@ fun LibraryScreen(
                             offlineCount = albumOfflineCount[album.id],
                             trackCount = album.trackCount,
                             onMenu = { contextAlbum = album },
+                            showFavoriteBadge = showFavoriteBadge,
+                            showOfflineBadge = showOfflineBadge,
+                            compact = listMode,
                         )
                         DropdownMenu(
                             expanded = contextAlbum?.id == album.id,
@@ -812,13 +824,17 @@ fun LibraryScreen(
             }
 
             tab == 1 -> LazyVerticalGrid(
-                columns = if (columns > 0) GridCells.Fixed(columns) else GridCells.Adaptive(126.dp),
+                columns = when {
+                    listMode -> GridCells.Fixed(1)
+                    columns > 0 -> GridCells.Fixed(columns)
+                    else -> GridCells.Adaptive(126.dp)
+                },
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth(),
                 contentPadding = PaddingValues(16.dp),
                 horizontalArrangement = Arrangement.spacedBy(gridSpacing.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
+                verticalArrangement = Arrangement.spacedBy(if (listMode) 2.dp else 16.dp),
             ) {
                 items(vm.artists, key = { it.id }) { artist ->
                     Box {
@@ -838,6 +854,9 @@ fun LibraryScreen(
                             isFavorite = vm.effectiveArtistFavorite(artist),
                             onToggleFavorite = { vm.toggleArtistFavorite(artist) },
                             onMenu = { contextArtist = artist },
+                            showFavoriteBadge = showFavoriteBadge,
+                            showOfflineBadge = showOfflineBadge,
+                            compact = listMode,
                         )
                         DropdownMenu(
                             expanded = contextArtist?.id == artist.id,

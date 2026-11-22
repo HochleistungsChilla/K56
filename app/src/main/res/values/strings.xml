@@ -333,6 +333,14 @@
     <string name="layout_move_up">Move up</string>
     <string name="layout_move_down">Move down</string>
     <string name="layout_library">Library grid</string>
+    <string name="layout_mode">Display</string>
+    <string name="layout_mode_grid">Grid</string>
+    <string name="layout_mode_list">List</string>
+    <string name="layout_covers">Cover badges</string>
+    <string name="layout_badge_favorite">Favorite heart</string>
+    <string name="layout_badge_favorite_body">Interactive heart on album and artist covers.</string>
+    <string name="layout_badge_offline">Offline badge</string>
+    <string name="layout_badge_offline_body">Shows how much of an album is cached for offline use.</string>
     <string name="layout_spacing">Spacing</string>
     <string name="layout_spacing_value">%1$d dp</string>
     <string name="layout_lists">Lists</string>

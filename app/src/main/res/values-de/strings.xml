@@ -323,6 +323,14 @@
     <string name="layout_move_up">Nach oben</string>
     <string name="layout_move_down">Nach unten</string>
     <string name="layout_library">Bibliotheksraster</string>
+    <string name="layout_mode">Anzeige</string>
+    <string name="layout_mode_grid">Raster</string>
+    <string name="layout_mode_list">Liste</string>
+    <string name="layout_covers">Cover-Badges</string>
+    <string name="layout_badge_favorite">Favoriten-Herz</string>
+    <string name="layout_badge_favorite_body">Antippbares Herz auf Album- und Interpreten-Covern.</string>
+    <string name="layout_badge_offline">Offline-Badge</string>
+    <string name="layout_badge_offline_body">Zeigt, wie viel eines Albums offline gespeichert ist.</string>
     <string name="layout_spacing">Abstand</string>
     <string name="layout_spacing_value">%1$d dp</string>
     <string name="layout_lists">Listen</string>

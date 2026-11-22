@@ -101,6 +101,9 @@ private fun MainShell(container: AppContainer) {
     val showTrackSubtitle by container.settingsStore.showTrackSubtitle.collectAsStateWithLifecycle()
     val showItemCount by container.settingsStore.showItemCount.collectAsStateWithLifecycle()
     val libraryColumns by container.settingsStore.libraryColumns.collectAsStateWithLifecycle()
+    val libraryDisplay by container.settingsStore.libraryDisplay.collectAsStateWithLifecycle()
+    val showFavoriteBadge by container.settingsStore.showFavoriteBadge.collectAsStateWithLifecycle()
+    val showOfflineBadge by container.settingsStore.showOfflineBadge.collectAsStateWithLifecycle()
     val wifiOnlyDownloads by container.settingsStore.wifiOnlyDownloads.collectAsStateWithLifecycle()
     val ignoreArticles by container.settingsStore.ignoreArticles.collectAsStateWithLifecycle()
     val showNowPlayingFavorite by container.settingsStore.showNowPlayingFavorite.collectAsStateWithLifecycle()
@@ -421,6 +424,9 @@ private fun MainShell(container: AppContainer) {
                     showSubtitle = showTrackSubtitle,
                     showItemCount = showItemCount,
                     gridSpacing = gridSpacing,
+                    displayMode = libraryDisplay,
+                    showFavoriteBadge = showFavoriteBadge,
+                    showOfflineBadge = showOfflineBadge,
                 )
             }
             composable("cache") {

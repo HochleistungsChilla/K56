@@ -34,6 +34,9 @@ enum class PlayerBackground { GRADIENT, SOLID, ALBUM_COLOR }
 /** What the home screen shows as its headline. */
 enum class HomeGreeting { OFF, PLAIN, SERVER, PERSONAL }
 
+/** How albums and artists are laid out in the library. */
+enum class LibraryDisplay { GRID, LIST }
+
 class SettingsStore(context: Context) {
 
     private val appContext = context.applicationContext
@@ -117,6 +120,21 @@ class SettingsStore(context: Context) {
 
     private val _libraryColumns = MutableStateFlow(prefs.getInt(KEY_COLUMNS, 0))
     val libraryColumns: StateFlow<Int> = _libraryColumns.asStateFlow()
+
+    /** Grid or list for albums and artists. */
+    private val _libraryDisplay = MutableStateFlow(
+        runCatching { LibraryDisplay.valueOf(prefs.getString(KEY_LIBRARY_DISPLAY, null) ?: "GRID") }
+            .getOrDefault(LibraryDisplay.GRID),
+    )
+    val libraryDisplay: StateFlow<LibraryDisplay> = _libraryDisplay.asStateFlow()
+
+    /** Show the interactive heart on album and artist covers. */
+    private val _showFavoriteBadge = MutableStateFlow(prefs.getBoolean(KEY_FAVORITE_BADGE, true))
+    val showFavoriteBadge: StateFlow<Boolean> = _showFavoriteBadge.asStateFlow()
+
+    /** Show the offline coverage badge on covers. */
+    private val _showOfflineBadge = MutableStateFlow(prefs.getBoolean(KEY_OFFLINE_BADGE, true))
+    val showOfflineBadge: StateFlow<Boolean> = _showOfflineBadge.asStateFlow()
 
     /** Keep the queue going with similar tracks when it runs out. */
     private val _autoplay = MutableStateFlow(prefs.getBoolean(KEY_AUTOPLAY, true))
@@ -355,6 +373,21 @@ class SettingsStore(context: Context) {
         _libraryColumns.value = value
     }
 
+    fun setLibraryDisplay(value: LibraryDisplay) {
+        prefs.edit().putString(KEY_LIBRARY_DISPLAY, value.name).apply()
+        _libraryDisplay.value = value
+    }
+
+    fun setShowFavoriteBadge(value: Boolean) {
+        prefs.edit().putBoolean(KEY_FAVORITE_BADGE, value).apply()
+        _showFavoriteBadge.value = value
+    }
+
+    fun setShowOfflineBadge(value: Boolean) {
+        prefs.edit().putBoolean(KEY_OFFLINE_BADGE, value).apply()
+        _showOfflineBadge.value = value
+    }
+
     fun setAutoplay(value: Boolean) {
         prefs.edit().putBoolean(KEY_AUTOPLAY, value).apply()
         _autoplay.value = value
@@ -470,6 +503,9 @@ class SettingsStore(context: Context) {
         private const val KEY_ORIENTATION = "screen_orientation"
         private const val KEY_GRID_SPACING = "grid_spacing"
         private const val KEY_COLUMNS = "library_columns"
+        private const val KEY_LIBRARY_DISPLAY = "library_display"
+        private const val KEY_FAVORITE_BADGE = "show_favorite_badge"
+        private const val KEY_OFFLINE_BADGE = "show_offline_badge"
         private const val KEY_HOME_SECTIONS = "home_sections"
         private const val KEY_WIFI_ONLY = "wifi_only_downloads"
         private const val KEY_HOME_GREETING = "home_greeting"

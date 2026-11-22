@@ -124,7 +124,27 @@ fun AlbumCard(
     offlineCount: Int? = null,
     trackCount: Int? = null,
     onMenu: (() -> Unit)? = null,
+    showFavoriteBadge: Boolean = true,
+    showOfflineBadge: Boolean = true,
+    compact: Boolean = false,
 ) {
+    if (compact) {
+        AlbumListRow(
+            album = album,
+            onClick = onClick,
+            modifier = modifier,
+            onLongClick = onLongClick,
+            selected = selected,
+            isFavorite = isFavorite,
+            onToggleFavorite = onToggleFavorite,
+            offlineCount = offlineCount,
+            trackCount = trackCount,
+            onMenu = onMenu,
+            showFavoriteBadge = showFavoriteBadge,
+            showOfflineBadge = showOfflineBadge,
+        )
+        return
+    }
     Column(
         modifier = modifier
             .clip(RoundedCornerShape(16.dp))
@@ -163,12 +183,12 @@ fun AlbumCard(
                         .padding(6.dp),
                 )
             }
-            if (onToggleFavorite != null || onMenu != null) {
+            if ((onToggleFavorite != null && showFavoriteBadge) || onMenu != null) {
                 Row(
                     modifier = Modifier.align(Alignment.TopEnd),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    if (onToggleFavorite != null) {
+                    if (onToggleFavorite != null && showFavoriteBadge) {
                         IconButton(onClick = onToggleFavorite) {
                             Icon(
                                 imageVector = if (isFavorite) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
@@ -197,11 +217,13 @@ fun AlbumCard(
                     }
                 }
             }
-            OfflineCoverageBadge(
-                offlineCount = offlineCount,
-                totalCount = trackCount,
-                modifier = Modifier.align(Alignment.BottomEnd),
-            )
+            if (showOfflineBadge) {
+                OfflineCoverageBadge(
+                    offlineCount = offlineCount,
+                    totalCount = trackCount,
+                    modifier = Modifier.align(Alignment.BottomEnd),
+                )
+            }
         }
         Spacer(Modifier.height(8.dp))
         Text(
@@ -232,7 +254,26 @@ fun ArtistCard(
     onToggleFavorite: (() -> Unit)? = null,
     offlineCount: Int? = null,
     onMenu: (() -> Unit)? = null,
+    showFavoriteBadge: Boolean = true,
+    showOfflineBadge: Boolean = true,
+    compact: Boolean = false,
 ) {
+    if (compact) {
+        ArtistListRow(
+            artist = artist,
+            onClick = onClick,
+            modifier = modifier,
+            onLongClick = onLongClick,
+            selected = selected,
+            isFavorite = isFavorite,
+            onToggleFavorite = onToggleFavorite,
+            offlineCount = offlineCount,
+            onMenu = onMenu,
+            showFavoriteBadge = showFavoriteBadge,
+            showOfflineBadge = showOfflineBadge,
+        )
+        return
+    }
     Column(
         modifier = modifier
             .clip(RoundedCornerShape(16.dp))
@@ -272,7 +313,7 @@ fun ArtistCard(
                         .padding(6.dp),
                 )
             }
-            if ((offlineCount ?: 0) > 0) {
+            if (showOfflineBadge && (offlineCount ?: 0) > 0) {
                 Box(
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
@@ -289,12 +330,12 @@ fun ArtistCard(
                     )
                 }
             }
-            if (onToggleFavorite != null || onMenu != null) {
+            if ((onToggleFavorite != null && showFavoriteBadge) || onMenu != null) {
                 Row(
                     modifier = Modifier.align(Alignment.TopEnd),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    if (onToggleFavorite != null) {
+                    if (onToggleFavorite != null && showFavoriteBadge) {
                         IconButton(onClick = onToggleFavorite) {
                             Icon(
                                 imageVector = if (isFavorite) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
@@ -332,6 +373,168 @@ fun ArtistCard(
             overflow = TextOverflow.Ellipsis,
             textAlign = TextAlign.Center,
         )
+    }
+}
+
+/** Compact list row for an album; the list counterpart of [AlbumCard]. */
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun AlbumListRow(
+    album: Album,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    onLongClick: (() -> Unit)? = null,
+    selected: Boolean = false,
+    isFavorite: Boolean = false,
+    onToggleFavorite: (() -> Unit)? = null,
+    offlineCount: Int? = null,
+    trackCount: Int? = null,
+    onMenu: (() -> Unit)? = null,
+    showFavoriteBadge: Boolean = true,
+    showOfflineBadge: Boolean = true,
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .combinedClickable(onClick = onClick, onLongClick = onLongClick)
+            .background(
+                if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)
+                else MaterialTheme.colorScheme.surface.copy(alpha = 0f),
+            )
+            .padding(horizontal = 8.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box {
+            Artwork(
+                url = album.imageUrl,
+                modifier = Modifier.size(52.dp),
+                shape = RoundedCornerShape(8.dp),
+            )
+            if (showOfflineBadge) {
+                OfflineCoverageBadge(
+                    offlineCount = offlineCount,
+                    totalCount = trackCount,
+                    modifier = Modifier.align(Alignment.BottomEnd),
+                )
+            }
+        }
+        Spacer(Modifier.width(12.dp))
+        Column(Modifier.weight(1f)) {
+            Text(
+                text = album.name,
+                style = MaterialTheme.typography.titleMedium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                text = album.artist.orEmpty(),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+        if (onToggleFavorite != null && showFavoriteBadge) {
+            IconButton(onClick = onToggleFavorite) {
+                Icon(
+                    imageVector = if (isFavorite) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
+                    contentDescription = null,
+                    tint = if (isFavorite) MaterialTheme.colorScheme.primary
+                    else MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+        if (onMenu != null) {
+            IconButton(onClick = onMenu) {
+                Icon(
+                    Icons.Rounded.MoreVert,
+                    contentDescription = stringResource(R.string.action_more),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+    }
+}
+
+/** Compact list row for an artist; the list counterpart of [ArtistCard]. */
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun ArtistListRow(
+    artist: Artist,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    onLongClick: (() -> Unit)? = null,
+    selected: Boolean = false,
+    isFavorite: Boolean = false,
+    onToggleFavorite: (() -> Unit)? = null,
+    offlineCount: Int? = null,
+    onMenu: (() -> Unit)? = null,
+    showFavoriteBadge: Boolean = true,
+    showOfflineBadge: Boolean = true,
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .combinedClickable(onClick = onClick, onLongClick = onLongClick)
+            .background(
+                if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)
+                else MaterialTheme.colorScheme.surface.copy(alpha = 0f),
+            )
+            .padding(horizontal = 8.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box {
+            Artwork(
+                url = artist.imageUrl,
+                modifier = Modifier.size(48.dp),
+                shape = CircleShape,
+            )
+            if (showOfflineBadge && (offlineCount ?: 0) > 0) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .size(16.dp)
+                        .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.75f), CircleShape),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.DownloadDone,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(11.dp),
+                    )
+                }
+            }
+        }
+        Spacer(Modifier.width(12.dp))
+        Text(
+            text = artist.name,
+            style = MaterialTheme.typography.titleMedium,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f),
+        )
+        if (onToggleFavorite != null && showFavoriteBadge) {
+            IconButton(onClick = onToggleFavorite) {
+                Icon(
+                    imageVector = if (isFavorite) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
+                    contentDescription = null,
+                    tint = if (isFavorite) MaterialTheme.colorScheme.primary
+                    else MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+        if (onMenu != null) {
+            IconButton(onClick = onMenu) {
+                Icon(
+                    Icons.Rounded.MoreVert,
+                    contentDescription = stringResource(R.string.action_more),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
     }
 }
 
@@ -411,6 +614,7 @@ fun TrackRow(
     onRemoveFromPlaylist: (() -> Unit)? = null,
     onLongClick: (() -> Unit)? = null,
     selected: Boolean = false,
+    showFavoriteBadge: Boolean = true,
 ) {
     var menuOpen by remember { mutableStateOf(false) }
     Row(
@@ -511,7 +715,7 @@ fun TrackRow(
                 )
             }
         }
-        if (onToggleFavorite != null) {
+        if (onToggleFavorite != null && showFavoriteBadge) {
             IconButton(onClick = onToggleFavorite) {
                 Icon(
                     imageVector = if (isFavorite) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
