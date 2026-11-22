@@ -131,3 +131,20 @@ Verifiziert: `dup`-Suche crasht nicht mehr und zeigt das Album nur noch einmal.
   `setsid … &` plus Redirect vom Exec loslösen, sonst stirbt er mit der Session.
 - `uiautomator dump` braucht ~2–3 s und verfälscht grobe Zeitmessungen der UI;
   für exakte Latenz lieber Logcat-Timestamps oder `am start -W` (nur Cold Start).
+
+## 9. Dienste und Ports
+
+| Zweck | Adresse | Anmerkung |
+|---|---|---|
+| Mock-Jellyfin | `http://10.0.2.2:8096` (aus dem Emulator) | `tools/mock_jellyfin.py`, User `tester`, PW beliebig |
+| Echter Jellyfin | `http://192.168.0.93:8096` | FranziflixXx², großer Bestand (~62k Tracks) |
+| Lidarr | `http://192.168.0.93:8686` | `/api/v1`, `X-Api-Key`; ohne Key liefert `system/status` 401 |
+| SABnzbd | `http://192.168.0.93:8080` | `api?mode=…&apikey=…`; `mode=version` antwortet **ohne** Auth, `mode=queue` braucht den Key |
+
+**Wichtig bei SABnzbd:** Ein Verbindungstest über `mode=version` würde auch
+einen falschen Key akzeptieren. Der Adapter prüft deshalb `mode=queue`.
+
+**Große Bibliothek:** Auf dem echten Server dauert ein voller Sync lange
+(~62k Tracks). Während des Syncs sind Schreibzugriffe auf `library.db`
+blockiert — DB-Arbeit gehört deshalb nie in die Composition oder in
+Player-Listener. Drei ANRs kamen genau daher (`101739d`, `2985509`).
