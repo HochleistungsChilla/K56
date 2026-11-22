@@ -1,10 +1,12 @@
 # Roadmap
 
-Stand: 2026-11-22. Grundlage ist `docs/SYMFONIUM-GAP.md` (Funktionsinventar)
-plus die neue Anforderung **Acquisition** (Lidarr & andere Downloader).
+Stand: 2026-11-22.
 
-„Parity" heißt funktional vergleichbar, nicht optisch gleich. Reihenfolge ist
-nach Nutzen pro Aufwand sortiert, nicht nach Feature-Liste.
+**K56 ist kein Symfonium-Nachbau.** `docs/SYMFONIUM-GAP.md` und externe
+Feature-Listen sind **Inspiration**, kein Pflichtenheft: keine 1:1-Übernahme
+von Settings-Taxonomie, Seitenlayouts, Widget-Sets oder Provider-Matrizen.
+Was hier steht, ist an der eigenen Produktidee ausgerichtet — selbst gehostete
+Bibliothek, vollständig verfügbar, auch offline.
 
 ---
 
@@ -39,10 +41,11 @@ nach Nutzen pro Aufwand sortiert, nicht nach Feature-Liste.
 | DSP | 🟡 | EQ, Preamp, Limiter, Convolution (DDC/IR) — kein AutoEQ/PEQ |
 | Themes / Startseite | ✅ | inkl. konfigurierbarer Begrüßung |
 
-### Was fehlt (Auswahl)
+### Bewusst nicht geplant (Stand heute)
 
-Cast (Chromecast/UPnP/Sonos), Lyrics, ReplayGain, AutoEQ/parametrischer EQ,
-Smart Playlists, Android Auto, Widgets, Wear OS, SMB — und **Acquisition**.
+Cast/Renderer, Wear OS, Widgets, Cloud-Quellen, Karaoke-Lyrics, AutoEQ-Sammlung.
+Nichts davon ist verboten — es ist nur kein Ziel, solange es nicht einem
+eigenen Bedürfnis dient.
 
 ---
 
@@ -132,28 +135,30 @@ A0–A2 sind der sichtbare Nutzen; B* ist Fleißarbeit mit vielen Sonderfällen
 
 ---
 
-## 3. Parity-Backlog (nach Nutzen/Aufwand)
+## 3. Eigene Schwerpunkte (statt Feature-Parität)
 
-| Priorität | Thema | Warum | Aufwand |
+Leitfrage: **hilft es, die eigene Bibliothek vollständig(er) und verlässlich
+verfügbar zu machen?** Wenn nein, ist es kein Roadmap-Punkt.
+
+| # | Thema | Warum es zu K56 gehört | Aufwand |
 |---|---|---|---|
-| 1 | **DB-Indizes** (`artists(name)`, `artist_favorites`, `tracks(artist_name)`) | Favoriten-Abfrage braucht auf 62k Tracks Sekunden | S |
-| 2 | Suche: Paging + Server-Limit | große Bibliotheken liefern sonst nur die ersten Treffer | S |
-| 3 | SMB v2/v3 | letzte fehlende Dateiquelle ohne Cloud | L |
-| 4 | Smart Playlists (Regeln auf lokaler DB) | starkes Feature, Daten sind schon da | M |
-| 5 | Lyrics (LRC + Server) | häufig genutzt, überschaubar | M |
-| 6 | ReplayGain (EBU/RG2) | „richtige" Lautstärke, DSP-Kette existiert | S |
-| 7 | AutoEQ + parametrischer EQ | Ergänzung zum vorhandenen EQ | M |
-| 8 | Android Auto | eigenes Modul, DPAD-Layouts | M |
-| 9 | Widgets (Glance) | 4 Typen, Mediensteuerung | M |
-| 10 | Cast: Chromecast/UPnP | groß, eigener Lebenszyklus | L |
-| 11 | Wear OS | Modul + Offline-Sync | L |
-| 12 | Cloud-Quellen (OAuth) | Aufwand pro Anbieter, geringer Nutzen | L |
+| 1 | DB-Indizes (`artists(name)`, `artist_favorites`, `tracks(artist_name)`) | 62k-Track-Bibliotheken müssen sich flott anfühlen | S |
+| 2 | Suche: Paging + Server-Limit | Vollständigkeit statt „erste 50 Treffer" | S |
+| 3 | **Acquisition** (Abschnitt 2) | Lücken schließen, ohne den Rechner zu verlassen | M–L |
+| 4 | Offline-Vollständigkeit | Auto-Cache-Regeln, Speicherverwaltung, sichtbar machen was fehlt | M |
+| 5 | Zuverlässigkeit | Sync-Fehler sichtbar, Wiederaufnahme, keine ANRs | S–M |
+| 6 | SMB v2/v3 | letzte Quelle ohne Cloud-Konto; passt zu „eigener Server" | L |
+| 7 | ReplayGain | leise und laute Alben aus einer Sammlung | S |
+
+**Geparkt:** Cast/Renderer, Wear OS, Widgets, Cloud-Quellen, Karaoke-Lyrics,
+AutoEQ-Sammlung. Kommen nur, wenn ein konkreter Bedarf auftaucht.
 
 ---
 
 ## 4. Nicht-Ziele
 
-- Kein Kopieren von Symfonium-Design, Assets oder Marke
+- **Kein Symfonium-Nachbau**: Gap-Dokumente sind Inspiration, kein Zielbild
+- Kein Kopieren von Design, Assets oder Marke
 - Keine Umgehung von Bezahl-/Lizenzlogik
 - Keine Telemetrie, kein Cloud-Mittelsmann
 - Keine Indexer-Suche oder DRM-Extraktion in der App
