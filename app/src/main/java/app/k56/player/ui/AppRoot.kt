@@ -47,6 +47,7 @@ import app.k56.player.ui.screens.DspScreen
 import app.k56.player.ui.screens.GenreScreen
 import app.k56.player.ui.screens.HomeScreen
 import app.k56.player.ui.screens.LibraryScreen
+import app.k56.player.ui.screens.LayoutScreen
 import app.k56.player.ui.screens.LoginScreen
 import app.k56.player.ui.screens.PlaylistScreen
 import app.k56.player.ui.screens.PlayerScreen
@@ -441,6 +442,12 @@ private fun MainShell(container: AppContainer) {
                     onBack = { navController.popBackStack() },
                 )
             }
+            composable("layout") {
+                LayoutScreen(
+                    settingsStore = container.settingsStore,
+                    onBack = { navController.popBackStack() },
+                )
+            }
             composable("search") {
                 SearchScreen(
                     repository = repository,
@@ -464,6 +471,7 @@ private fun MainShell(container: AppContainer) {
                     onOpenDsp = { navController.navigate("dsp") },
                     onOpenCache = { navController.navigate("cache") },
                     onOpenSyncLog = { navController.navigate("synclog") },
+                    onOpenLayout = { navController.navigate("layout") },
                 )
             }
             composable(
