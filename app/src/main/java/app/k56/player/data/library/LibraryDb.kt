@@ -70,6 +70,7 @@ class LibraryDb private constructor(context: Context) :
         db.execSQL("CREATE INDEX idx_albums_name ON albums(name)")
         createFavoriteTables(db)
         createPlayHistoryTable(db)
+        createFavoriteIndexes(db)
     }
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
@@ -79,6 +80,19 @@ class LibraryDb private constructor(context: Context) :
         if (oldVersion < 3) {
             createPlayHistoryTable(db)
         }
+        if (oldVersion < 4) {
+            createFavoriteIndexes(db)
+        }
+    }
+
+    /**
+     * Speeds up [favoriteTracks]: without these, the correlated EXISTS scans the
+     * whole artists table for every track (50 s on a 62k-track library).
+     */
+    private fun createFavoriteIndexes(db: SQLiteDatabase) {
+        db.execSQL("CREATE INDEX IF NOT EXISTS idx_artists_name ON artists(name)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS idx_tracks_artist_name ON tracks(artist_name)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS idx_tracks_favorite ON tracks(is_favorite)")
     }
 
     private fun createPlayHistoryTable(db: SQLiteDatabase) {
@@ -673,7 +687,7 @@ class LibraryDb private constructor(context: Context) :
     }
 
     companion object {
-        private const val DB_VERSION = 3
+        private const val DB_VERSION = 4
         private val STAGED_TABLES = listOf("tracks", "albums", "artists", "genres")
         private const val KEY_LAST_SYNC = "last_sync"
         private const val KEY_SERVER_TRACKS = "server_tracks"
