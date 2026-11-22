@@ -69,6 +69,7 @@ import kotlinx.coroutines.launch
 import app.k56.player.ui.formatBytes
 import app.k56.player.ui.theme.ThemeController
 import app.k56.player.ui.theme.ThemeMode
+import app.k56.player.ui.screens.settings.AcquisitionCard
 
 @Composable
 fun SettingsScreen(
@@ -404,6 +405,8 @@ fun SettingsScreen(
                 }
             }
         }
+
+        AcquisitionCard(Modifier.padding(top = 14.dp))
 
         Surface(
             color = MaterialTheme.colorScheme.surfaceContainer,
