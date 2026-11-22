@@ -709,22 +709,19 @@ fun HomeSkeleton(modifier: Modifier = Modifier) {
             }
         }
         Spacer(Modifier.height(24.dp))
+        // Two album rows, then one artist row — same order and card sizes as the
+        // real content (150 dp square covers, 118 dp round artist cards), so the
+        // layout does not jump when the data arrives.
         repeat(2) {
-            SkeletonBox(
-                Modifier
-                    .padding(horizontal = 20.dp)
-                    .width(140.dp)
-                    .height(18.dp),
-            )
-            Spacer(Modifier.height(12.dp))
+            SkeletonSectionHeader()
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 20.dp),
+                    .padding(horizontal = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 repeat(3) {
-                    Column(Modifier.width(132.dp)) {
+                    Column(Modifier.width(150.dp)) {
                         SkeletonBox(
                             Modifier
                                 .fillMaxWidth()
@@ -738,8 +735,38 @@ fun HomeSkeleton(modifier: Modifier = Modifier) {
                     }
                 }
             }
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(16.dp))
         }
+        SkeletonSectionHeader()
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            repeat(4) {
+                Column(
+                    modifier = Modifier.width(118.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    SkeletonBox(
+                        Modifier
+                            .fillMaxWidth()
+                            .aspectRatio(1f),
+                        CircleShape,
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    SkeletonBox(Modifier.fillMaxWidth(0.8f).height(12.dp))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SkeletonSectionHeader() {
+    Column(Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
+        SkeletonBox(Modifier.width(150.dp).height(18.dp))
     }
 }
 
