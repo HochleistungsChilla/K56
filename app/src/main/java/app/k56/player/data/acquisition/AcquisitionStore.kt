@@ -46,6 +46,13 @@ class AcquisitionStore(context: Context) {
         _config.value = read()
     }
 
+    /** Highest Lidarr history id we have already reported, so imports are not announced twice. */
+    fun lastHistoryId(): Int = prefs.getInt(KEY_LAST_HISTORY, 0)
+
+    fun setLastHistoryId(id: Int) {
+        prefs.edit().putInt(KEY_LAST_HISTORY, id).apply()
+    }
+
     private fun read() = AcquisitionConfig(
         enabled = prefs.getBoolean(KEY_ENABLED, false),
         baseUrl = prefs.getString(KEY_URL, "").orEmpty(),
@@ -62,5 +69,6 @@ class AcquisitionStore(context: Context) {
         const val KEY_QUALITY_PROFILE = "quality_profile_id"
         const val KEY_METADATA_PROFILE = "metadata_profile_id"
         const val KEY_ROOT_FOLDER = "root_folder_path"
+        const val KEY_LAST_HISTORY = "last_history_id"
     }
 }

@@ -318,6 +318,27 @@
     <string name="display_subtitle_body">Show artist and album under each title.</string>
     <string name="display_item_count">Item count</string>
     <string name="display_item_count_body">Show the number of items in each list.</string>
+
+    <!-- Layout editor -->
+    <string name="layout_title">Layout</string>
+    <string name="layout_open">Customize layout</string>
+    <string name="layout_open_body">Live preview, home rows, grid and player.</string>
+    <string name="layout_preview">Live preview</string>
+    <string name="layout_presets">Presets</string>
+    <string name="layout_preset_compact">Compact</string>
+    <string name="layout_preset_standard">Standard</string>
+    <string name="layout_preset_spacious">Spacious</string>
+    <string name="layout_home_rows">Home rows</string>
+    <string name="layout_home_rows_body">Arrows reorder, switches show or hide. Hidden rows drop to the bottom of this list.</string>
+    <string name="layout_move_up">Move up</string>
+    <string name="layout_move_down">Move down</string>
+    <string name="layout_library">Library grid</string>
+    <string name="layout_spacing">Spacing</string>
+    <string name="layout_spacing_value">%1$d dp</string>
+    <string name="layout_lists">Lists</string>
+    <string name="layout_player">Player</string>
+    <string name="layout_reset">Reset layout</string>
+    <string name="layout_reset_done">Layout reset</string>
     <string name="orientation_title">Screen orientation</string>
     <string name="orientation_auto">Auto</string>
     <string name="orientation_portrait">Portrait</string>
@@ -459,4 +480,6 @@
     <string name="requests_history">History</string>
     <string name="requests_refresh">Refresh</string>
     <string name="requests_empty">Nothing here.</string>
+    <string name="requests_imported">%1$d albums imported — update the library?</string>
+    <string name="requests_update_library">Update library</string>
 </resources>

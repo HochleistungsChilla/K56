@@ -61,7 +61,10 @@ import kotlinx.coroutines.launch
  * search/request dialog, so the host screen only needs to place it.
  */
 @Composable
-fun AcquisitionCard(modifier: Modifier = Modifier) {
+fun AcquisitionCard(
+    modifier: Modifier = Modifier,
+    onLibraryChanged: () -> Unit = {},
+) {
     val context = LocalContext.current
     val store = remember { AcquisitionStore(context.applicationContext) }
     val scope = rememberCoroutineScope()
@@ -262,6 +265,7 @@ fun AcquisitionCard(modifier: Modifier = Modifier) {
         RequestsDialog(
             config = draft(),
             onDismiss = { requestsOpen = false },
+            onLibraryChanged = onLibraryChanged,
         )
     }
 }

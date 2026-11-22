@@ -308,6 +308,27 @@
     <string name="display_subtitle_body">Zeigt Interpret und Album unter jedem Titel.</string>
     <string name="display_item_count">Anzahl anzeigen</string>
     <string name="display_item_count_body">Zeigt die Anzahl der Einträge in jeder Liste.</string>
+
+    <!-- Layout-Editor -->
+    <string name="layout_title">Layout</string>
+    <string name="layout_open">Layout bearbeiten</string>
+    <string name="layout_open_body">Live-Vorschau, Startzeilen, Raster und Player.</string>
+    <string name="layout_preview">Live-Vorschau</string>
+    <string name="layout_presets">Vorlagen</string>
+    <string name="layout_preset_compact">Kompakt</string>
+    <string name="layout_preset_standard">Standard</string>
+    <string name="layout_preset_spacious">Großzügig</string>
+    <string name="layout_home_rows">Startseite</string>
+    <string name="layout_home_rows_body">Pfeile sortieren, Schalter blenden ein oder aus. Ausgeblendete Zeilen rutschen ans Ende der Liste.</string>
+    <string name="layout_move_up">Nach oben</string>
+    <string name="layout_move_down">Nach unten</string>
+    <string name="layout_library">Bibliotheksraster</string>
+    <string name="layout_spacing">Abstand</string>
+    <string name="layout_spacing_value">%1$d dp</string>
+    <string name="layout_lists">Listen</string>
+    <string name="layout_player">Wiedergabe</string>
+    <string name="layout_reset">Layout zurücksetzen</string>
+    <string name="layout_reset_done">Layout zurückgesetzt</string>
     <string name="orientation_title">Bildschirm-Ausrichtung</string>
     <string name="orientation_auto">Auto</string>
     <string name="orientation_portrait">Hochformat</string>
@@ -449,4 +470,6 @@
     <string name="requests_history">Verlauf</string>
     <string name="requests_refresh">Aktualisieren</string>
     <string name="requests_empty">Nichts vorhanden.</string>
+    <string name="requests_imported">%1$d Alben importiert — Bibliothek aktualisieren?</string>
+    <string name="requests_update_library">Bibliothek aktualisieren</string>
 </resources>

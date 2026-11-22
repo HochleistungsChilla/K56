@@ -86,6 +86,7 @@ fun SettingsScreen(
     onOpenDsp: () -> Unit = {},
     onOpenCache: () -> Unit = {},
     onOpenSyncLog: () -> Unit = {},
+    onOpenLayout: () -> Unit = {},
 ) {
     val context = LocalContext.current
     var batteryExempt by remember { mutableStateOf(false) }
@@ -403,7 +404,10 @@ fun SettingsScreen(
             }
         }
 
-        AcquisitionCard(Modifier.padding(top = 14.dp))
+        AcquisitionCard(
+            modifier = Modifier.padding(top = 14.dp),
+            onLibraryChanged = { librarySync.start() },
+        )
 
         SettingsSection(
             title = stringResource(R.string.offline_section),
@@ -870,6 +874,22 @@ fun SettingsScreen(
             }
         }
 
+
+        SettingsSection(title = stringResource(R.string.layout_title)) {
+            Text(
+                stringResource(R.string.layout_open_body),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(Modifier.height(10.dp))
+            OutlinedButton(
+                onClick = onOpenLayout,
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(stringResource(R.string.layout_open))
+            }
+        }
 
         SettingsSection(
             title = stringResource(R.string.display_title),

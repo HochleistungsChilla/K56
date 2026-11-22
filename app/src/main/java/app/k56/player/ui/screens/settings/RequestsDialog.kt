@@ -30,12 +30,14 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import app.k56.player.R
 import app.k56.player.data.acquisition.AcquisitionConfig
+import app.k56.player.data.acquisition.AcquisitionStore
 import app.k56.player.data.acquisition.lidarr.LidarrAlbumDto
 import app.k56.player.data.acquisition.lidarr.LidarrException
 import app.k56.player.data.acquisition.lidarr.LidarrHistoryRecordDto
@@ -57,7 +59,10 @@ private enum class RequestsTab(val label: Int) {
 fun RequestsDialog(
     config: AcquisitionConfig,
     onDismiss: () -> Unit,
+    onLibraryChanged: () -> Unit = {},
 ) {
+    val context = LocalContext.current
+    val store = remember { AcquisitionStore(context.applicationContext) }
     val scope = rememberCoroutineScope()
     var tab by remember { mutableIntStateOf(0) }
     var loading by remember { mutableStateOf(false) }
@@ -66,6 +71,7 @@ fun RequestsDialog(
     var queue by remember { mutableStateOf<List<LidarrQueueRecordDto>>(emptyList()) }
     var history by remember { mutableStateOf<List<LidarrHistoryRecordDto>>(emptyList()) }
     var reloadKey by remember { mutableIntStateOf(0) }
+    var importedCount by remember { mutableIntStateOf(0) }
 
     LaunchedEffect(tab, reloadKey) {
         loading = true
@@ -75,7 +81,21 @@ fun RequestsDialog(
             when (RequestsTab.entries[tab]) {
                 RequestsTab.WANTED -> wanted = service.wanted().records
                 RequestsTab.QUEUE -> queue = service.queue().records
-                RequestsTab.HISTORY -> history = service.history().records
+                RequestsTab.HISTORY -> {
+                    val records = service.history().records
+                    history = records
+                    val lastSeen = store.lastHistoryId()
+                    if (lastSeen == 0) {
+                        // First look at this server: remember where we are, announce nothing.
+                        store.setLastHistoryId(records.maxOfOrNull { it.id ?: 0 } ?: 0)
+                        importedCount = 0
+                    } else {
+                        importedCount = records.count { record ->
+                            (record.id ?: 0) > lastSeen &&
+                                record.eventType?.contains("imported", ignoreCase = true) == true
+                        }
+                    }
+                }
             }
         } catch (e: LidarrException) {
             error = e.message
@@ -124,6 +144,24 @@ fun RequestsDialog(
                 error?.let {
                     Spacer(Modifier.height(10.dp))
                     Text(it, color = MaterialTheme.colorScheme.error)
+                }
+
+                if (importedCount > 0) {
+                    Spacer(Modifier.height(10.dp))
+                    Text(
+                        stringResource(R.string.requests_imported, importedCount),
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                    OutlinedButton(
+                        onClick = {
+                            val newest = history.maxOfOrNull { it.id ?: 0 } ?: 0
+                            store.setLastHistoryId(newest)
+                            importedCount = 0
+                            onLibraryChanged()
+                        },
+                    ) {
+                        Text(stringResource(R.string.requests_update_library))
+                    }
                 }
 
                 val empty = when (RequestsTab.entries[tab]) {
