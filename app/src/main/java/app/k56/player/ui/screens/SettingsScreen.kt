@@ -28,7 +28,6 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Button
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -74,6 +73,7 @@ import app.k56.player.ui.formatBytes
 import app.k56.player.ui.theme.ThemeController
 import app.k56.player.ui.theme.ThemeMode
 import app.k56.player.ui.screens.settings.AcquisitionCard
+import app.k56.player.ui.screens.settings.SettingsSection
 
 @Composable
 fun SettingsScreen(
@@ -243,471 +243,440 @@ fun SettingsScreen(
         Text(stringResource(R.string.nav_settings), style = MaterialTheme.typography.headlineMedium)
         Spacer(Modifier.height(18.dp))
 
-        Surface(
-            color = MaterialTheme.colorScheme.surfaceContainer,
-            shape = RoundedCornerShape(20.dp),
-            modifier = Modifier.fillMaxWidth(),
+        SettingsSection(
+            title = stringResource(R.string.settings_connection),
+            topSpacing = 0.dp,
         ) {
-            Column(Modifier.padding(16.dp)) {
-                Text(stringResource(R.string.settings_connection), style = MaterialTheme.typography.titleLarge)
-                Spacer(Modifier.height(8.dp))
-                InfoRow(stringResource(R.string.settings_type), session?.backend?.label ?: "—")
-                InfoRow(stringResource(R.string.settings_server), session?.serverName ?: "—")
-                InfoRow("LAN", session?.internalUrl ?: "—")
-                InfoRow("Internet", session?.externalUrl ?: "—")
-                InfoRow(stringResource(R.string.login_username), session?.userName ?: "—")
-                InfoRow(stringResource(R.string.settings_version), session?.serverVersion ?: "—")
-                InfoRow(
-                    stringResource(R.string.settings_network),
-                    when (networkStatus.transport) {
-                        NetworkTransport.WIFI -> stringResource(R.string.net_wifi)
-                        NetworkTransport.CELLULAR -> stringResource(R.string.net_cellular)
-                        NetworkTransport.ETHERNET -> stringResource(R.string.net_ethernet)
-                        NetworkTransport.OTHER -> stringResource(R.string.net_other)
-                        NetworkTransport.OFFLINE -> stringResource(R.string.net_offline)
-                    },
-                )
-                InfoRow(
-                    stringResource(R.string.settings_route),
-                    when {
-                        session?.backend == BackendKind.LOCAL -> stringResource(R.string.route_local)
-                        preferExternal -> stringResource(R.string.route_external_forced)
-                        networkStatus.transport == NetworkTransport.CELLULAR ->
-                            stringResource(R.string.route_external)
-                        session?.externalUrl.isNullOrBlank() -> stringResource(R.string.login_lan_label)
-                        session?.internalUrl.isNullOrBlank() -> stringResource(R.string.route_external)
-                        else -> stringResource(R.string.route_lan_if_available)
-                    },
-                )
-                Spacer(Modifier.height(12.dp))
-                OutlinedButton(
-                    onClick = { editOpen = true },
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Icon(Icons.Rounded.Edit, contentDescription = null)
-                    Spacer(Modifier.width(8.dp))
-                    Text(stringResource(R.string.settings_edit_connection))
-                }
+            InfoRow(stringResource(R.string.settings_type), session?.backend?.label ?: "—")
+            InfoRow(stringResource(R.string.settings_server), session?.serverName ?: "—")
+            InfoRow("LAN", session?.internalUrl ?: "—")
+            InfoRow("Internet", session?.externalUrl ?: "—")
+            InfoRow(stringResource(R.string.login_username), session?.userName ?: "—")
+            InfoRow(stringResource(R.string.settings_version), session?.serverVersion ?: "—")
+            InfoRow(
+                stringResource(R.string.settings_network),
+                when (networkStatus.transport) {
+                    NetworkTransport.WIFI -> stringResource(R.string.net_wifi)
+                    NetworkTransport.CELLULAR -> stringResource(R.string.net_cellular)
+                    NetworkTransport.ETHERNET -> stringResource(R.string.net_ethernet)
+                    NetworkTransport.OTHER -> stringResource(R.string.net_other)
+                    NetworkTransport.OFFLINE -> stringResource(R.string.net_offline)
+                },
+            )
+            InfoRow(
+                stringResource(R.string.settings_route),
+                when {
+                    session?.backend == BackendKind.LOCAL -> stringResource(R.string.route_local)
+                    preferExternal -> stringResource(R.string.route_external_forced)
+                    networkStatus.transport == NetworkTransport.CELLULAR ->
+                        stringResource(R.string.route_external)
+                    session?.externalUrl.isNullOrBlank() -> stringResource(R.string.login_lan_label)
+                    session?.internalUrl.isNullOrBlank() -> stringResource(R.string.route_external)
+                    else -> stringResource(R.string.route_lan_if_available)
+                },
+            )
+            Spacer(Modifier.height(12.dp))
+            OutlinedButton(
+                onClick = { editOpen = true },
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Icon(Icons.Rounded.Edit, contentDescription = null)
+                Spacer(Modifier.width(8.dp))
+                Text(stringResource(R.string.settings_edit_connection))
             }
         }
 
-        Surface(
-            color = MaterialTheme.colorScheme.surfaceContainer,
-            shape = RoundedCornerShape(20.dp),
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 14.dp),
+        SettingsSection(
+            title = stringResource(R.string.sync_title),
         ) {
-            Column(Modifier.padding(16.dp)) {
-                Text(stringResource(R.string.sync_title), style = MaterialTheme.typography.titleLarge)
-                Spacer(Modifier.height(8.dp))
-                val counts = libraryCounts
-                val serverCounts = libraryServerCounts
-                if (counts != null && serverCounts != null) {
-                    Text(
-                        text = stringResource(
-                            R.string.sync_counts,
-                            counts.songs,
-                            counts.albums,
-                            counts.artists,
-                        ),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    if (serverCounts.songs > 0 && serverCounts.songs != counts.songs) {
-                        Text(
-                            text = stringResource(R.string.sync_status, counts.songs, serverCounts.songs),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                }
-                val lastSync = lastSyncAt
-                if (lastSync > 0) {
-                    Text(
-                        text = stringResource(
-                            R.string.sync_last,
-                            java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault())
-                                .format(java.util.Date(lastSync)),
-                        ),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-                if (syncState.running) {
-                    Spacer(Modifier.height(6.dp))
-                    LinearProgressIndicator(Modifier.fillMaxWidth())
-                    Text(
-                        text = "${syncPhaseLabel(syncState.phase)}: ${syncState.loaded}/${syncState.total}",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-                syncState.error?.let { message ->
-                    Spacer(Modifier.height(6.dp))
-                    Text(
-                        text = message,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.error,
-                    )
-                }
-                Spacer(Modifier.height(10.dp))
-                Button(
-                    onClick = { librarySync.start(force = true) },
-                    enabled = !syncState.running,
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Text(stringResource(R.string.sync_now))
-                }
-                Spacer(Modifier.height(8.dp))
-                OutlinedButton(
-                    onClick = onOpenSyncLog,
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Text(stringResource(R.string.sync_log_open))
-                }
-                Spacer(Modifier.height(8.dp))
+            val counts = libraryCounts
+            val serverCounts = libraryServerCounts
+            if (counts != null && serverCounts != null) {
                 Text(
-                    text = stringResource(R.string.sync_legend),
+                    text = stringResource(
+                        R.string.sync_counts,
+                        counts.songs,
+                        counts.albums,
+                        counts.artists,
+                    ),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                if (serverCounts.songs > 0 && serverCounts.songs != counts.songs) {
+                    Text(
+                        text = stringResource(R.string.sync_status, counts.songs, serverCounts.songs),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+            val lastSync = lastSyncAt
+            if (lastSync > 0) {
+                Text(
+                    text = stringResource(
+                        R.string.sync_last,
+                        java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault())
+                            .format(java.util.Date(lastSync)),
+                    ),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                Spacer(Modifier.height(8.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Column(Modifier.weight(1f)) {
-                        Text(stringResource(R.string.auto_sync_title), style = MaterialTheme.typography.titleMedium)
-                        Text(
-                            stringResource(R.string.auto_sync_body),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                    Spacer(Modifier.width(12.dp))
-                    Switch(
-                        checked = autoSync,
-                        onCheckedChange = { settingsStore.setAutoSync(it) },
-                    )
-                }
             }
-        }
-
-        Surface(
-            color = MaterialTheme.colorScheme.surfaceContainer,
-            shape = RoundedCornerShape(20.dp),
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 14.dp),
-        ) {
-            Column(Modifier.padding(16.dp)) {
+            if (syncState.running) {
+                Spacer(Modifier.height(6.dp))
+                LinearProgressIndicator(Modifier.fillMaxWidth())
                 Text(
-                    stringResource(R.string.battery_title),
-                    style = MaterialTheme.typography.titleLarge,
+                    text = "${syncPhaseLabel(syncState.phase)}: ${syncState.loaded}/${syncState.total}",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+            }
+            syncState.error?.let { message ->
                 Spacer(Modifier.height(6.dp))
                 Text(
-                    stringResource(R.string.battery_body),
+                    text = message,
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = MaterialTheme.colorScheme.error,
                 )
-                Spacer(Modifier.height(10.dp))
-                OutlinedButton(
-                    onClick = { requestBatteryExemption(context) },
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = !batteryExempt,
-                ) {
+            }
+            Spacer(Modifier.height(10.dp))
+            Button(
+                onClick = { librarySync.start(force = true) },
+                enabled = !syncState.running,
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(stringResource(R.string.sync_now))
+            }
+            Spacer(Modifier.height(8.dp))
+            OutlinedButton(
+                onClick = onOpenSyncLog,
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(stringResource(R.string.sync_log_open))
+            }
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text = stringResource(R.string.sync_legend),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(Modifier.height(8.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text(stringResource(R.string.auto_sync_title), style = MaterialTheme.typography.titleMedium)
                     Text(
-                        stringResource(
-                            if (batteryExempt) R.string.battery_done else R.string.battery_disable,
-                        ),
+                        stringResource(R.string.auto_sync_body),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
+                Spacer(Modifier.width(12.dp))
+                Switch(
+                    checked = autoSync,
+                    onCheckedChange = { settingsStore.setAutoSync(it) },
+                )
+            }
+        }
+
+        SettingsSection(
+            title = stringResource(R.string.battery_title),
+            titleSpacing = 6.dp,
+        ) {
+            Text(
+                stringResource(R.string.battery_body),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(Modifier.height(10.dp))
+            OutlinedButton(
+                onClick = { requestBatteryExemption(context) },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !batteryExempt,
+            ) {
+                Text(
+                    stringResource(
+                        if (batteryExempt) R.string.battery_done else R.string.battery_disable,
+                    ),
+                )
             }
         }
 
         AcquisitionCard(Modifier.padding(top = 14.dp))
 
-        Surface(
-            color = MaterialTheme.colorScheme.surfaceContainer,
-            shape = RoundedCornerShape(20.dp),
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 14.dp),
+        SettingsSection(
+            title = stringResource(R.string.offline_section),
         ) {
-            Column(Modifier.padding(16.dp)) {
-                Text(stringResource(R.string.offline_section), style = MaterialTheme.typography.titleLarge)
-                Spacer(Modifier.height(8.dp))
-                InfoRow(stringResource(R.string.offline_tracks), offlineTracks.size.toString())
-                InfoRow("Speicher", formatBytes(offlineTracks.sumOf { it.bytes }))
+            InfoRow(stringResource(R.string.offline_tracks), offlineTracks.size.toString())
+            InfoRow("Speicher", formatBytes(offlineTracks.sumOf { it.bytes }))
 
-                if (queueEntries.isNotEmpty() || downloadQueue.running) {
-                    Spacer(Modifier.height(12.dp))
-                    Text(stringResource(R.string.download_queue_title), style = MaterialTheme.typography.titleMedium)
-                    Spacer(Modifier.height(6.dp))
-                    val wifiWaiting = wifiOnlyDownloads &&
-                        networkStatus.transport != NetworkTransport.WIFI &&
-                        networkStatus.transport != NetworkTransport.ETHERNET
-                    val pausedLabel = when {
-                        downloadPaused -> stringResource(R.string.download_queue_paused)
-                        wifiWaiting && downloadQueue.running -> stringResource(R.string.download_queue_waiting_wifi)
-                        else -> null
-                    }
-                    Text(
-                        buildString {
-                            append(
-                                stringResource(
-                                    R.string.download_queue_progress,
-                                    downloadQueue.done,
-                                    downloadQueue.total,
-                                    downloadQueue.active,
-                                ),
-                            )
-                            if (pausedLabel != null) append(" · ").append(pausedLabel)
-                        },
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    Spacer(Modifier.height(6.dp))
-                    queueEntries.forEach { entry ->
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 3.dp),
-                        ) {
-                            Column(Modifier.weight(1f)) {
-                                Text(entry.title, maxLines = 1, style = MaterialTheme.typography.bodyMedium)
-                                Text(
-                                    queueStateLabel(entry.state),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                            }
-                            if (entry.state == DownloadState.ACTIVE) {
-                                LinearProgressIndicator(
-                                    progress = { downloads[entry.trackId] ?: 0f },
-                                    modifier = Modifier
-                                        .width(64.dp)
-                                        .height(4.dp),
-                                )
-                            }
-                        }
-                    }
-                    Spacer(Modifier.height(4.dp))
-                    Row {
-                        TextButton(onClick = { if (downloadPaused) offlineStore.resume() else offlineStore.pause() }) {
-                            Text(stringResource(if (downloadPaused) R.string.download_queue_resume else R.string.download_queue_pause))
-                        }
-                        if (downloadQueue.failed > 0) {
-                            TextButton(onClick = { offlineStore.retryFailed() }) {
-                                Text(stringResource(R.string.download_queue_retry))
-                            }
-                        }
-                        if (downloadQueue.done > 0) {
-                            TextButton(onClick = { offlineStore.clearFinished() }) {
-                                Text(stringResource(R.string.download_queue_clear_finished))
-                            }
-                        }
-                    }
-                }
-
+            if (queueEntries.isNotEmpty() || downloadQueue.running) {
                 Spacer(Modifier.height(12.dp))
-                Text(
-                    stringResource(R.string.storage_location),
-                    style = MaterialTheme.typography.titleMedium,
-                )
+                Text(stringResource(R.string.download_queue_title), style = MaterialTheme.typography.titleMedium)
                 Spacer(Modifier.height(6.dp))
-                Row(
-                    modifier = Modifier.horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    FilterChip(
-                        selected = storageLocation == StorageLocation.INTERNAL,
-                        onClick = { settingsStore.setStorageLocation(StorageLocation.INTERNAL) },
-                        label = { Text(stringResource(R.string.storage_internal)) },
-                    )
-                    FilterChip(
-                        selected = storageLocation == StorageLocation.EXTERNAL,
-                        onClick = { if (hasSdCard) settingsStore.setStorageLocation(StorageLocation.EXTERNAL) },
-                        enabled = hasSdCard,
-                        label = { Text(stringResource(R.string.storage_external)) },
-                    )
+                val wifiWaiting = wifiOnlyDownloads &&
+                    networkStatus.transport != NetworkTransport.WIFI &&
+                    networkStatus.transport != NetworkTransport.ETHERNET
+                val pausedLabel = when {
+                    downloadPaused -> stringResource(R.string.download_queue_paused)
+                    wifiWaiting && downloadQueue.running -> stringResource(R.string.download_queue_waiting_wifi)
+                    else -> null
                 }
-                if (!hasSdCard) {
-                    Text(
-                        stringResource(R.string.storage_no_sd),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                } else {
-                    val dir = app.k56.player.data.offline.OfflineStore
-                        .directoryFor(context, storageLocation)
-                    Text(
-                        stringResource(
-                            R.string.storage_free,
-                            formatBytes(SettingsStore.freeBytes(dir)),
-                        ),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-
-                Spacer(Modifier.height(14.dp))
                 Text(
-                    stringResource(R.string.cache_title),
-                    style = MaterialTheme.typography.titleMedium,
-                )
-                Spacer(Modifier.height(6.dp))
-                Row(
-                    modifier = Modifier.horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    listOf(0, 128, 256, 512, 1024, -1).forEach { mb ->
-                        FilterChip(
-                            selected = cacheLimitMb == mb,
-                            onClick = { settingsStore.setCacheLimitMb(mb) },
-                            label = {
-                                Text(
-                                    when (mb) {
-                                        0 -> stringResource(R.string.cache_off)
-                                        -1 -> stringResource(R.string.cache_unlimited)
-                                        else -> "$mb MiB"
-                                    },
-                                )
-                            },
+                    buildString {
+                        append(
+                            stringResource(
+                                R.string.download_queue_progress,
+                                downloadQueue.done,
+                                downloadQueue.total,
+                                downloadQueue.active,
+                            ),
                         )
-                    }
-                }
-                Text(
-                    stringResource(R.string.cache_hint),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-
-                Spacer(Modifier.height(14.dp))
-                Text(
-                    stringResource(R.string.download_quality_title),
-                    style = MaterialTheme.typography.titleMedium,
-                )
-                Spacer(Modifier.height(6.dp))
-                Row(
-                    modifier = Modifier.horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    DownloadQuality.entries.forEach { entry ->
-                        FilterChip(
-                            selected = downloadQuality == entry,
-                            onClick = { settingsStore.setDownloadQuality(entry) },
-                            label = {
-                                Text(
-                                    when (entry) {
-                                        DownloadQuality.ORIGINAL ->
-                                            stringResource(R.string.quality_original)
-                                        else -> "${entry.kbps} kbps"
-                                    },
-                                )
-                            },
-                        )
-                    }
-                }
-                Spacer(Modifier.height(8.dp))
-                Row(
-                    modifier = Modifier.horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    DownloadFormat.entries.forEach { entry ->
-                        FilterChip(
-                            selected = downloadFormat == entry,
-                            onClick = { settingsStore.setDownloadFormat(entry) },
-                            enabled = downloadQuality != DownloadQuality.ORIGINAL,
-                            label = {
-                                Text(
-                                    when (entry) {
-                                        DownloadFormat.AAC -> "AAC (m4a)"
-                                        DownloadFormat.MP3 -> "MP3"
-                                    },
-                                )
-                            },
-                        )
-                    }
-                }
-                Text(
-                    text = if (downloadQuality == DownloadQuality.ORIGINAL) {
-                        stringResource(R.string.download_quality_original_hint)
-                    } else {
-                        stringResource(R.string.download_quality_transcode_hint, downloadQuality.kbps)
+                        if (pausedLabel != null) append(" · ").append(pausedLabel)
                     },
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                Spacer(Modifier.height(8.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Column(Modifier.weight(1f)) {
-                        Text(stringResource(R.string.wifi_only_title), style = MaterialTheme.typography.titleMedium)
-                        Text(
-                            stringResource(R.string.wifi_only_body),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
+                Spacer(Modifier.height(6.dp))
+                queueEntries.forEach { entry ->
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 3.dp),
+                    ) {
+                        Column(Modifier.weight(1f)) {
+                            Text(entry.title, maxLines = 1, style = MaterialTheme.typography.bodyMedium)
+                            Text(
+                                queueStateLabel(entry.state),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        if (entry.state == DownloadState.ACTIVE) {
+                            LinearProgressIndicator(
+                                progress = { downloads[entry.trackId] ?: 0f },
+                                modifier = Modifier
+                                    .width(64.dp)
+                                    .height(4.dp),
+                            )
+                        }
                     }
-                    Switch(
-                        checked = wifiOnlyDownloads,
-                        onCheckedChange = { settingsStore.setWifiOnlyDownloads(it) },
-                    )
                 }
                 Spacer(Modifier.height(4.dp))
-                Text(
-                    stringResource(R.string.concurrent_downloads_title),
-                    style = MaterialTheme.typography.titleMedium,
-                )
-                Row(
-                    modifier = Modifier.horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    (1..5).forEach { n ->
-                        FilterChip(
-                            selected = concurrentDownloads == n,
-                            onClick = { settingsStore.setConcurrentDownloads(n) },
-                            label = { Text("$n") },
-                        )
+                Row {
+                    TextButton(onClick = { if (downloadPaused) offlineStore.resume() else offlineStore.pause() }) {
+                        Text(stringResource(if (downloadPaused) R.string.download_queue_resume else R.string.download_queue_pause))
+                    }
+                    if (downloadQueue.failed > 0) {
+                        TextButton(onClick = { offlineStore.retryFailed() }) {
+                            Text(stringResource(R.string.download_queue_retry))
+                        }
+                    }
+                    if (downloadQueue.done > 0) {
+                        TextButton(onClick = { offlineStore.clearFinished() }) {
+                            Text(stringResource(R.string.download_queue_clear_finished))
+                        }
                     }
                 }
-                Spacer(Modifier.height(8.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Column(Modifier.weight(1f)) {
-                        Text(stringResource(R.string.auto_cache_favorites_title), style = MaterialTheme.typography.titleMedium)
-                        Text(
-                            stringResource(R.string.auto_cache_favorites_body),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                    Switch(
-                        checked = autoCacheFavorites,
-                        onCheckedChange = { settingsStore.setAutoCacheFavorites(it) },
+            }
+
+            Spacer(Modifier.height(12.dp))
+            Text(
+                stringResource(R.string.storage_location),
+                style = MaterialTheme.typography.titleMedium,
+            )
+            Spacer(Modifier.height(6.dp))
+            Row(
+                modifier = Modifier.horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                FilterChip(
+                    selected = storageLocation == StorageLocation.INTERNAL,
+                    onClick = { settingsStore.setStorageLocation(StorageLocation.INTERNAL) },
+                    label = { Text(stringResource(R.string.storage_internal)) },
+                )
+                FilterChip(
+                    selected = storageLocation == StorageLocation.EXTERNAL,
+                    onClick = { if (hasSdCard) settingsStore.setStorageLocation(StorageLocation.EXTERNAL) },
+                    enabled = hasSdCard,
+                    label = { Text(stringResource(R.string.storage_external)) },
+                )
+            }
+            if (!hasSdCard) {
+                Text(
+                    stringResource(R.string.storage_no_sd),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            } else {
+                val dir = app.k56.player.data.offline.OfflineStore
+                    .directoryFor(context, storageLocation)
+                Text(
+                    stringResource(
+                        R.string.storage_free,
+                        formatBytes(SettingsStore.freeBytes(dir)),
+                    ),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+
+            Spacer(Modifier.height(14.dp))
+            Text(
+                stringResource(R.string.cache_title),
+                style = MaterialTheme.typography.titleMedium,
+            )
+            Spacer(Modifier.height(6.dp))
+            Row(
+                modifier = Modifier.horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                listOf(0, 128, 256, 512, 1024, -1).forEach { mb ->
+                    FilterChip(
+                        selected = cacheLimitMb == mb,
+                        onClick = { settingsStore.setCacheLimitMb(mb) },
+                        label = {
+                            Text(
+                                when (mb) {
+                                    0 -> stringResource(R.string.cache_off)
+                                    -1 -> stringResource(R.string.cache_unlimited)
+                                    else -> "$mb MiB"
+                                },
+                            )
+                        },
                     )
                 }
-                Spacer(Modifier.height(10.dp))
-                OutlinedButton(onClick = onOpenCache, modifier = Modifier.fillMaxWidth()) {
-                    Text(stringResource(R.string.cache_manager_title))
+            }
+            Text(
+                stringResource(R.string.cache_hint),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+
+            Spacer(Modifier.height(14.dp))
+            Text(
+                stringResource(R.string.download_quality_title),
+                style = MaterialTheme.typography.titleMedium,
+            )
+            Spacer(Modifier.height(6.dp))
+            Row(
+                modifier = Modifier.horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                DownloadQuality.entries.forEach { entry ->
+                    FilterChip(
+                        selected = downloadQuality == entry,
+                        onClick = { settingsStore.setDownloadQuality(entry) },
+                        label = {
+                            Text(
+                                when (entry) {
+                                    DownloadQuality.ORIGINAL ->
+                                        stringResource(R.string.quality_original)
+                                    else -> "${entry.kbps} kbps"
+                                },
+                            )
+                        },
+                    )
                 }
-                if (offlineTracks.isEmpty()) {
+            }
+            Spacer(Modifier.height(8.dp))
+            Row(
+                modifier = Modifier.horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                DownloadFormat.entries.forEach { entry ->
+                    FilterChip(
+                        selected = downloadFormat == entry,
+                        onClick = { settingsStore.setDownloadFormat(entry) },
+                        enabled = downloadQuality != DownloadQuality.ORIGINAL,
+                        label = {
+                            Text(
+                                when (entry) {
+                                    DownloadFormat.AAC -> "AAC (m4a)"
+                                    DownloadFormat.MP3 -> "MP3"
+                                },
+                            )
+                        },
+                    )
+                }
+            }
+            Text(
+                text = if (downloadQuality == DownloadQuality.ORIGINAL) {
+                    stringResource(R.string.download_quality_original_hint)
+                } else {
+                    stringResource(R.string.download_quality_transcode_hint, downloadQuality.kbps)
+                },
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(Modifier.height(8.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text(stringResource(R.string.wifi_only_title), style = MaterialTheme.typography.titleMedium)
                     Text(
-                        stringResource(R.string.offline_empty),
-                        style = MaterialTheme.typography.bodyMedium,
+                        stringResource(R.string.wifi_only_body),
+                        style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                } else {
-                    Spacer(Modifier.height(10.dp))
-                    OutlinedButton(
-                        onClick = { offlineTracks.map { it.id }.forEach(offlineStore::delete) },
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        Icon(Icons.Rounded.DeleteOutline, contentDescription = null)
-                        Spacer(Modifier.width(8.dp))
-                        Text(stringResource(R.string.offline_clear))
-                    }
+                }
+                Switch(
+                    checked = wifiOnlyDownloads,
+                    onCheckedChange = { settingsStore.setWifiOnlyDownloads(it) },
+                )
+            }
+            Spacer(Modifier.height(4.dp))
+            Text(
+                stringResource(R.string.concurrent_downloads_title),
+                style = MaterialTheme.typography.titleMedium,
+            )
+            Row(
+                modifier = Modifier.horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                (1..5).forEach { n ->
+                    FilterChip(
+                        selected = concurrentDownloads == n,
+                        onClick = { settingsStore.setConcurrentDownloads(n) },
+                        label = { Text("$n") },
+                    )
+                }
+            }
+            Spacer(Modifier.height(8.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text(stringResource(R.string.auto_cache_favorites_title), style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        stringResource(R.string.auto_cache_favorites_body),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Switch(
+                    checked = autoCacheFavorites,
+                    onCheckedChange = { settingsStore.setAutoCacheFavorites(it) },
+                )
+            }
+            Spacer(Modifier.height(10.dp))
+            OutlinedButton(onClick = onOpenCache, modifier = Modifier.fillMaxWidth()) {
+                Text(stringResource(R.string.cache_manager_title))
+            }
+            if (offlineTracks.isEmpty()) {
+                Text(
+                    stringResource(R.string.offline_empty),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            } else {
+                Spacer(Modifier.height(10.dp))
+                OutlinedButton(
+                    onClick = { offlineTracks.map { it.id }.forEach(offlineStore::delete) },
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Icon(Icons.Rounded.DeleteOutline, contentDescription = null)
+                    Spacer(Modifier.width(8.dp))
+                    Text(stringResource(R.string.offline_clear))
                 }
             }
         }
@@ -745,17 +714,10 @@ fun SettingsScreen(
             )
         }
 
-        Spacer(Modifier.height(14.dp))
-
-        Surface(
-            color = MaterialTheme.colorScheme.surfaceContainer,
-            shape = RoundedCornerShape(20.dp),
-            modifier = Modifier.fillMaxWidth(),
-        ) {
+        SettingsSection {
             Row(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
+                    .fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Column(Modifier.weight(1f)) {
@@ -777,17 +739,10 @@ fun SettingsScreen(
             }
         }
 
-        Spacer(Modifier.height(14.dp))
-
-        Surface(
-            color = MaterialTheme.colorScheme.surfaceContainer,
-            shape = RoundedCornerShape(20.dp),
-            modifier = Modifier.fillMaxWidth(),
-        ) {
+        SettingsSection {
             Row(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
+                    .fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Column(Modifier.weight(1f)) {
@@ -809,17 +764,10 @@ fun SettingsScreen(
             }
         }
 
-        Spacer(Modifier.height(14.dp))
-
-        Surface(
-            color = MaterialTheme.colorScheme.surfaceContainer,
-            shape = RoundedCornerShape(20.dp),
-            modifier = Modifier.fillMaxWidth(),
-        ) {
+        SettingsSection {
             Row(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
+                    .fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Column(Modifier.weight(1f)) {
@@ -841,482 +789,401 @@ fun SettingsScreen(
             }
         }
 
-        Spacer(Modifier.height(14.dp))
 
-        Surface(
-            color = MaterialTheme.colorScheme.surfaceContainer,
-            shape = RoundedCornerShape(20.dp),
-            modifier = Modifier.fillMaxWidth(),
+        SettingsSection(
         ) {
-            Column(Modifier.padding(16.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Column(Modifier.weight(1f)) {
-                        Text(stringResource(R.string.autoplay_title), style = MaterialTheme.typography.titleMedium)
-                        Text(
-                            stringResource(R.string.autoplay_body),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                    Switch(
-                        checked = autoplay,
-                        onCheckedChange = { settingsStore.setAutoplay(it) },
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text(stringResource(R.string.autoplay_title), style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        stringResource(R.string.autoplay_body),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-                Spacer(Modifier.height(6.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Column(Modifier.weight(1f)) {
-                        Text(stringResource(R.string.circular_queue_title), style = MaterialTheme.typography.titleMedium)
-                        Text(
-                            stringResource(R.string.circular_queue_body),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                    Switch(
-                        checked = circularQueue,
-                        onCheckedChange = { settingsStore.setCircularQueue(it) },
+                Switch(
+                    checked = autoplay,
+                    onCheckedChange = { settingsStore.setAutoplay(it) },
+                )
+            }
+            Spacer(Modifier.height(6.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text(stringResource(R.string.circular_queue_title), style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        stringResource(R.string.circular_queue_body),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Switch(
+                    checked = circularQueue,
+                    onCheckedChange = { settingsStore.setCircularQueue(it) },
+                )
+            }
+        }
+
+
+        SettingsSection(
+            title = stringResource(R.string.resume_title),
+            titleSpacing = 0.dp,
+        ) {
+            Text(
+                stringResource(R.string.resume_body),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(Modifier.height(8.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text(stringResource(R.string.save_np_title), style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        stringResource(R.string.save_np_body),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Switch(
+                    checked = saveNowPlaying,
+                    onCheckedChange = { settingsStore.setSaveNowPlaying(it) },
+                )
+            }
+            Spacer(Modifier.height(10.dp))
+            Text(stringResource(R.string.resume_threshold), style = MaterialTheme.typography.titleMedium)
+            Spacer(Modifier.height(6.dp))
+            Row(
+                modifier = Modifier.horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                listOf(0, 5, 15, 30, 60).forEach { seconds ->
+                    FilterChip(
+                        selected = resumeThresholdSeconds == seconds,
+                        onClick = { settingsStore.setResumeThresholdSeconds(seconds) },
+                        label = {
+                            Text(
+                                if (seconds == 0) stringResource(R.string.resume_off)
+                                else stringResource(R.string.resume_seconds, seconds),
+                            )
+                        },
                     )
                 }
             }
         }
 
-        Spacer(Modifier.height(14.dp))
 
-        Surface(
-            color = MaterialTheme.colorScheme.surfaceContainer,
-            shape = RoundedCornerShape(20.dp),
-            modifier = Modifier.fillMaxWidth(),
+        SettingsSection(
+            title = stringResource(R.string.display_title),
         ) {
-            Column(Modifier.padding(16.dp)) {
-                Text(stringResource(R.string.resume_title), style = MaterialTheme.typography.titleLarge)
-                Text(
-                    stringResource(R.string.resume_body),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Spacer(Modifier.height(8.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Column(Modifier.weight(1f)) {
-                        Text(stringResource(R.string.save_np_title), style = MaterialTheme.typography.titleMedium)
-                        Text(
-                            stringResource(R.string.save_np_body),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                    Switch(
-                        checked = saveNowPlaying,
-                        onCheckedChange = { settingsStore.setSaveNowPlaying(it) },
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text(stringResource(R.string.display_keep_on), style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        stringResource(R.string.display_keep_on_body),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-                Spacer(Modifier.height(10.dp))
-                Text(stringResource(R.string.resume_threshold), style = MaterialTheme.typography.titleMedium)
-                Spacer(Modifier.height(6.dp))
-                Row(
-                    modifier = Modifier.horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                Switch(
+                    checked = keepScreenOn,
+                    onCheckedChange = { settingsStore.setKeepScreenOn(it) },
+                )
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text(stringResource(R.string.display_numbers), style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        stringResource(R.string.display_numbers_body),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Switch(
+                    checked = showTrackNumbers,
+                    onCheckedChange = { settingsStore.setShowTrackNumbers(it) },
+                )
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text(stringResource(R.string.display_subtitle), style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        stringResource(R.string.display_subtitle_body),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Switch(
+                    checked = showTrackSubtitle,
+                    onCheckedChange = { settingsStore.setShowTrackSubtitle(it) },
+                )
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text(stringResource(R.string.display_item_count), style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        stringResource(R.string.display_item_count_body),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Switch(
+                    checked = showItemCount,
+                    onCheckedChange = { settingsStore.setShowItemCount(it) },
+                )
+            }
+            Spacer(Modifier.height(8.dp))
+            Text(stringResource(R.string.display_columns), style = MaterialTheme.typography.titleMedium)
+            Spacer(Modifier.height(4.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf(0, 2, 3, 4).forEach { value ->
+                    FilterChip(
+                        selected = libraryColumns == value,
+                        onClick = { settingsStore.setLibraryColumns(value) },
+                        label = {
+                            Text(
+                                if (value == 0) stringResource(R.string.display_columns_auto)
+                                else value.toString(),
+                            )
+                        },
+                    )
+                }
+            }
+            Spacer(Modifier.height(10.dp))
+            Text(stringResource(R.string.orientation_title), style = MaterialTheme.typography.titleMedium)
+            Spacer(Modifier.height(4.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                ScreenOrientation.entries.forEach { entry ->
+                    FilterChip(
+                        selected = screenOrientation == entry,
+                        onClick = { settingsStore.setScreenOrientation(entry) },
+                        label = { Text(stringResource(orientationLabel(entry))) },
+                    )
+                }
+            }
+            Spacer(Modifier.height(10.dp))
+            Text(stringResource(R.string.grid_spacing_title), style = MaterialTheme.typography.titleMedium)
+            Spacer(Modifier.height(4.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf(4, 8, 12, 16).forEach { value ->
+                    FilterChip(
+                        selected = gridSpacing == value,
+                        onClick = { settingsStore.setGridSpacing(value) },
+                        label = { Text("$value dp") },
+                    )
+                }
+            }
+        }
+
+
+        SettingsSection(
+            title = stringResource(R.string.np_options_title),
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text(stringResource(R.string.np_hide_favorite), style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        stringResource(R.string.np_hide_favorite_body),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Switch(
+                    checked = showNowPlayingFavorite,
+                    onCheckedChange = { settingsStore.setShowNowPlayingFavorite(it) },
+                )
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text(stringResource(R.string.np_fit_cover), style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        stringResource(R.string.np_fit_cover_body),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Switch(
+                    checked = fitCover,
+                    onCheckedChange = { settingsStore.setFitCover(it) },
+                )
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text(stringResource(R.string.np_compact), style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        stringResource(R.string.np_compact_body),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Switch(
+                    checked = compactControls,
+                    onCheckedChange = { settingsStore.setCompactControls(it) },
+                )
+            }
+        }
+
+
+        SettingsSection(
+            title = stringResource(R.string.np_buttons_title),
+        ) {
+            PlayerButtonSwitch(stringResource(R.string.np_show_shuffle), showShuffleButton) { settingsStore.setShowShuffleButton(it) }
+            PlayerButtonSwitch(stringResource(R.string.np_show_repeat), showRepeatButton) { settingsStore.setShowRepeatButton(it) }
+            PlayerButtonSwitch(stringResource(R.string.np_show_queue), showQueueButton) { settingsStore.setShowQueueButton(it) }
+            PlayerButtonSwitch(stringResource(R.string.np_show_dsp), showDspButton) { settingsStore.setShowDspButton(it) }
+            PlayerButtonSwitch(stringResource(R.string.np_show_sleep), showSleepTimerButton) { settingsStore.setShowSleepTimerButton(it) }
+        }
+
+
+        SettingsSection(
+            title = stringResource(R.string.np_style_title),
+        ) {
+            Text(stringResource(R.string.np_style_label), style = MaterialTheme.typography.titleMedium)
+            Spacer(Modifier.height(4.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                PlayerStyle.entries.forEach { entry ->
+                    FilterChip(
+                        selected = playerStyle == entry,
+                        onClick = { settingsStore.setPlayerStyle(entry) },
+                        label = { Text(stringResource(playerStyleLabel(entry))) },
+                    )
+                }
+            }
+            Spacer(Modifier.height(10.dp))
+            Text(stringResource(R.string.np_cover_radius), style = MaterialTheme.typography.titleMedium)
+            Spacer(Modifier.height(4.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf(0, 8, 16, 24, 28).forEach { value ->
+                    FilterChip(
+                        selected = coverCornerRadius == value,
+                        onClick = { settingsStore.setCoverCornerRadius(value) },
+                        label = { Text("$value dp") },
+                    )
+                }
+            }
+            Spacer(Modifier.height(10.dp))
+            Text(stringResource(R.string.np_cover_margin), style = MaterialTheme.typography.titleMedium)
+            Spacer(Modifier.height(4.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf(0, 8, 16, 24).forEach { value ->
+                    FilterChip(
+                        selected = coverMarginDp == value,
+                        onClick = { settingsStore.setCoverMarginDp(value) },
+                        label = { Text("$value dp") },
+                    )
+                }
+            }
+            Spacer(Modifier.height(10.dp))
+            Text(stringResource(R.string.np_background_title), style = MaterialTheme.typography.titleMedium)
+            Spacer(Modifier.height(4.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                PlayerBackground.entries.forEach { entry ->
+                    FilterChip(
+                        selected = playerBackground == entry,
+                        onClick = { settingsStore.setPlayerBackground(entry) },
+                        label = { Text(stringResource(playerBackgroundLabel(entry))) },
+                    )
+                }
+            }
+            Spacer(Modifier.height(10.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text(stringResource(R.string.np_animated_progress), style = MaterialTheme.typography.titleMedium)
+                }
+                Switch(
+                    checked = animatedProgress,
+                    onCheckedChange = { settingsStore.setAnimatedProgress(it) },
+                )
+            }
+        }
+
+
+        SettingsSection(
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text(stringResource(R.string.articles_title), style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        stringResource(R.string.articles_body),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Switch(
+                    checked = ignoreArticles,
+                    onCheckedChange = { settingsStore.setIgnoreArticles(it) },
+                )
+            }
+        }
+
+
+        SettingsSection(
+            title = stringResource(R.string.settings_theme_title),
+            titleSpacing = 10.dp,
+        ) {
+            Row(
+                modifier = Modifier.horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                ThemeMode.entries.forEach { entry ->
+                    FilterChip(
+                        selected = ThemeController.mode == entry,
+                        onClick = { ThemeController.set(context, entry) },
+                        label = { Text(stringResource(themeLabel(entry))) },
+                    )
+                }
+            }
+        }
+
+
+        SettingsSection(
+            title = stringResource(R.string.settings_home_greeting),
+            titleSpacing = 10.dp,
+        ) {
+            Row(
+                modifier = Modifier.horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                HomeGreeting.entries.forEach { entry ->
+                    FilterChip(
+                        selected = homeGreeting == entry,
+                        onClick = { settingsStore.setHomeGreeting(entry) },
+                        label = { Text(stringResource(homeGreetingLabel(entry))) },
+                    )
+                }
+            }
+        }
+
+
+        SettingsSection(
+            title = stringResource(R.string.dsp_title),
+            titleSpacing = 0.dp,
+        ) {
+            Text(
+                stringResource(R.string.dsp_settings_body),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(Modifier.height(10.dp))
+            OutlinedButton(onClick = onOpenDsp, modifier = Modifier.fillMaxWidth()) {
+                Text(stringResource(R.string.dsp_open))
+            }
+        }
+
+
+        SettingsSection(
+            title = stringResource(R.string.backup_title),
+        ) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedButton(
+                    onClick = { exportPasswordOpen = true },
+                    modifier = Modifier.weight(1f),
                 ) {
-                    listOf(0, 5, 15, 30, 60).forEach { seconds ->
-                        FilterChip(
-                            selected = resumeThresholdSeconds == seconds,
-                            onClick = { settingsStore.setResumeThresholdSeconds(seconds) },
-                            label = {
-                                Text(
-                                    if (seconds == 0) stringResource(R.string.resume_off)
-                                    else stringResource(R.string.resume_seconds, seconds),
-                                )
-                            },
-                        )
-                    }
+                    Text(stringResource(R.string.backup_export))
                 }
-            }
-        }
-
-        Spacer(Modifier.height(14.dp))
-
-        Surface(
-            color = MaterialTheme.colorScheme.surfaceContainer,
-            shape = RoundedCornerShape(20.dp),
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Column(Modifier.padding(16.dp)) {
-                Text(
-                    stringResource(R.string.display_title),
-                    style = MaterialTheme.typography.titleLarge,
-                )
-                Spacer(Modifier.height(8.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Column(Modifier.weight(1f)) {
-                        Text(stringResource(R.string.display_keep_on), style = MaterialTheme.typography.titleMedium)
-                        Text(
-                            stringResource(R.string.display_keep_on_body),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                    Switch(
-                        checked = keepScreenOn,
-                        onCheckedChange = { settingsStore.setKeepScreenOn(it) },
-                    )
-                }
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Column(Modifier.weight(1f)) {
-                        Text(stringResource(R.string.display_numbers), style = MaterialTheme.typography.titleMedium)
-                        Text(
-                            stringResource(R.string.display_numbers_body),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                    Switch(
-                        checked = showTrackNumbers,
-                        onCheckedChange = { settingsStore.setShowTrackNumbers(it) },
-                    )
-                }
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Column(Modifier.weight(1f)) {
-                        Text(stringResource(R.string.display_subtitle), style = MaterialTheme.typography.titleMedium)
-                        Text(
-                            stringResource(R.string.display_subtitle_body),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                    Switch(
-                        checked = showTrackSubtitle,
-                        onCheckedChange = { settingsStore.setShowTrackSubtitle(it) },
-                    )
-                }
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Column(Modifier.weight(1f)) {
-                        Text(stringResource(R.string.display_item_count), style = MaterialTheme.typography.titleMedium)
-                        Text(
-                            stringResource(R.string.display_item_count_body),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                    Switch(
-                        checked = showItemCount,
-                        onCheckedChange = { settingsStore.setShowItemCount(it) },
-                    )
-                }
-                Spacer(Modifier.height(8.dp))
-                Text(stringResource(R.string.display_columns), style = MaterialTheme.typography.titleMedium)
-                Spacer(Modifier.height(4.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    listOf(0, 2, 3, 4).forEach { value ->
-                        FilterChip(
-                            selected = libraryColumns == value,
-                            onClick = { settingsStore.setLibraryColumns(value) },
-                            label = {
-                                Text(
-                                    if (value == 0) stringResource(R.string.display_columns_auto)
-                                    else value.toString(),
-                                )
-                            },
-                        )
-                    }
-                }
-                Spacer(Modifier.height(10.dp))
-                Text(stringResource(R.string.orientation_title), style = MaterialTheme.typography.titleMedium)
-                Spacer(Modifier.height(4.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    ScreenOrientation.entries.forEach { entry ->
-                        FilterChip(
-                            selected = screenOrientation == entry,
-                            onClick = { settingsStore.setScreenOrientation(entry) },
-                            label = { Text(stringResource(orientationLabel(entry))) },
-                        )
-                    }
-                }
-                Spacer(Modifier.height(10.dp))
-                Text(stringResource(R.string.grid_spacing_title), style = MaterialTheme.typography.titleMedium)
-                Spacer(Modifier.height(4.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    listOf(4, 8, 12, 16).forEach { value ->
-                        FilterChip(
-                            selected = gridSpacing == value,
-                            onClick = { settingsStore.setGridSpacing(value) },
-                            label = { Text("$value dp") },
-                        )
-                    }
-                }
-            }
-        }
-
-        Spacer(Modifier.height(14.dp))
-
-        Surface(
-            color = MaterialTheme.colorScheme.surfaceContainer,
-            shape = RoundedCornerShape(20.dp),
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Column(Modifier.padding(16.dp)) {
-                Text(
-                    stringResource(R.string.np_options_title),
-                    style = MaterialTheme.typography.titleLarge,
-                )
-                Spacer(Modifier.height(8.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Column(Modifier.weight(1f)) {
-                        Text(stringResource(R.string.np_hide_favorite), style = MaterialTheme.typography.titleMedium)
-                        Text(
-                            stringResource(R.string.np_hide_favorite_body),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                    Switch(
-                        checked = showNowPlayingFavorite,
-                        onCheckedChange = { settingsStore.setShowNowPlayingFavorite(it) },
-                    )
-                }
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Column(Modifier.weight(1f)) {
-                        Text(stringResource(R.string.np_fit_cover), style = MaterialTheme.typography.titleMedium)
-                        Text(
-                            stringResource(R.string.np_fit_cover_body),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                    Switch(
-                        checked = fitCover,
-                        onCheckedChange = { settingsStore.setFitCover(it) },
-                    )
-                }
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Column(Modifier.weight(1f)) {
-                        Text(stringResource(R.string.np_compact), style = MaterialTheme.typography.titleMedium)
-                        Text(
-                            stringResource(R.string.np_compact_body),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                    Switch(
-                        checked = compactControls,
-                        onCheckedChange = { settingsStore.setCompactControls(it) },
-                    )
-                }
-            }
-        }
-
-        Spacer(Modifier.height(14.dp))
-
-        Surface(
-            color = MaterialTheme.colorScheme.surfaceContainer,
-            shape = RoundedCornerShape(20.dp),
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Column(Modifier.padding(16.dp)) {
-                Text(stringResource(R.string.np_buttons_title), style = MaterialTheme.typography.titleLarge)
-                Spacer(Modifier.height(8.dp))
-                PlayerButtonSwitch(stringResource(R.string.np_show_shuffle), showShuffleButton) { settingsStore.setShowShuffleButton(it) }
-                PlayerButtonSwitch(stringResource(R.string.np_show_repeat), showRepeatButton) { settingsStore.setShowRepeatButton(it) }
-                PlayerButtonSwitch(stringResource(R.string.np_show_queue), showQueueButton) { settingsStore.setShowQueueButton(it) }
-                PlayerButtonSwitch(stringResource(R.string.np_show_dsp), showDspButton) { settingsStore.setShowDspButton(it) }
-                PlayerButtonSwitch(stringResource(R.string.np_show_sleep), showSleepTimerButton) { settingsStore.setShowSleepTimerButton(it) }
-            }
-        }
-
-        Spacer(Modifier.height(14.dp))
-
-        Surface(
-            color = MaterialTheme.colorScheme.surfaceContainer,
-            shape = RoundedCornerShape(20.dp),
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Column(Modifier.padding(16.dp)) {
-                Text(stringResource(R.string.np_style_title), style = MaterialTheme.typography.titleLarge)
-                Spacer(Modifier.height(8.dp))
-                Text(stringResource(R.string.np_style_label), style = MaterialTheme.typography.titleMedium)
-                Spacer(Modifier.height(4.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    PlayerStyle.entries.forEach { entry ->
-                        FilterChip(
-                            selected = playerStyle == entry,
-                            onClick = { settingsStore.setPlayerStyle(entry) },
-                            label = { Text(stringResource(playerStyleLabel(entry))) },
-                        )
-                    }
-                }
-                Spacer(Modifier.height(10.dp))
-                Text(stringResource(R.string.np_cover_radius), style = MaterialTheme.typography.titleMedium)
-                Spacer(Modifier.height(4.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    listOf(0, 8, 16, 24, 28).forEach { value ->
-                        FilterChip(
-                            selected = coverCornerRadius == value,
-                            onClick = { settingsStore.setCoverCornerRadius(value) },
-                            label = { Text("$value dp") },
-                        )
-                    }
-                }
-                Spacer(Modifier.height(10.dp))
-                Text(stringResource(R.string.np_cover_margin), style = MaterialTheme.typography.titleMedium)
-                Spacer(Modifier.height(4.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    listOf(0, 8, 16, 24).forEach { value ->
-                        FilterChip(
-                            selected = coverMarginDp == value,
-                            onClick = { settingsStore.setCoverMarginDp(value) },
-                            label = { Text("$value dp") },
-                        )
-                    }
-                }
-                Spacer(Modifier.height(10.dp))
-                Text(stringResource(R.string.np_background_title), style = MaterialTheme.typography.titleMedium)
-                Spacer(Modifier.height(4.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    PlayerBackground.entries.forEach { entry ->
-                        FilterChip(
-                            selected = playerBackground == entry,
-                            onClick = { settingsStore.setPlayerBackground(entry) },
-                            label = { Text(stringResource(playerBackgroundLabel(entry))) },
-                        )
-                    }
-                }
-                Spacer(Modifier.height(10.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Column(Modifier.weight(1f)) {
-                        Text(stringResource(R.string.np_animated_progress), style = MaterialTheme.typography.titleMedium)
-                    }
-                    Switch(
-                        checked = animatedProgress,
-                        onCheckedChange = { settingsStore.setAnimatedProgress(it) },
-                    )
-                }
-            }
-        }
-
-        Spacer(Modifier.height(14.dp))
-
-        Surface(
-            color = MaterialTheme.colorScheme.surfaceContainer,
-            shape = RoundedCornerShape(20.dp),
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Column(Modifier.padding(16.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Column(Modifier.weight(1f)) {
-                        Text(stringResource(R.string.articles_title), style = MaterialTheme.typography.titleMedium)
-                        Text(
-                            stringResource(R.string.articles_body),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                    Switch(
-                        checked = ignoreArticles,
-                        onCheckedChange = { settingsStore.setIgnoreArticles(it) },
-                    )
-                }
-            }
-        }
-
-        Spacer(Modifier.height(14.dp))
-
-        Surface(
-            color = MaterialTheme.colorScheme.surfaceContainer,
-            shape = RoundedCornerShape(20.dp),
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Column(Modifier.padding(16.dp)) {
-                Text(
-                    stringResource(R.string.settings_theme_title),
-                    style = MaterialTheme.typography.titleMedium,
-                )
-                Spacer(Modifier.height(10.dp))
-                Row(
-                    modifier = Modifier.horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                OutlinedButton(
+                    onClick = { importLauncher.launch(arrayOf("application/json")) },
+                    modifier = Modifier.weight(1f),
                 ) {
-                    ThemeMode.entries.forEach { entry ->
-                        FilterChip(
-                            selected = ThemeController.mode == entry,
-                            onClick = { ThemeController.set(context, entry) },
-                            label = { Text(stringResource(themeLabel(entry))) },
-                        )
-                    }
-                }
-            }
-        }
-
-        Spacer(Modifier.height(14.dp))
-
-        Surface(
-            color = MaterialTheme.colorScheme.surfaceContainer,
-            shape = RoundedCornerShape(20.dp),
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Column(Modifier.padding(16.dp)) {
-                Text(
-                    stringResource(R.string.settings_home_greeting),
-                    style = MaterialTheme.typography.titleMedium,
-                )
-                Spacer(Modifier.height(10.dp))
-                Row(
-                    modifier = Modifier.horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    HomeGreeting.entries.forEach { entry ->
-                        FilterChip(
-                            selected = homeGreeting == entry,
-                            onClick = { settingsStore.setHomeGreeting(entry) },
-                            label = { Text(stringResource(homeGreetingLabel(entry))) },
-                        )
-                    }
-                }
-            }
-        }
-
-        Spacer(Modifier.height(14.dp))
-
-        Surface(
-            color = MaterialTheme.colorScheme.surfaceContainer,
-            shape = RoundedCornerShape(20.dp),
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Column(Modifier.padding(16.dp)) {
-                Text(stringResource(R.string.dsp_title), style = MaterialTheme.typography.titleLarge)
-                Text(
-                    stringResource(R.string.dsp_settings_body),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Spacer(Modifier.height(10.dp))
-                OutlinedButton(onClick = onOpenDsp, modifier = Modifier.fillMaxWidth()) {
-                    Text(stringResource(R.string.dsp_open))
-                }
-            }
-        }
-
-        Spacer(Modifier.height(14.dp))
-
-        Surface(
-            color = MaterialTheme.colorScheme.surfaceContainer,
-            shape = RoundedCornerShape(20.dp),
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Column(Modifier.padding(16.dp)) {
-                Text(stringResource(R.string.backup_title), style = MaterialTheme.typography.titleLarge)
-                Spacer(Modifier.height(8.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(
-                        onClick = { exportPasswordOpen = true },
-                        modifier = Modifier.weight(1f),
-                    ) {
-                        Text(stringResource(R.string.backup_export))
-                    }
-                    OutlinedButton(
-                        onClick = { importLauncher.launch(arrayOf("application/json")) },
-                        modifier = Modifier.weight(1f),
-                    ) {
-                        Text(stringResource(R.string.backup_import))
-                    }
+                    Text(stringResource(R.string.backup_import))
                 }
             }
         }
