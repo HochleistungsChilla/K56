@@ -137,7 +137,8 @@ Aufwand: S (< 1 h) · M (1–3 h) · L (> 3 h)
 | Automatischer Offline-Modus | ❌ | M | |
 | Bei Transcode vom Server streamen | ❌ | S | |
 | Bei WLAN statt Offline streamen | ❌ | S | |
-| Parallele Downloads (Anzahl) | ❌ | S | |
+| Parallele Downloads (Anzahl) | ✅ | S | 1–5 in Einstellungen, Standard 3 |
+| Persistente Download-Queue | ✅ | M | JSON-Index `files/offline/queue.json`, atomar + gedrosselt; Zustände queued/active/done/failed; `.part` wird beim Start verworfen und neu geladen; Netz-Gate über NetworkTransport (Mobil pausiert, WLAN setzt fort); Queue-Liste in Einstellungen → Offline |
 | HTTP/1.1 für Downloads erzwingen | ❌ | S | |
 | Pre-Cache Queue (Mobil/WLAN) | 🟡 | M | rolling cache |
 | Ersten Track vor Wiedergabe fertig cachen | ❌ | S | |
