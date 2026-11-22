@@ -76,8 +76,8 @@ import app.k56.player.ui.components.ArtistCard
 import app.k56.player.ui.components.Artwork
 import app.k56.player.ui.components.EmptyState
 import app.k56.player.ui.components.ErrorState
+import app.k56.player.ui.components.HomeSkeleton
 import app.k56.player.ui.components.HorizontalAlbumRow
-import app.k56.player.ui.components.LoadingState
 import app.k56.player.ui.components.SectionHeader
 import app.k56.player.ui.components.TrackRow
 import app.k56.player.ui.userMessage
@@ -305,7 +305,7 @@ fun HomeScreen(
 
     Box(Modifier.fillMaxSize()) {
         when {
-            vm.loading -> LoadingState()
+            vm.loading -> HomeSkeleton()
 
             vm.error != null -> ErrorState(vm.error!!, vm::load)
 
