@@ -441,4 +441,16 @@
     <string name="acquisition_root_folder">Root folder</string>
     <string name="acquisition_save">Save</string>
     <string name="acquisition_saved">Saved</string>
+    <string name="acquisition_search">Search albums</string>
+    <string name="acquisition_search_title">Lidarr search</string>
+    <string name="acquisition_search_hint">Artist or album</string>
+    <string name="acquisition_search_action">Search</string>
+    <string name="acquisition_search_empty">Type a term and search.</string>
+    <string name="acquisition_request_sent">Requested: %1$s</string>
+    <string name="acquisition_artist_added">Artist was added to Lidarr (not monitored)</string>
+    <string name="acquisition_confirm_title">Request this album?</string>
+    <string name="acquisition_confirm">Request</string>
+    <string name="acquisition_sending">Requesting…</string>
+    <string name="acquisition_cancel">Cancel</string>
+    <string name="acquisition_close">Close</string>
 </resources>

@@ -431,4 +431,16 @@
     <string name="acquisition_root_folder">Zielordner</string>
     <string name="acquisition_save">Speichern</string>
     <string name="acquisition_saved">Gespeichert</string>
+    <string name="acquisition_search">Alben suchen</string>
+    <string name="acquisition_search_title">Lidarr-Suche</string>
+    <string name="acquisition_search_hint">Interpret oder Album</string>
+    <string name="acquisition_search_action">Suchen</string>
+    <string name="acquisition_search_empty">Suchbegriff eingeben und suchen.</string>
+    <string name="acquisition_request_sent">Angefordert: %1$s</string>
+    <string name="acquisition_artist_added">Interpret in Lidarr angelegt (nicht überwacht)</string>
+    <string name="acquisition_confirm_title">Album anfordern?</string>
+    <string name="acquisition_confirm">Anfordern</string>
+    <string name="acquisition_sending">Wird angefordert…</string>
+    <string name="acquisition_cancel">Abbrechen</string>
+    <string name="acquisition_close">Schließen</string>
 </resources>
