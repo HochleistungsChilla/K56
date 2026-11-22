@@ -498,4 +498,20 @@
     <string name="download_client_sent">An den Client gesendet</string>
     <string name="download_client_rejected">Der Client hat es nicht angenommen</string>
     <string name="requests_only_my_artists">Nur meine Interpreten</string>
+    <string name="audiomuse_title">AudioMuse</string>
+    <string name="audiomuse_body">Klangsuche in der eigenen Bibliothek. K56 liest nur aus AudioMuse.</string>
+    <string name="audiomuse_url">AudioMuse-URL</string>
+    <string name="audiomuse_token">API-Token</string>
+    <string name="audiomuse_test">Verbindung testen</string>
+    <string name="audiomuse_save">Speichern</string>
+    <string name="audiomuse_saved">Gespeichert</string>
+    <string name="audiomuse_connected">Verbunden</string>
+    <string name="audiomuse_chip_clap_on">CLAP aktiv</string>
+    <string name="audiomuse_chip_clap_off">CLAP aus</string>
+    <string name="audiomuse_chip_embeddings">%1$s Embeddings</string>
+    <string name="audiomuse_chip_refresh">aktualisiert %1$s</string>
+    <string name="audiomuse_search_hint">ruhiges Klavier bei Nacht</string>
+    <string name="audiomuse_search_action">Suchen</string>
+    <string name="audiomuse_no_results">Keine Treffer</string>
+    <string name="audiomuse_results">%1$d Treffer</string>
 </resources>
