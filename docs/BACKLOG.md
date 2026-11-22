@@ -21,6 +21,15 @@ Legende: **offen** · **läuft** · **erledigt** · **verworfen** · **Frage**
 | 6 | K56-App im Emulator zeigen | **erledigt** | Fenster-Emulator, echter Server verbunden |
 | 7 | `codegraph` nutzen (K56 + symfonik-re, zweiterer nur Inspiration) | **erledigt** | beide Indizes gesynct |
 
+### 2026-11-22 — UI-Pass (UI-Session)
+
+| # | Wunsch | Stand | Wo |
+|---|---|---|---|
+| 14 | Farbhierarchie: alle Material-3-Rollen gesetzt (kein Baseline-Lila mehr), Nav-Indicator theme-folgend, Typo-Rollen definiert | **erledigt** | `a6a6b1c` |
+| 15 | Settings-Karten: ein `SettingsSection` statt 15 Kopien (Abstand/Radius/Padding an einer Stelle) | **erledigt** | `c03773b` |
+| 16 | Home-Skeletons statt Spinner beim ersten Laden, Maße = echte Karten (150 dp Alben, 118 dp Künstler) | **erledigt** | `8df6606`, `6de09fb` |
+| 17 | Mini-Player beim Verschwinden animieren | **verworfen** | schon vorhanden: `AnimatedVisibility` = fade + expand/shrink, kein Eingriff nötig |
+
 ### Ältere Punkte (vor 22.11., Details in `docs/SYMFONIUM-GAP.md` / `docs/ROADMAP.md`)
 
 | # | Wunsch | Stand |
