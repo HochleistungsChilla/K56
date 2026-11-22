@@ -472,4 +472,21 @@
     <string name="requests_empty">Nichts vorhanden.</string>
     <string name="requests_imported">%1$d Alben importiert — Bibliothek aktualisieren?</string>
     <string name="requests_update_library">Bibliothek aktualisieren</string>
+    <string name="download_client_title">Download-Client</string>
+    <string name="download_client_body">Link an SABnzbd oder qBittorrent übergeben; die App löscht dort nichts.</string>
+    <string name="download_client_none">Aus</string>
+    <string name="download_client_url">Client-URL</string>
+    <string name="download_client_api_key">API-Key</string>
+    <string name="download_client_user">Benutzer</string>
+    <string name="download_client_password">Passwort</string>
+    <string name="download_client_category">Kategorie (optional)</string>
+    <string name="download_client_test">Verbindung testen</string>
+    <string name="download_client_save">Speichern</string>
+    <string name="download_client_connected">%1$s verbunden · %2$s</string>
+    <string name="download_client_saved">Gespeichert</string>
+    <string name="download_client_hand_over">Link übergeben</string>
+    <string name="download_client_link_hint">Magnet, NZB oder http(s)</string>
+    <string name="download_client_send">Senden</string>
+    <string name="download_client_sent">An den Client gesendet</string>
+    <string name="download_client_rejected">Der Client hat es nicht angenommen</string>
 </resources>

@@ -482,4 +482,21 @@
     <string name="requests_empty">Nothing here.</string>
     <string name="requests_imported">%1$d albums imported — update the library?</string>
     <string name="requests_update_library">Update library</string>
+    <string name="download_client_title">Download client</string>
+    <string name="download_client_body">Hand a link to SABnzbd or qBittorrent; the app never deletes anything there.</string>
+    <string name="download_client_none">Off</string>
+    <string name="download_client_url">Client URL</string>
+    <string name="download_client_api_key">API key</string>
+    <string name="download_client_user">Username</string>
+    <string name="download_client_password">Password</string>
+    <string name="download_client_category">Category (optional)</string>
+    <string name="download_client_test">Test connection</string>
+    <string name="download_client_save">Save</string>
+    <string name="download_client_connected">%1$s connected · %2$s</string>
+    <string name="download_client_saved">Saved</string>
+    <string name="download_client_hand_over">Hand over a link</string>
+    <string name="download_client_link_hint">magnet, NZB or http(s)</string>
+    <string name="download_client_send">Send</string>
+    <string name="download_client_sent">Sent to the client</string>
+    <string name="download_client_rejected">The client did not accept it</string>
 </resources>
