@@ -81,9 +81,11 @@ import app.k56.player.ui.components.LoadingState
 import app.k56.player.ui.components.SectionHeader
 import app.k56.player.ui.components.TrackRow
 import app.k56.player.ui.userMessage
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class HomeViewModel(
     private val repository: MediaRepository,
@@ -153,27 +155,40 @@ class HomeViewModel(
         }
     }
 
-    /** Refreshes the local (device) sections: resume points and play history. */
+    /** Refreshes the local (device) sections: resume points, history, favourites. */
     fun refreshLocal() {
-        continueItems = resumeStore.recent(6).mapNotNull { point ->
-            val track = libraryDb.trackById(point.itemId) ?: Track(
-                id = point.itemId,
-                title = point.title,
-                albumId = null,
-                albumName = null,
-                artistName = null,
-                durationMs = point.durationMs,
-                indexNumber = null,
-                discNumber = null,
-                container = null,
-                bitrate = null,
-                imageUrl = null,
-            )
-            ResumeItem(track, point.positionMs, point.durationMs)
+        // Never touch the library DB on the main thread: on a large library these
+        // queries take seconds and used to trip a startup ANR.
+        viewModelScope.launch {
+            val points = withContext(Dispatchers.IO) { resumeStore.recent(6) }
+            val items = withContext(Dispatchers.IO) {
+                points.mapNotNull { point ->
+                    val track = libraryDb.trackById(point.itemId) ?: Track(
+                        id = point.itemId,
+                        title = point.title,
+                        albumId = null,
+                        albumName = null,
+                        artistName = null,
+                        durationMs = point.durationMs,
+                        indexNumber = null,
+                        discNumber = null,
+                        container = null,
+                        bitrate = null,
+                        imageUrl = null,
+                    )
+                    ResumeItem(track, point.positionMs, point.durationMs)
+                }
+            }
+            continueItems = items
         }
-        recentPlayed = libraryDb.recentPlays(12)
-        favorites = libraryDb.favoriteTracks(12)
-        genres = libraryDb.allGenres().take(12)
+        viewModelScope.launch {
+            val local = withContext(Dispatchers.IO) {
+                Triple(libraryDb.recentPlays(12), libraryDb.favoriteTracks(12), libraryDb.allGenres().take(12))
+            }
+            recentPlayed = local.first
+            favorites = local.second
+            genres = local.third
+        }
     }
 
     /** Title mix: a wide random slice of the library. */

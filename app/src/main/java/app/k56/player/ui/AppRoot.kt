@@ -55,7 +55,9 @@ import app.k56.player.ui.screens.PlayerScreen
 import app.k56.player.ui.screens.SearchScreen
 import app.k56.player.ui.screens.SettingsScreen
 import app.k56.player.ui.screens.SyncLogScreen
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @Composable
 fun K56Root(container: AppContainer) {
@@ -164,7 +166,7 @@ private fun MainShell(container: AppContainer) {
 
     // Keep favorited tracks on disk whenever the option is enabled.
     LaunchedEffect(autoCacheFavorites) {
-        if (autoCacheFavorites) container.favoriteCache.sync()
+        if (autoCacheFavorites) withContext(Dispatchers.IO) { container.favoriteCache.sync() }
     }
 
     // Refresh the offline library copy: full sync when missing/very old, incremental otherwise.
@@ -177,16 +179,20 @@ private fun MainShell(container: AppContainer) {
 
     LaunchedEffect(autoSync) {
         if (!autoSync) return@LaunchedEffect
-        if (!container.librarySync.needsFullSync() && !container.librarySync.isStale()) {
-            return@LaunchedEffect
+        // DB checks and the sync itself must stay off the main thread; a library
+        // count on a big database is enough to trip the startup ANR watchdog.
+        val needsWork = withContext(Dispatchers.IO) {
+            container.librarySync.needsFullSync() || container.librarySync.isStale()
         }
+        if (!needsWork) return@LaunchedEffect
         // Application scope: a sync must survive the screen that started it.
         container.appScope.launch {
             runCatching {
-            when {
-                container.librarySync.needsFullSync() -> container.librarySync.sync()
-                container.librarySync.isStale() -> container.librarySync.syncIncremental()
-            }
+                when {
+                    withContext(Dispatchers.IO) { container.librarySync.needsFullSync() } ->
+                        withContext(Dispatchers.IO) { container.librarySync.sync() }
+                    else -> withContext(Dispatchers.IO) { container.librarySync.syncIncremental() }
+                }
             }
         }
     }
