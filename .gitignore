@@ -9,3 +9,6 @@ captures/
 .cxx/
 app/build/
 .codegraph/
+
+# local-only working notes
+docs/BACKLOG.md
