@@ -97,7 +97,9 @@ private fun MainShell(container: AppContainer) {
         onDispose { connection.release() }
     }
     // A3: while the app is in the foreground, notice albums that finished in the
-    // acquisition queue and refresh the offline library once for them.
+    // acquisition queue and refresh the offline library once for them. Every five
+    // minutes is enough for a download queue; one toast for the batch, so ten
+    // finished albums do not mean ten pop-ups.
     val lifecycleOwner = LocalLifecycleOwner.current
     LaunchedEffect(lifecycleOwner) {
         lifecycleOwner.repeatOnLifecycle(Lifecycle.State.RESUMED) {
@@ -106,15 +108,14 @@ private fun MainShell(container: AppContainer) {
                     .getOrDefault(emptyList())
                 if (arrived.isNotEmpty()) {
                     container.librarySync.start()
-                    arrived.forEach { title ->
-                        android.widget.Toast.makeText(
-                            context,
-                            context.getString(R.string.requests_arrived, title),
-                            android.widget.Toast.LENGTH_LONG,
-                        ).show()
+                    val text = if (arrived.size == 1) {
+                        context.getString(R.string.requests_arrived, arrived.first())
+                    } else {
+                        context.getString(R.string.requests_arrived_many, arrived.size)
                     }
+                    android.widget.Toast.makeText(context, text, android.widget.Toast.LENGTH_LONG).show()
                 }
-                delay(60_000)
+                delay(5 * 60_000L)
             }
         }
     }

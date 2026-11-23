@@ -488,6 +488,7 @@
     <string name="requests_title">Requests</string>
     <string name="requests_not_configured">Lidarr is not configured. Enter the URL and API key first.</string>
     <string name="requests_arrived">%1$s is now in the library</string>
+    <string name="requests_arrived_many">%1$d new albums are now in the library</string>
     <string name="requests_status_missing">Missing</string>
     <string name="requests_wanted">Missing</string>
     <string name="requests_queue">Queue</string>
