@@ -89,6 +89,7 @@ fun SettingsScreen(
     onOpenCache: () -> Unit = {},
     onOpenSyncLog: () -> Unit = {},
     onOpenLayout: () -> Unit = {},
+    onOpenRequests: () -> Unit = {},
 ) {
     val context = LocalContext.current
     var batteryExempt by remember { mutableStateOf(false) }
@@ -409,6 +410,7 @@ fun SettingsScreen(
         AcquisitionCard(
             modifier = Modifier.padding(top = 14.dp),
             onLibraryChanged = { librarySync.start() },
+            onOpenRequests = onOpenRequests,
         )
 
         DownloadClientCard(Modifier.padding(top = 14.dp))

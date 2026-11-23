@@ -15,3 +15,6 @@ docs/BACKLOG.md
 
 # reference checkout, never part of this repo
 symfonik-re/
+
+# locally built APKs and screenshots
+files/

@@ -51,6 +51,7 @@ import app.k56.player.ui.screens.LayoutScreen
 import app.k56.player.ui.screens.LoginScreen
 import app.k56.player.ui.screens.PlaylistScreen
 import app.k56.player.ui.screens.PlayerScreen
+import app.k56.player.ui.screens.RequestsScreen
 import app.k56.player.ui.screens.SearchScreen
 import app.k56.player.ui.screens.SettingsScreen
 import app.k56.player.ui.screens.SyncLogScreen
@@ -478,6 +479,13 @@ private fun MainShell(container: AppContainer) {
                     onOpenCache = { navController.navigate("cache") },
                     onOpenSyncLog = { navController.navigate("synclog") },
                     onOpenLayout = { navController.navigate("layout") },
+                    onOpenRequests = { navController.navigate("requests") },
+                )
+            }
+            composable("requests") {
+                RequestsScreen(
+                    onBack = { navController.popBackStack() },
+                    onLibraryChanged = { container.librarySync.start() },
                 )
             }
             composable(

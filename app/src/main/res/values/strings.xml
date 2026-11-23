@@ -484,6 +484,10 @@
     <string name="acquisition_cancel">Cancel</string>
     <string name="acquisition_close">Close</string>
     <string name="acquisition_requests">Requests</string>
+    <string name="acquisition_open_requests">View requests</string>
+    <string name="requests_title">Requests</string>
+    <string name="requests_not_configured">Lidarr is not configured. Enter the URL and API key first.</string>
+    <string name="requests_status_missing">Missing</string>
     <string name="requests_wanted">Missing</string>
     <string name="requests_queue">Queue</string>
     <string name="requests_history">History</string>
