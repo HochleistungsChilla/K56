@@ -8,26 +8,18 @@ inspired by Symfonium, YouTube Music and ViPER4Android/JamesDSP.
 
 | Role | Input | Output |
 |---|---|---|
-| Analysis | public product docs, APK metadata, protocol research | feature/interface specification |
+| Analysis | public product documentation, protocol research | feature/interface specification |
 | Implementation | specification + public API documentation | original Kotlin/Compose code |
 
-The implementation takes **no** application code and **no** resources from the
-APK. APK analysis (manifest, version data, string inventory) serves
+The implementation takes **no** application code and **no** resources from any
+third-party build. Public product documentation and protocol research serve
 interoperability only: which sources and protocols have to be supported.
 
-## Observed metadata of the reference APK
+## Analysis scope
 
-- Package: `app.symfonik.music.player`
-- Version: `15.1.0 TV` (`versionCode 227812`)
-- minSdk 26, targetSdk 36, compileSdk 37
-- 4 ABIs, 13 native libraries (FFmpeg libraries, TagLib, Zstandard among them)
-- 22 JSON layout templates for now-playing/app styles
-- Permissions: network, foreground media playback, read audio, Bluetooth,
-  billing, ads attribution
-
-Requirements derived from this are **purely functional**: multiple sources,
-configurable playback views, local files, server streaming, background
-playback. No strings, layouts, artwork or code blocks were taken over.
+Derived requirements are **purely functional**: multiple sources, configurable
+playback views, local files, server streaming, background playback. No strings,
+layouts, artwork or code blocks were taken over.
 
 ## Protocol research
 

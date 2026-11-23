@@ -2,7 +2,7 @@
 
 Stand: 2026-11-22.
 
-**K56 ist kein Symfonium-Nachbau.** `docs/SYMFONIUM-GAP.md` und externe
+**K56 ist kein Symfonium-Nachbau.** `docs/FEATURE-GAPS.md` und externe
 Feature-Listen sind **Inspiration**, kein Pflichtenheft: keine 1:1-Übernahme
 von Settings-Taxonomie, Seitenlayouts, Widget-Sets oder Provider-Matrizen.
 Was hier steht, ist an der eigenen Produktidee ausgerichtet — selbst gehostete
