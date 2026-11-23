@@ -693,7 +693,9 @@ fun TrackRow(
         Spacer(Modifier.width(8.dp))
         // Fixed trailing slots: an icon keeps its x-position whether the track is
         // downloaded, favourited, mid-transfer or plain, so the column stays aligned.
-        Box(Modifier.size(48.dp), contentAlignment = Alignment.Center) {
+        // 20 dp, not 48: the state slot must cost the title as little as possible,
+        // while still holding a 16 dp glyph centred and keeping the column aligned.
+        Box(Modifier.width(20.dp), contentAlignment = Alignment.Center) {
             if (downloadProgress != null) {
                 CircularProgressIndicator(
                     progress = { downloadProgress },
@@ -701,11 +703,13 @@ fun TrackRow(
                     strokeWidth = 2.dp,
                 )
             } else if (isDownloaded) {
+                // State glyphs only: the download action itself lives in the menu, so
+                // the row keeps its space for the title and the heart.
                 Icon(
                     imageVector = Icons.Rounded.DownloadDone,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(18.dp),
+                    modifier = Modifier.size(16.dp),
                 )
             } else if (isCached) {
                 Icon(
@@ -714,15 +718,6 @@ fun TrackRow(
                     tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                     modifier = Modifier.size(16.dp),
                 )
-            } else if (onDownload != null) {
-                IconButton(onClick = onDownload, modifier = Modifier.size(48.dp)) {
-                    Icon(
-                        imageVector = Icons.Rounded.Download,
-                        contentDescription = stringResource(R.string.offline_download),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(20.dp),
-                    )
-                }
             }
         }
         Box(Modifier.size(48.dp), contentAlignment = Alignment.Center) {
@@ -749,7 +744,9 @@ fun TrackRow(
             )
         }
         Box(Modifier.size(48.dp), contentAlignment = Alignment.Center) {
-            if (onPlayNext != null || onAddToQueue != null || onAddToPlaylist != null || onRemoveFromPlaylist != null) {
+            if (onPlayNext != null || onAddToQueue != null || onAddToPlaylist != null ||
+                onRemoveFromPlaylist != null || onDownload != null
+            ) {
                 Box {
                     IconButton(onClick = { menuOpen = true }, modifier = Modifier.size(48.dp)) {
                         Icon(
@@ -786,7 +783,7 @@ fun TrackRow(
                             },
                         )
                     }
-                    if (onDownload != null && !isDownloaded) {
+                    if (onDownload != null && !isDownloaded && downloadProgress == null) {
                         DropdownMenuItem(
                             text = { Text(stringResource(R.string.offline_download)) },
                             onClick = {
