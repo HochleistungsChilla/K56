@@ -473,7 +473,6 @@
     <string name="acquisition_sending">Wird angefordert…</string>
     <string name="acquisition_cancel">Abbrechen</string>
     <string name="acquisition_close">Schließen</string>
-    <string name="acquisition_requests">Anfragen</string>
     <string name="acquisition_open_requests">Anfragen ansehen</string>
     <string name="requests_title">Anfragen</string>
     <string name="requests_not_configured">Lidarr ist nicht eingerichtet. Zuerst URL und API-Key eintragen.</string>

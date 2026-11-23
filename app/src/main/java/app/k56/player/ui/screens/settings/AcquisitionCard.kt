@@ -247,7 +247,9 @@ fun AcquisitionCard(
                     Text(stringResource(R.string.acquisition_search))
                 }
                 OutlinedButton(
-                    enabled = url.isNotBlank() && apiKey.isNotBlank(),
+                    // The screen reads the saved config, so the button must not
+                    // offer a draft that was never stored: Save first, then look.
+                    enabled = saved.isComplete,
                     onClick = onOpenRequests,
                 ) {
                     Text(stringResource(R.string.acquisition_open_requests))

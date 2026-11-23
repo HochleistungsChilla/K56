@@ -1,9 +1,11 @@
 package app.k56.player.data.acquisition.clients
 
+import app.k56.player.core.net.parseBaseUrl
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import okhttp3.HttpUrl
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.IOException
@@ -40,16 +42,17 @@ class SlskdClient(
         .writeTimeout(20, TimeUnit.SECONDS)
         .build()
 
-    private fun base(): String {
-        val raw = config.baseUrl.trim().trimEnd('/')
-        if (raw.isBlank()) throw DownloadClientException("slskd URL is empty")
-        return if (raw.startsWith("http://") || raw.startsWith("https://")) raw else "http://$raw"
+    /** See SabnzbdClient.requireBase. */
+    private fun requireBase(): HttpUrl = try {
+        parseBaseUrl(config.baseUrl)
+    } catch (e: IllegalArgumentException) {
+        throw DownloadClientException("slskd URL is not valid", e)
     }
 
     private suspend fun get(path: String): String = withContext(Dispatchers.IO) {
         if (config.apiKey.isBlank()) throw DownloadClientException("slskd API key is empty")
         val request = Request.Builder()
-            .url("${base()}$path")
+            .url(requireBase().newBuilder().addPathSegments(path.trimStart('/')).build())
             .header("X-API-Key", config.apiKey)
             .header("Accept", "application/json")
             .build()

@@ -105,6 +105,11 @@ private fun MainShell(container: AppContainer) {
         lifecycleOwner.repeatOnLifecycle(Lifecycle.State.RESUMED) {
             while (isActive) {
                 val arrived = runCatching { container.acquisitionWatcher.check() }
+                    .onFailure {
+                        if (BuildConfig.DEBUG) {
+                            android.util.Log.w("K56/Acquisition", "watcher check failed", it)
+                        }
+                    }
                     .getOrDefault(emptyList())
                 if (arrived.isNotEmpty()) {
                     container.librarySync.start()

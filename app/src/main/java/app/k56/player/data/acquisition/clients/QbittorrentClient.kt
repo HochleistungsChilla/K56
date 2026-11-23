@@ -1,11 +1,13 @@
 package app.k56.player.data.acquisition.clients
 
+import app.k56.player.core.net.parseBaseUrl
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import okhttp3.FormBody
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
+import okhttp3.HttpUrl
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.IOException
@@ -42,11 +44,11 @@ class QbittorrentClient(
 
     private var sid: String? = null
 
-    private fun base(): String {
-        val raw = config.baseUrl.trim().trimEnd('/')
-        if (raw.isBlank()) throw DownloadClientException("qBittorrent URL is empty")
-        val withScheme = if (raw.startsWith("http://") || raw.startsWith("https://")) raw else "http://$raw"
-        return withScheme
+    /** See SabnzbdClient.requireBase. */
+    private fun requireBase(): HttpUrl = try {
+        parseBaseUrl(config.baseUrl)
+    } catch (e: IllegalArgumentException) {
+        throw DownloadClientException("qBittorrent URL is not valid", e)
     }
 
     private suspend fun login(): String = withContext(Dispatchers.IO) {
@@ -55,10 +57,11 @@ class QbittorrentClient(
             .add("username", config.username)
             .add("password", config.passwd)
             .build()
+        val baseUrl = requireBase()
         val request = Request.Builder()
-            .url("${base()}/api/v2/auth/login")
+            .url(baseUrl.newBuilder().addPathSegments("api/v2/auth/login").build())
             .post(body)
-            .header("Referer", base())
+            .header("Referer", baseUrl.toString())
             .build()
         try {
             http.newCall(request).execute().use { response ->
@@ -80,10 +83,11 @@ class QbittorrentClient(
 
     private suspend fun get(path: String): String = withContext(Dispatchers.IO) {
         val cookie = login()
+        val baseUrl = requireBase()
         val request = Request.Builder()
-            .url("${base()}$path")
+            .url(baseUrl.newBuilder().addPathSegments(path.trimStart('/')).build())
             .header("Cookie", cookie)
-            .header("Referer", base())
+            .header("Referer", baseUrl.toString())
             .build()
         try {
             http.newCall(request).execute().use { response ->
@@ -103,11 +107,12 @@ class QbittorrentClient(
 
     private suspend fun post(path: String, form: FormBody): String = withContext(Dispatchers.IO) {
         val cookie = login()
+        val baseUrl = requireBase()
         val request = Request.Builder()
-            .url("${base()}$path")
+            .url(baseUrl.newBuilder().addPathSegments(path.trimStart('/')).build())
             .post(form)
             .header("Cookie", cookie)
-            .header("Referer", base())
+            .header("Referer", baseUrl.toString())
             .build()
         try {
             http.newCall(request).execute().use { response ->
