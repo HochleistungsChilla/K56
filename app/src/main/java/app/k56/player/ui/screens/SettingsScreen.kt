@@ -3,6 +3,7 @@ package app.k56.player.ui.screens
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.draw.clip
@@ -17,6 +18,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -78,6 +80,7 @@ import app.k56.player.ui.formatBytes
 import app.k56.player.ui.theme.ThemeController
 import app.k56.player.ui.theme.ThemeMode
 import app.k56.player.ui.theme.ThemePalette
+import app.k56.player.ui.theme.paletteScheme
 import app.k56.player.ui.screens.settings.AcquisitionCard
 import app.k56.player.ui.screens.settings.DownloadClientCard
 import app.k56.player.ui.screens.settings.AudioMuseCard
@@ -1168,17 +1171,22 @@ fun SettingsScreen(
                     )
                 }
             }
-            Spacer(Modifier.height(10.dp))
-            Row(
-                modifier = Modifier.horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                ThemePalette.entries.forEach { entry ->
-                    PaletteChip(
-                        palette = entry,
-                        selected = ThemeController.palette == entry,
-                        onClick = { ThemeController.setPalette(context, entry) },
-                    )
+            // The sets are dark schemes; in light mode the choice would do nothing.
+            val effectiveDark = ThemeController.mode == ThemeMode.Dark ||
+                (ThemeController.mode == ThemeMode.System && isSystemInDarkTheme())
+            if (effectiveDark) {
+                Spacer(Modifier.height(10.dp))
+                Row(
+                    modifier = Modifier.horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    ThemePalette.entries.forEach { entry ->
+                        PaletteChip(
+                            palette = entry,
+                            selected = ThemeController.palette == entry,
+                            onClick = { ThemeController.setPalette(context, entry) },
+                        )
+                    }
                 }
             }
         }
@@ -1405,14 +1413,13 @@ private fun paletteLabel(palette: ThemePalette): Int = when (palette) {
     ThemePalette.Cobalt -> R.string.theme_palette_cobalt
 }
 
-/** Surface, accent and secondary of each set, shown as three dots. */
-private fun paletteSwatches(palette: ThemePalette): Triple<Long, Long, Long> = when (palette) {
-    ThemePalette.Warm -> Triple(0x0E0F12L, 0xFFB74DL, 0xC9C2B4L)
-    ThemePalette.Matrix -> Triple(0x040705L, 0x00FF41L, 0x7FD6A0L)
-    ThemePalette.Ice -> Triple(0x0A0F14L, 0x7CD8F0L, 0xA9C4D0L)
-    ThemePalette.Twilight -> Triple(0x0B0910L, 0xC9A9FFL, 0xC8BFD8L)
-    ThemePalette.Sakura -> Triple(0x100A0CL, 0xFF9EC4L, 0xD8BFC7L)
-    ThemePalette.Cobalt -> Triple(0x060A12L, 0x8FB0FFL, 0xB9C3D9L)
+/**
+ * Surface, accent and secondary straight from the set's scheme — one source of
+ * truth, and no chance of a stray alpha value.
+ */
+private fun paletteSwatches(palette: ThemePalette): Triple<Color, Color, Color> {
+    val scheme = paletteScheme(palette)
+    return Triple(scheme.surface, scheme.primary, scheme.secondary)
 }
 
 @Composable
@@ -1438,13 +1445,10 @@ private fun PaletteChip(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                listOf(surface, accent, secondary).forEach { color ->
-                    Box(
-                        Modifier
-                            .size(14.dp)
-                            .clip(CircleShape)
-                            .background(Color(color)),
-                    )
+                listOf(surface, accent, secondary).forEach { swatch ->
+                    Canvas(Modifier.size(14.dp)) {
+                        drawCircle(color = swatch, radius = size.minDimension / 2f)
+                    }
                 }
             }
             Spacer(Modifier.height(6.dp))

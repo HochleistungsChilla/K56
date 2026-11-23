@@ -1,6 +1,7 @@
 package app.k56.player.ui.theme
 
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
@@ -379,6 +380,19 @@ private val MatrixTypography = Typography(
     labelMedium = TextStyle(fontFamily = FontFamily.Monospace, fontSize = 11.sp, fontWeight = FontWeight.Medium),
     labelSmall = TextStyle(fontFamily = FontFamily.Monospace, fontSize = 10.sp, fontWeight = FontWeight.Medium),
 )
+
+/**
+ * The dark scheme behind each palette. Exposed so the settings swatches can read
+ * the real colours instead of repeating hex values.
+ */
+fun paletteScheme(palette: ThemePalette): ColorScheme = when (palette) {
+    ThemePalette.Warm -> DarkColors
+    ThemePalette.Matrix -> MatrixColors
+    ThemePalette.Ice -> IceColors
+    ThemePalette.Twilight -> TwilightColors
+    ThemePalette.Sakura -> SakuraColors
+    ThemePalette.Cobalt -> CobaltColors
+}
 
 @Composable
 fun K56Theme(
