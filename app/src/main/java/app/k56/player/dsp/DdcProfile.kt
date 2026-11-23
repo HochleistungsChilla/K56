@@ -6,11 +6,10 @@ import kotlin.math.abs
 /**
  * ViPER DDC headphone-correction profile.
  *
- * File format (reverse engineered from the shipped kernels):
- * one line per sample rate, `SR_44100:...` / `SR_48000:...`, holding 25 numbers
- * — five second-order sections of `b0,b1,b2,a1,a2`. The stored a1/a2 use the
- * opposite sign of the standard difference equation, so they are negated when
- * the sections are loaded.
+ * File format: one line per sample rate, `SR_44100:...` / `SR_48000:...`,
+ * holding 25 numbers — five second-order sections of `b0,b1,b2,a1,a2`. The
+ * stored a1/a2 use the opposite sign of the standard difference equation, so
+ * they are negated when the sections are loaded.
  */
 class DdcProfile(
     val name: String,
