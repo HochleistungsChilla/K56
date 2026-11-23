@@ -43,7 +43,8 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.PrimaryScrollableTabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -483,6 +484,7 @@ class LibraryViewModel(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LibraryScreen(
     repository: MediaRepository,
@@ -595,7 +597,12 @@ fun LibraryScreen(
 
     Box(Modifier.fillMaxSize()) {
     Column(Modifier.fillMaxSize()) {
-        TabRow(selectedTabIndex = tab) {
+        // Six labels do not fit a fixed TabRow: it wraps them mid-word ("Favori\ntes").
+        // A scrollable row keeps every label on one line and lets the strip move instead.
+        PrimaryScrollableTabRow(
+            selectedTabIndex = tab,
+            edgePadding = 0.dp,
+        ) {
             listOf(
                 stringResource(R.string.library_tab_albums),
                 stringResource(R.string.library_tab_artists),
@@ -607,7 +614,13 @@ fun LibraryScreen(
                 Tab(
                     selected = tab == index,
                     onClick = { tab = index },
-                    text = { Text(label) },
+                    text = {
+                        Text(
+                            text = label,
+                            maxLines = 1,
+                            softWrap = false,
+                        )
+                    },
                 )
             }
         }
