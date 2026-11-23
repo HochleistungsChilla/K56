@@ -53,6 +53,19 @@ class AcquisitionStore(context: Context) {
         prefs.edit().putInt(KEY_LAST_HISTORY, id).apply()
     }
 
+    /** Album ids that were in the download queue at the last watcher look. */
+    fun queuedAlbumIds(): Set<Int> = prefs
+        .getStringSet(KEY_QUEUE_IDS, emptySet())
+        .orEmpty()
+        .mapNotNull { it.toIntOrNull() }
+        .toSet()
+
+    fun setQueuedAlbumIds(ids: Set<Int>) {
+        prefs.edit()
+            .putStringSet(KEY_QUEUE_IDS, ids.map { it.toString() }.toSet())
+            .apply()
+    }
+
     private fun read() = AcquisitionConfig(
         enabled = prefs.getBoolean(KEY_ENABLED, false),
         baseUrl = prefs.getString(KEY_URL, "").orEmpty(),
@@ -70,5 +83,6 @@ class AcquisitionStore(context: Context) {
         const val KEY_METADATA_PROFILE = "metadata_profile_id"
         const val KEY_ROOT_FOLDER = "root_folder_path"
         const val KEY_LAST_HISTORY = "last_history_id"
+        const val KEY_QUEUE_IDS = "queue_album_ids"
     }
 }

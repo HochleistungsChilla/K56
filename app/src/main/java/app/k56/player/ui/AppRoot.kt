@@ -20,7 +20,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -56,6 +59,8 @@ import app.k56.player.ui.screens.SearchScreen
 import app.k56.player.ui.screens.SettingsScreen
 import app.k56.player.ui.screens.SyncLogScreen
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -91,6 +96,29 @@ private fun MainShell(container: AppContainer) {
     DisposableEffect(Unit) {
         onDispose { connection.release() }
     }
+    // A3: while the app is in the foreground, notice albums that finished in the
+    // acquisition queue and refresh the offline library once for them.
+    val lifecycleOwner = LocalLifecycleOwner.current
+    LaunchedEffect(lifecycleOwner) {
+        lifecycleOwner.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+            while (isActive) {
+                val arrived = runCatching { container.acquisitionWatcher.check() }
+                    .getOrDefault(emptyList())
+                if (arrived.isNotEmpty()) {
+                    container.librarySync.start()
+                    arrived.forEach { title ->
+                        android.widget.Toast.makeText(
+                            context,
+                            context.getString(R.string.requests_arrived, title),
+                            android.widget.Toast.LENGTH_LONG,
+                        ).show()
+                    }
+                }
+                delay(60_000)
+            }
+        }
+    }
+
 
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()

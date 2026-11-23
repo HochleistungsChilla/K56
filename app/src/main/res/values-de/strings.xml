@@ -477,6 +477,7 @@
     <string name="acquisition_open_requests">Anfragen ansehen</string>
     <string name="requests_title">Anfragen</string>
     <string name="requests_not_configured">Lidarr ist nicht eingerichtet. Zuerst URL und API-Key eintragen.</string>
+    <string name="requests_arrived">%1$s ist jetzt in der Bibliothek</string>
     <string name="requests_status_missing">Fehlt</string>
     <string name="requests_wanted">Fehlend</string>
     <string name="requests_queue">Warteschlange</string>
