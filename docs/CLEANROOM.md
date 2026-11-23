@@ -34,7 +34,7 @@ Supported sources are integrated through their public APIs:
 
 ## Deliberate non-adoptions
 
-- No Symfonium mark, logo or store listing text
+- No third-party marks, logos or store listing text
 - No copied colour resources, drawables, JSON styles or sounds
 - No taking over of library internals or class names
 - No circumvention of licensing or payment mechanisms
