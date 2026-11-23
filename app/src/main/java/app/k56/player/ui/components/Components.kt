@@ -685,7 +685,7 @@ fun TrackRow(
         Spacer(Modifier.width(8.dp))
         // Fixed trailing slots: an icon keeps its x-position whether the track is
         // downloaded, favourited, mid-transfer or plain, so the column stays aligned.
-        Box(Modifier.size(32.dp), contentAlignment = Alignment.Center) {
+        Box(Modifier.size(48.dp), contentAlignment = Alignment.Center) {
             if (downloadProgress != null) {
                 CircularProgressIndicator(
                     progress = { downloadProgress },
@@ -707,7 +707,7 @@ fun TrackRow(
                     modifier = Modifier.size(16.dp),
                 )
             } else if (onDownload != null) {
-                IconButton(onClick = onDownload, modifier = Modifier.size(32.dp)) {
+                IconButton(onClick = onDownload, modifier = Modifier.size(48.dp)) {
                     Icon(
                         imageVector = Icons.Rounded.Download,
                         contentDescription = stringResource(R.string.offline_download),
@@ -717,12 +717,14 @@ fun TrackRow(
                 }
             }
         }
-        Box(Modifier.size(32.dp), contentAlignment = Alignment.Center) {
+        Box(Modifier.size(48.dp), contentAlignment = Alignment.Center) {
             if (onToggleFavorite != null && showFavoriteBadge) {
-                IconButton(onClick = onToggleFavorite, modifier = Modifier.size(32.dp)) {
+                IconButton(onClick = onToggleFavorite, modifier = Modifier.size(48.dp)) {
                     Icon(
                         imageVector = if (isFavorite) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
-                        contentDescription = null,
+                        contentDescription = stringResource(
+                            if (isFavorite) R.string.action_favorite_remove else R.string.action_favorite_add,
+                        ),
                         tint = if (isFavorite) MaterialTheme.colorScheme.primary
                         else MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(18.dp),
@@ -738,10 +740,10 @@ fun TrackRow(
                 maxLines = 1,
             )
         }
-        Box(Modifier.size(32.dp), contentAlignment = Alignment.Center) {
+        Box(Modifier.size(48.dp), contentAlignment = Alignment.Center) {
             if (onPlayNext != null || onAddToQueue != null || onAddToPlaylist != null || onRemoveFromPlaylist != null) {
                 Box {
-                    IconButton(onClick = { menuOpen = true }, modifier = Modifier.size(32.dp)) {
+                    IconButton(onClick = { menuOpen = true }, modifier = Modifier.size(48.dp)) {
                         Icon(
                         Icons.Rounded.MoreVert,
                         contentDescription = stringResource(R.string.action_more),
@@ -1084,7 +1086,7 @@ fun MiniPlayer(
                         onClick = {
                             if (state.isPlaying) controller?.pause() else controller?.play()
                         },
-                        modifier = Modifier.size(40.dp),
+                        modifier = Modifier.size(48.dp),
                         colors = IconButtonDefaults.filledIconButtonColors(
                             containerColor = MaterialTheme.colorScheme.primary,
                             contentColor = MaterialTheme.colorScheme.onPrimary,
@@ -1092,10 +1094,10 @@ fun MiniPlayer(
                     ) {
                         Icon(
                             imageVector = if (state.isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
+                            modifier = Modifier.size(24.dp),
                             contentDescription = stringResource(
                                 if (state.isPlaying) R.string.common_pause else R.string.common_play,
                             ),
-                            modifier = Modifier.size(22.dp),
                         )
                     }
                     Spacer(Modifier.width(2.dp))

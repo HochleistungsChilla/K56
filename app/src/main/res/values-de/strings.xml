@@ -100,6 +100,8 @@
     <string name="queue_move_down">Nach unten</string>
     <string name="queue_remove">Entfernen</string>
     <string name="player_favorite">Favorit</string>
+    <string name="action_favorite_add">Zu Favoriten hinzufügen</string>
+    <string name="action_favorite_remove">Aus Favoriten entfernen</string>
 
     <string name="settings_edit_connection">Verbindung bearbeiten</string>
 
