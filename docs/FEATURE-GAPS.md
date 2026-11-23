@@ -1,4 +1,4 @@
-# Symfonium → K56 Gap-Analyse
+# Feature-Gap-Analyse
 
 Quelle: öffentliche Doku (docs.symfonium.app/wiki/settings/settings-all-settings-tree/ und Unterseiten).
 Kein Code, keine APK, kein Decompile — nur dokumentierte Konzepte.
