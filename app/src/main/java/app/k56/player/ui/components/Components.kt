@@ -693,7 +693,9 @@ fun TrackRow(
         Spacer(Modifier.width(8.dp))
         // Fixed trailing slots: an icon keeps its x-position whether the track is
         // downloaded, favourited, mid-transfer or plain, so the column stays aligned.
-        Box(Modifier.size(48.dp), contentAlignment = Alignment.Center) {
+        // 20 dp, not 48: the state slot must cost the title as little as possible,
+        // while still holding a 16 dp glyph centred and keeping the column aligned.
+        Box(Modifier.width(20.dp), contentAlignment = Alignment.Center) {
             if (downloadProgress != null) {
                 CircularProgressIndicator(
                     progress = { downloadProgress },
@@ -706,7 +708,7 @@ fun TrackRow(
                 Icon(
                     imageVector = Icons.Rounded.DownloadDone,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(16.dp),
                 )
             } else if (isCached) {
@@ -781,7 +783,7 @@ fun TrackRow(
                             },
                         )
                     }
-                    if (onDownload != null && !isDownloaded) {
+                    if (onDownload != null && !isDownloaded && downloadProgress == null) {
                         DropdownMenuItem(
                             text = { Text(stringResource(R.string.offline_download)) },
                             onClick = {
