@@ -229,7 +229,9 @@ fun AcquisitionCard(
             Spacer(Modifier.height(12.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Button(
-                    enabled = url.isNotBlank() && apiKey.isNotBlank(),
+                    // A saved key must be removable again, so Save only needs a
+                    // URL; Test, search and the request list still need the key.
+                    enabled = url.isNotBlank(),
                     onClick = {
                         store.save(draft())
                         isError = false
