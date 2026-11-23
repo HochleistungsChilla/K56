@@ -1,7 +1,7 @@
 # Feature-Gap-Analyse
 
 Quelle: öffentliche Doku (docs.symfonium.app/wiki/settings/settings-all-settings-tree/ und Unterseiten).
-Kein Code, keine APK, kein Decompile — nur dokumentierte Konzepte.
+Kein Code und keine Assets übernommen — nur dokumentierte Konzepte.
 Stand: 2026-11-16, Abgleich gegen K56-Quellcode (SettingsStore/Theme/Screens).
 
 Status: ✅ vorhanden · 🟡 teilweise · ❌ fehlt · ⛔ bewusst nicht

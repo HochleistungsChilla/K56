@@ -6,32 +6,32 @@ Such-Absturzes in einem Ablauf.
 
 ## 1. Voraussetzungen
 
-- Android SDK unter `/home/fran/Android/Sdk` (`platform-tools/adb`,
+- Android SDK unter `$HOME/Android/Sdk` (`platform-tools/adb`,
   `cmdline-tools/latest/bin/{sdkmanager,avdmanager}`).
-- Java 21: `JAVA_HOME=/home/fran/tools/jdk-21.0.12.1+1`
+- Java 21: `JAVA_HOME=$HOME/tools/jdk-21.0.12.1+1`
   (oder `export JAVA_HOME=$(dirname $(dirname $(readlink -f $(which java))))`).
 - `/dev/kvm` muss verfügbar sein (Hardware-Beschleunigung).
 - Kein `adb` im PATH → immer den absoluten Pfad nutzen:
 
 ```bash
-ADB=/home/fran/Android/Sdk/platform-tools/adb
-export ANDROID_HOME=/home/fran/Android/Sdk
-export ANDROID_SDK_ROOT=/home/fran/Android/Sdk
-export JAVA_HOME=/home/fran/tools/jdk-21.0.12.1+1
+ADB=$HOME/Android/Sdk/platform-tools/adb
+export ANDROID_HOME=$HOME/Android/Sdk
+export ANDROID_SDK_ROOT=$HOME/Android/Sdk
+export JAVA_HOME=$HOME/tools/jdk-21.0.12.1+1
 ```
 
 ## 2. Emulator + System-Image installieren (einmalig)
 
 ```bash
-yes | /home/fran/Android/Sdk/cmdline-tools/latest/bin/sdkmanager \
-  --sdk_root=/home/fran/Android/Sdk \
+yes | $HOME/Android/Sdk/cmdline-tools/latest/bin/sdkmanager \
+  --sdk_root=$HOME/Android/Sdk \
   "emulator" "system-images;android-34;google_apis;x86_64"
 ```
 
 AVD anlegen (Pixel 6, Android 14):
 
 ```bash
-echo no | /home/fran/Android/Sdk/cmdline-tools/latest/bin/avdmanager \
+echo no | $HOME/Android/Sdk/cmdline-tools/latest/bin/avdmanager \
   create avd -n k56-test \
   -k "system-images;android-34;google_apis;x86_64" -d pixel_6
 ```
@@ -40,7 +40,7 @@ echo no | /home/fran/Android/Sdk/cmdline-tools/latest/bin/avdmanager \
 
 ```bash
 mkdir -p /tmp/k56-emu
-setsid /home/fran/Android/Sdk/emulator/emulator \
+setsid $HOME/Android/Sdk/emulator/emulator \
   -avd k56-test -no-window -no-audio -no-snapshot \
   -gpu swiftshader_indirect -no-boot-anim \
   > /tmp/k56-emu/emulator.log 2>&1 < /dev/null &
@@ -54,7 +54,7 @@ done
 ## 4. Bauen, installieren, starten
 
 ```bash
-cd /home/fran/.openclaw/workspace/k56
+cd <repo>
 ./gradlew assembleDebug
 $ADB install -r app/build/outputs/apk/debug/app-debug.apk
 $ADB shell am start -n app.k56.player/.MainActivity
