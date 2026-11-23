@@ -109,6 +109,8 @@
     <string name="queue_move_down">Move down</string>
     <string name="queue_remove">Remove</string>
     <string name="player_favorite">Favorite</string>
+    <string name="action_favorite_add">Add to favorites</string>
+    <string name="action_favorite_remove">Remove from favorites</string>
 
     <!-- settings -->
     <string name="settings_edit_connection">Edit connection</string>

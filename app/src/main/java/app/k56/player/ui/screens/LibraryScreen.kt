@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -26,6 +27,7 @@ import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Shuffle
 import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.Icons
@@ -43,7 +45,8 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.PrimaryScrollableTabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -483,6 +486,7 @@ class LibraryViewModel(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LibraryScreen(
     repository: MediaRepository,
@@ -595,7 +599,12 @@ fun LibraryScreen(
 
     Box(Modifier.fillMaxSize()) {
     Column(Modifier.fillMaxSize()) {
-        TabRow(selectedTabIndex = tab) {
+        // Six labels do not fit a fixed TabRow: it wraps them mid-word ("Favori\ntes").
+        // A scrollable row keeps every label on one line and lets the strip move instead.
+        PrimaryScrollableTabRow(
+            selectedTabIndex = tab,
+            edgePadding = 0.dp,
+        ) {
             listOf(
                 stringResource(R.string.library_tab_albums),
                 stringResource(R.string.library_tab_artists),
@@ -607,7 +616,13 @@ fun LibraryScreen(
                 Tab(
                     selected = tab == index,
                     onClick = { tab = index },
-                    text = { Text(label) },
+                    text = {
+                        Text(
+                            text = label,
+                            maxLines = 1,
+                            softWrap = false,
+                        )
+                    },
                 )
             }
         }
@@ -972,7 +987,7 @@ fun LibraryScreen(
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 8.dp),
+                                .padding(start = 16.dp, end = 8.dp, top = 4.dp, bottom = 4.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Text(
@@ -981,32 +996,38 @@ fun LibraryScreen(
                                     downloadedIds.count { id -> favorites.any { it.id == id } },
                                     favorites.size,
                                 ),
-                                style = MaterialTheme.typography.bodyMedium,
+                                style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
                                 modifier = Modifier.weight(1f),
                             )
                             IconButton(
                                 onClick = {
                                     if (favorites.isNotEmpty()) onPlay(favorites, 0)
                                 },
+                                modifier = Modifier.size(40.dp),
                             ) {
                                 Icon(
                                     Icons.Rounded.PlayArrow,
                                     contentDescription = stringResource(R.string.common_play),
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
                             }
                             IconButton(
                                 onClick = {
                                     if (favorites.isNotEmpty()) onPlay(favorites.shuffled(), 0)
                                 },
+                                modifier = Modifier.size(40.dp),
                             ) {
                                 Icon(
                                     Icons.Rounded.Shuffle,
                                     contentDescription = stringResource(R.string.player_shuffle),
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
                             }
                             if (downloaded > 0 && missing == 0) {
-                                OutlinedButton(
+                                TextButton(
                                     onClick = {
                                         scope.launch {
                                             favorites.filter { it.id in downloadedIds }.forEach { track ->
@@ -1022,19 +1043,37 @@ fun LibraryScreen(
                                         }
                                     },
                                 ) {
+                                    Icon(
+                                        Icons.Rounded.Refresh,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(18.dp),
+                                    )
+                                    Spacer(Modifier.width(6.dp))
                                     Text(stringResource(R.string.offline_reload))
                                 }
                             }
                             if (missing > 0) {
-                                Button(
+                                // Bulk download is a secondary action: it keeps the wording and
+                                // the icon, but no filled pill that outshouts the track list.
+                                TextButton(
                                     onClick = { enqueueTracks(favorites.filter { it.id !in downloadedIds }) },
                                 ) {
-                                    Text(stringResource(R.string.offline_download_all, missing))
+                                    Text(
+                                        text = stringResource(R.string.offline_download_all, missing),
+                                        style = MaterialTheme.typography.labelMedium,
+                                    )
                                 }
                             }
-                            if (downloadQueue.running) {
-                                Spacer(Modifier.height(8.dp))
-                                Row(verticalAlignment = Alignment.CenterVertically) {
+                        }
+                        // The queue line gets its own row: inside the header row it pushed the
+                        // counter and the buttons around while a download was running.
+                        if (downloadQueue.running) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(start = 16.dp, end = 8.dp, bottom = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
                                     Text(
                                         stringResource(
                                             R.string.download_queue_progress,
@@ -1049,7 +1088,6 @@ fun LibraryScreen(
                                     TextButton(onClick = { offlineStore.cancelAll() }) {
                                         Text(stringResource(R.string.download_queue_cancel))
                                     }
-                                }
                             }
                         }
                         LazyColumn(
