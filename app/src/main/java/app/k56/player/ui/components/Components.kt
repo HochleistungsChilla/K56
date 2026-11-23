@@ -682,58 +682,67 @@ fun TrackRow(
                 )
             }
         }
-        Spacer(Modifier.width(12.dp))
-        if (downloadProgress != null) {
-            CircularProgressIndicator(
-                progress = { downloadProgress },
-                modifier = Modifier.size(22.dp),
-                strokeWidth = 2.dp,
-            )
-            Spacer(Modifier.width(8.dp))
-        } else if (isDownloaded) {
-            Icon(
-                imageVector = Icons.Rounded.DownloadDone,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(20.dp),
-            )
-            Spacer(Modifier.width(8.dp))
-        } else if (isCached) {
-            Icon(
-                imageVector = Icons.Rounded.OfflinePin,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                modifier = Modifier.size(16.dp),
-            )
-            Spacer(Modifier.width(8.dp))
-        } else if (onDownload != null) {
-            IconButton(onClick = onDownload) {
-                Icon(
-                    imageVector = Icons.Rounded.Download,
-                    contentDescription = stringResource(R.string.offline_download),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        Spacer(Modifier.width(8.dp))
+        // Fixed trailing slots: an icon keeps its x-position whether the track is
+        // downloaded, favourited, mid-transfer or plain, so the column stays aligned.
+        Box(Modifier.size(32.dp), contentAlignment = Alignment.Center) {
+            if (downloadProgress != null) {
+                CircularProgressIndicator(
+                    progress = { downloadProgress },
+                    modifier = Modifier.size(20.dp),
+                    strokeWidth = 2.dp,
                 )
-            }
-        }
-        if (onToggleFavorite != null && showFavoriteBadge) {
-            IconButton(onClick = onToggleFavorite) {
+            } else if (isDownloaded) {
                 Icon(
-                    imageVector = if (isFavorite) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
+                    imageVector = Icons.Rounded.DownloadDone,
                     contentDescription = null,
-                    tint = if (isFavorite) MaterialTheme.colorScheme.primary
-                    else MaterialTheme.colorScheme.onSurfaceVariant,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(18.dp),
                 )
+            } else if (isCached) {
+                Icon(
+                    imageVector = Icons.Rounded.OfflinePin,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                    modifier = Modifier.size(16.dp),
+                )
+            } else if (onDownload != null) {
+                IconButton(onClick = onDownload, modifier = Modifier.size(32.dp)) {
+                    Icon(
+                        imageVector = Icons.Rounded.Download,
+                        contentDescription = stringResource(R.string.offline_download),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(20.dp),
+                    )
+                }
             }
         }
-        Text(
-            text = formatDuration(track.durationMs),
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        if (onPlayNext != null || onAddToQueue != null || onAddToPlaylist != null || onRemoveFromPlaylist != null) {
-            Box {
-                IconButton(onClick = { menuOpen = true }) {
+        Box(Modifier.size(32.dp), contentAlignment = Alignment.Center) {
+            if (onToggleFavorite != null && showFavoriteBadge) {
+                IconButton(onClick = onToggleFavorite, modifier = Modifier.size(32.dp)) {
                     Icon(
+                        imageVector = if (isFavorite) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
+                        contentDescription = null,
+                        tint = if (isFavorite) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(18.dp),
+                    )
+                }
+            }
+        }
+        Box(Modifier.width(44.dp), contentAlignment = Alignment.CenterEnd) {
+            Text(
+                text = formatDuration(track.durationMs),
+                style = MaterialTheme.typography.labelMedium.copy(fontFeatureSettings = "tnum"),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+            )
+        }
+        Box(Modifier.size(32.dp), contentAlignment = Alignment.Center) {
+            if (onPlayNext != null || onAddToQueue != null || onAddToPlaylist != null || onRemoveFromPlaylist != null) {
+                Box {
+                    IconButton(onClick = { menuOpen = true }, modifier = Modifier.size(32.dp)) {
+                        Icon(
                         Icons.Rounded.MoreVert,
                         contentDescription = stringResource(R.string.action_more),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -789,6 +798,7 @@ fun TrackRow(
             }
         }
     }
+}
 }
 
 @Composable
