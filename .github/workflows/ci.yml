@@ -27,7 +27,14 @@ jobs:
           distribution: temurin
           java-version: '21'
           cache: gradle
-      - uses: android-actions/setup-android@v3
+      # The runner image already ships an SDK; setup-android@v3 fails on new
+      # images because the legacy "tools" package is gone. Install what the
+      # build needs directly instead.
+      - name: Android packages
+        run: |
+          SDKMANAGER="$(find "$ANDROID_HOME/cmdline-tools" -name sdkmanager -type f | head -1)"
+          yes | "$SDKMANAGER" --licenses > /dev/null
+          "$SDKMANAGER" "platform-tools" "platforms;android-35" "build-tools;35.0.0"
       - run: ./gradlew --no-daemon :app:assembleDebug :app:testDebugUnitTest
       - if: failure()
         uses: actions/upload-artifact@v4
