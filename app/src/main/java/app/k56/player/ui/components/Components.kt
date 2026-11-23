@@ -192,7 +192,9 @@ fun AlbumCard(
                         IconButton(onClick = onToggleFavorite) {
                             Icon(
                                 imageVector = if (isFavorite) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
-                                contentDescription = null,
+                                contentDescription = stringResource(
+                                    if (isFavorite) R.string.action_favorite_remove else R.string.action_favorite_add,
+                                ),
                                 tint = if (isFavorite) MaterialTheme.colorScheme.primary
                                 else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.75f),
                             )
@@ -339,7 +341,9 @@ fun ArtistCard(
                         IconButton(onClick = onToggleFavorite) {
                             Icon(
                                 imageVector = if (isFavorite) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
-                                contentDescription = null,
+                                contentDescription = stringResource(
+                                    if (isFavorite) R.string.action_favorite_remove else R.string.action_favorite_add,
+                                ),
                                 tint = if (isFavorite) MaterialTheme.colorScheme.primary
                                 else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.75f),
                             )
@@ -439,7 +443,9 @@ fun AlbumListRow(
             IconButton(onClick = onToggleFavorite) {
                 Icon(
                     imageVector = if (isFavorite) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
-                    contentDescription = null,
+                    contentDescription = stringResource(
+                        if (isFavorite) R.string.action_favorite_remove else R.string.action_favorite_add,
+                    ),
                     tint = if (isFavorite) MaterialTheme.colorScheme.primary
                     else MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -520,7 +526,9 @@ fun ArtistListRow(
             IconButton(onClick = onToggleFavorite) {
                 Icon(
                     imageVector = if (isFavorite) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
-                    contentDescription = null,
+                    contentDescription = stringResource(
+                        if (isFavorite) R.string.action_favorite_remove else R.string.action_favorite_add,
+                    ),
                     tint = if (isFavorite) MaterialTheme.colorScheme.primary
                     else MaterialTheme.colorScheme.onSurfaceVariant,
                 )
