@@ -1025,7 +1025,9 @@ fun MiniPlayer(
 
     AnimatedVisibility(visible = state.hasItem && controller != null) {
         Surface(
-            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+            // surfaceContainerHigh picks up too much of the accent on this palette and
+            // reads olive against the black list; the plain container step stays neutral.
+            color = MaterialTheme.colorScheme.surfaceContainer,
             shape = RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp),
             modifier = Modifier
                 .fillMaxWidth()
