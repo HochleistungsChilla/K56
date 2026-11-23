@@ -15,6 +15,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -27,6 +28,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -38,6 +40,8 @@ import app.k56.player.data.acquisition.clients.DownloadClientConfig
 import app.k56.player.data.acquisition.clients.DownloadClientException
 import app.k56.player.data.acquisition.clients.DownloadClientKind
 import app.k56.player.data.acquisition.clients.DownloadClientStore
+import app.k56.player.data.acquisition.clients.DownloadTask
+import app.k56.player.ui.formatBytes
 import kotlinx.coroutines.launch
 
 /**
@@ -62,6 +66,8 @@ fun DownloadClientCard(modifier: Modifier = Modifier) {
     var busy by remember { mutableStateOf(false) }
     var message by remember { mutableStateOf<String?>(null) }
     var isError by remember { mutableStateOf(false) }
+    var transfers by remember { mutableStateOf<List<DownloadTask>>(emptyList()) }
+    var transfersLoading by remember { mutableStateOf(false) }
 
     fun draft() = DownloadClientConfig(
         kind = kind,
@@ -118,7 +124,7 @@ fun DownloadClientCard(modifier: Modifier = Modifier) {
                 )
 
                 when (kind) {
-                    DownloadClientKind.SABNZBD -> {
+                    DownloadClientKind.SABNZBD, DownloadClientKind.SLSKD -> {
                         Spacer(Modifier.height(8.dp))
                         OutlinedTextField(
                             value = key,
@@ -207,7 +213,88 @@ fun DownloadClientCard(modifier: Modifier = Modifier) {
                     }
                 }
 
+                if (kind == DownloadClientKind.SLSKD) {
+                    Spacer(Modifier.height(14.dp))
+                    Text(
+                        stringResource(R.string.download_client_slskd_note),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Spacer(Modifier.height(10.dp))
+                    Text(
+                        stringResource(R.string.download_client_transfers),
+                        style = MaterialTheme.typography.titleSmall,
+                    )
+                    Spacer(Modifier.height(6.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        OutlinedButton(
+                            enabled = !transfersLoading && saved.kind == DownloadClientKind.SLSKD && saved.isComplete,
+                            onClick = {
+                                transfersLoading = true
+                                message = null
+                                val config = saved
+                                scope.launch {
+                                    try {
+                                        val client = config.createClient()
+                                            ?: throw DownloadClientException("No client configured")
+                                        transfers = client.tasks()
+                                        isError = false
+                                        if (transfers.isEmpty()) {
+                                            message = context.getString(R.string.download_client_no_transfers)
+                                        }
+                                    } catch (e: DownloadClientException) {
+                                        isError = true
+                                        message = e.message
+                                    } finally {
+                                        transfersLoading = false
+                                    }
+                                }
+                            },
+                        ) {
+                            Text(stringResource(R.string.download_client_load_transfers))
+                        }
+                        if (transfersLoading) {
+                            Spacer(Modifier.size(8.dp))
+                            CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
+                        }
+                    }
+                    transfers.forEach { task ->
+                        SlskdTransferRow(
+                            task = task,
+                            busy = transfersLoading,
+                            onPause = {
+                                message = null
+                                val config = saved
+                                scope.launch {
+                                    try {
+                                        config.createClient()?.pause(task.id)
+                                        isError = false
+                                        message = context.getString(R.string.download_client_paused)
+                                    } catch (e: DownloadClientException) {
+                                        isError = true
+                                        message = e.message
+                                    }
+                                }
+                            },
+                            onResume = {
+                                message = null
+                                val config = saved
+                                scope.launch {
+                                    try {
+                                        config.createClient()?.resume(task.id)
+                                        isError = false
+                                    } catch (e: DownloadClientException) {
+                                        isError = true
+                                        message = e.message
+                                    }
+                                }
+                            },
+                        )
+                    }
+                }
+
                 Spacer(Modifier.height(14.dp))
+                if (kind != DownloadClientKind.SLSKD) {
                 Text(
                     stringResource(R.string.download_client_hand_over),
                     style = MaterialTheme.typography.titleSmall,
@@ -252,6 +339,7 @@ fun DownloadClientCard(modifier: Modifier = Modifier) {
                         Text(stringResource(R.string.download_client_send))
                     }
                 }
+                }
 
                 message?.let {
                     Spacer(Modifier.height(8.dp))
@@ -272,4 +360,59 @@ private fun kindLabel(kind: DownloadClientKind): String = when (kind) {
     DownloadClientKind.NONE -> stringResource(R.string.download_client_none)
     DownloadClientKind.SABNZBD -> "SABnzbd"
     DownloadClientKind.QBITTORRENT -> "qBittorrent"
+    DownloadClientKind.SLSKD -> "slskd"
+}
+
+@Composable
+private fun SlskdTransferRow(
+    task: DownloadTask,
+    busy: Boolean,
+    onPause: () -> Unit,
+    onResume: () -> Unit,
+) {
+    Column(Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
+        Text(
+            task.name,
+            style = MaterialTheme.typography.titleSmall,
+            maxLines = 1,
+            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+        )
+        Text(
+            buildString {
+                val total = task.sizeBytes
+                val done = task.transferredBytes
+                if (done != null && total != null) {
+                    append(formatBytes(done)).append(" / ").append(formatBytes(total))
+                } else if (total != null) {
+                    append(formatBytes(total))
+                }
+                task.speedBytesPerSecond?.let {
+                    if (isNotEmpty()) append(" · ")
+                    append(formatBytes(it)).append("/s")
+                }
+                if (task.state.isNotBlank()) {
+                    if (isNotEmpty()) append(" · ")
+                    append(task.state)
+                }
+            },
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(Modifier.height(6.dp))
+        LinearProgressIndicator(
+            progress = { task.progress },
+            modifier = Modifier.fillMaxWidth().height(4.dp),
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            OutlinedButton(onClick = onPause, enabled = !busy) {
+                Text(stringResource(R.string.download_client_pause))
+            }
+            OutlinedButton(onClick = onResume, enabled = !busy) {
+                Text(stringResource(R.string.download_client_resume))
+            }
+        }
+        task.error?.let {
+            Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+        }
+    }
 }

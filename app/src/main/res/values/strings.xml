@@ -513,6 +513,13 @@
     <string name="download_client_send">Send</string>
     <string name="download_client_sent">Sent to the client</string>
     <string name="download_client_rejected">The client did not accept it</string>
+    <string name="download_client_slskd_note">slskd downloads come from Soulseek searches (usually started by Lidarr). Links cannot be handed over, and slskd has no pause/resume — only cancel in slskd.</string>
+    <string name="download_client_transfers">Transfers</string>
+    <string name="download_client_load_transfers">Show downloads</string>
+    <string name="download_client_no_transfers">No downloads running.</string>
+    <string name="download_client_pause">Pause</string>
+    <string name="download_client_resume">Resume</string>
+    <string name="download_client_paused">Paused</string>
     <string name="requests_only_my_artists">Only my artists</string>
     <string name="audiomuse_title">AudioMuse</string>
     <string name="audiomuse_body">Sonic search over your own library. K56 only reads from AudioMuse.</string>
