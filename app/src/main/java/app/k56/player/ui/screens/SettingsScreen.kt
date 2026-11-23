@@ -74,6 +74,7 @@ import app.k56.player.ui.theme.ThemeController
 import app.k56.player.ui.theme.ThemeMode
 import app.k56.player.ui.screens.settings.AcquisitionCard
 import app.k56.player.ui.screens.settings.DownloadClientCard
+import app.k56.player.ui.screens.settings.AudioMuseCard
 import app.k56.player.ui.screens.settings.SettingsSection
 
 @Composable
@@ -411,6 +412,8 @@ fun SettingsScreen(
         )
 
         DownloadClientCard(Modifier.padding(top = 14.dp))
+
+        AudioMuseCard(Modifier.padding(top = 14.dp))
 
         SettingsSection(
             title = stringResource(R.string.offline_section),

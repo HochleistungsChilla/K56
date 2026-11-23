@@ -509,4 +509,20 @@
     <string name="download_client_sent">Sent to the client</string>
     <string name="download_client_rejected">The client did not accept it</string>
     <string name="requests_only_my_artists">Only my artists</string>
+    <string name="audiomuse_title">AudioMuse</string>
+    <string name="audiomuse_body">Sonic search over your own library. K56 only reads from AudioMuse.</string>
+    <string name="audiomuse_url">AudioMuse URL</string>
+    <string name="audiomuse_token">API token</string>
+    <string name="audiomuse_test">Test connection</string>
+    <string name="audiomuse_save">Save</string>
+    <string name="audiomuse_saved">Saved</string>
+    <string name="audiomuse_connected">Connected</string>
+    <string name="audiomuse_chip_clap_on">CLAP active</string>
+    <string name="audiomuse_chip_clap_off">CLAP off</string>
+    <string name="audiomuse_chip_embeddings">%1$s embeddings</string>
+    <string name="audiomuse_chip_refresh">updated %1$s</string>
+    <string name="audiomuse_search_hint">calm piano at night</string>
+    <string name="audiomuse_search_action">Search</string>
+    <string name="audiomuse_no_results">No matches</string>
+    <string name="audiomuse_results">%1$d results</string>
 </resources>

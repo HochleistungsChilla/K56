@@ -140,9 +140,15 @@ Verifiziert: `dup`-Suche crasht nicht mehr und zeigt das Album nur noch einmal.
 | Echter Jellyfin | `http://192.168.0.93:8096` | FranziflixXx², großer Bestand (~62k Tracks) |
 | Lidarr | `http://192.168.0.93:8686` | `/api/v1`, `X-Api-Key`; ohne Key liefert `system/status` 401 |
 | SABnzbd | `http://192.168.0.93:8080` | `api?mode=…&apikey=…`; `mode=version` antwortet **ohne** Auth, `mode=queue` braucht den Key |
+| AudioMuse-AI | `http://192.168.0.93:8090` | `/api/**` mit `Authorization: Bearer <API_TOKEN>`; `API_TOKEN` setzt Fran im Web-UI (Setup Wizard), nicht im Chat |
 
 **Wichtig bei SABnzbd:** Ein Verbindungstest über `mode=version` würde auch
 einen falschen Key akzeptieren. Der Adapter prüft deshalb `mode=queue`.
+
+**Wichtig bei AudioMuse:** Ohne Token antwortet jeder `/api/**`-Pfad mit 401
+`{"error":"Unauthorized","error_class":"Authentication Required","error_code":1005}`.
+Die Karte testet deshalb `/api/clap/stats`; ein 200 dort beweist den Token.
+Ein 503 bedeutet „Analyse im Web-UI noch nicht gelaufen", nicht „Key falsch".
 
 **Große Bibliothek:** Auf dem echten Server dauert ein voller Sync lange
 (~62k Tracks). Während des Syncs sind Schreibzugriffe auf `library.db`
