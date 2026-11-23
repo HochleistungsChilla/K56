@@ -416,7 +416,7 @@ fun SettingsScreen(
             title = stringResource(R.string.offline_section),
         ) {
             InfoRow(stringResource(R.string.offline_tracks), offlineTracks.size.toString())
-            InfoRow("Speicher", formatBytes(offlineTracks.sumOf { it.bytes }))
+            InfoRow(stringResource(R.string.offline_storage), formatBytes(offlineTracks.sumOf { it.bytes }))
 
             if (queueEntries.isNotEmpty() || downloadQueue.running) {
                 Spacer(Modifier.height(12.dp))
