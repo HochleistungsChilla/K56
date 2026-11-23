@@ -23,7 +23,10 @@ import okhttp3.HttpUrl.Companion.toHttpUrl
 fun parseBaseUrl(raw: String): HttpUrl {
     val trimmed = raw.trim()
     require(trimmed.isNotEmpty()) { "URL is empty" }
-    val withScheme = if (trimmed.contains("://")) trimmed else "http://$trimmed"
+    // "http:/host" and "http:host" are typos people actually make. Repair the
+    // separator instead of turning the scheme into a host name further down.
+    val repaired = trimmed.replace(SCHEME_SEPARATOR, "$1://")
+    val withScheme = if (repaired.contains("://")) repaired else "http://$repaired"
     val schemeEnd = withScheme.indexOf("://") + 3
     if (schemeEnd < 3) require(false) { "URL has no scheme" }
 
@@ -40,3 +43,9 @@ fun parseBaseUrl(raw: String): HttpUrl {
     require(withoutTrailingSlash.length > schemeEnd) { "URL has no host" }
     return withoutTrailingSlash.toHttpUrl()
 }
+
+/**
+ * Matches `http:` and `http:/` at the start — but never `http://`, so a
+ * genuinely broken `http:///path` keeps failing instead of becoming host "path".
+ */
+private val SCHEME_SEPARATOR = Regex("^(https?):(?!//)/?", RegexOption.IGNORE_CASE)

@@ -51,6 +51,14 @@ class BaseUrlTest {
     }
 
     @Test
+    fun aSingleSlashIsRepaired() {
+        assertEquals("http://host:5030/", parseBaseUrl("http:/host:5030").toString())
+        assertEquals("https://host/", parseBaseUrl("https:/host").toString())
+        // Repairing must not invent a host where there is none.
+        assertThrows(IllegalArgumentException::class.java) { parseBaseUrl("http:/") }
+    }
+
+    @Test
     fun aHostWithASpaceIsRejected() {
         assertThrows(IllegalArgumentException::class.java) { parseBaseUrl("http://exa mple.com:8090") }
         assertThrows(IllegalArgumentException::class.java) { parseBaseUrl("192.168.0.9 3:8090") }
