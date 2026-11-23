@@ -38,7 +38,7 @@ class MainActivity : ComponentActivity() {
         val container = (application as K56App).container
         ThemeController.load(this)
         setContent {
-            K56Theme(mode = ThemeController.mode) {
+            K56Theme(mode = ThemeController.mode, palette = ThemeController.palette) {
                 K56Root(container)
             }
         }

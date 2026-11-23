@@ -2,6 +2,12 @@ package app.k56.player.ui.screens
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -12,6 +18,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -72,10 +79,15 @@ import kotlinx.coroutines.withContext
 import app.k56.player.ui.formatBytes
 import app.k56.player.ui.theme.ThemeController
 import app.k56.player.ui.theme.ThemeMode
+import app.k56.player.ui.theme.ThemePalette
+import app.k56.player.ui.theme.paletteScheme
 import app.k56.player.ui.screens.settings.AcquisitionCard
 import app.k56.player.ui.screens.settings.DownloadClientCard
 import app.k56.player.ui.screens.settings.AudioMuseCard
 import app.k56.player.ui.screens.settings.SettingsSection
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Surface
 
 @Composable
 fun SettingsScreen(
@@ -1154,9 +1166,27 @@ fun SettingsScreen(
                 ThemeMode.entries.forEach { entry ->
                     FilterChip(
                         selected = ThemeController.mode == entry,
-                        onClick = { ThemeController.set(context, entry) },
+                        onClick = { ThemeController.setMode(context, entry) },
                         label = { Text(stringResource(themeLabel(entry))) },
                     )
+                }
+            }
+            // The sets are dark schemes; in light mode the choice would do nothing.
+            val effectiveDark = ThemeController.mode == ThemeMode.Dark ||
+                (ThemeController.mode == ThemeMode.System && isSystemInDarkTheme())
+            if (effectiveDark) {
+                Spacer(Modifier.height(10.dp))
+                Row(
+                    modifier = Modifier.horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    ThemePalette.entries.forEach { entry ->
+                        PaletteChip(
+                            palette = entry,
+                            selected = ThemeController.palette == entry,
+                            onClick = { ThemeController.setPalette(context, entry) },
+                        )
+                    }
                 }
             }
         }
@@ -1372,7 +1402,63 @@ private fun themeLabel(mode: ThemeMode): Int = when (mode) {
     ThemeMode.System -> R.string.theme_system
     ThemeMode.Light -> R.string.theme_light
     ThemeMode.Dark -> R.string.theme_dark
-    ThemeMode.Matrix -> R.string.theme_matrix
+}
+
+private fun paletteLabel(palette: ThemePalette): Int = when (palette) {
+    ThemePalette.Warm -> R.string.theme_palette_warm
+    ThemePalette.Matrix -> R.string.theme_matrix
+    ThemePalette.Ice -> R.string.theme_palette_ice
+    ThemePalette.Twilight -> R.string.theme_palette_twilight
+    ThemePalette.Sakura -> R.string.theme_palette_sakura
+    ThemePalette.Cobalt -> R.string.theme_palette_cobalt
+}
+
+/**
+ * Surface, accent and secondary straight from the set's scheme — one source of
+ * truth, and no chance of a stray alpha value.
+ */
+private fun paletteSwatches(palette: ThemePalette): Triple<Color, Color, Color> {
+    val scheme = paletteScheme(palette)
+    return Triple(scheme.surface, scheme.primary, scheme.secondary)
+}
+
+@Composable
+private fun PaletteChip(
+    palette: ThemePalette,
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
+    val (surface, accent, secondary) = paletteSwatches(palette)
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(12.dp),
+        color = if (selected) MaterialTheme.colorScheme.secondaryContainer
+        else MaterialTheme.colorScheme.surfaceContainerHigh,
+        border = if (selected) {
+            BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary)
+        } else {
+            BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+        },
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                listOf(surface, accent, secondary).forEach { swatch ->
+                    Canvas(Modifier.size(14.dp)) {
+                        drawCircle(color = swatch, radius = size.minDimension / 2f)
+                    }
+                }
+            }
+            Spacer(Modifier.height(6.dp))
+            Text(
+                text = stringResource(paletteLabel(palette)),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+        }
+    }
 }
 
 private fun orientationLabel(mode: ScreenOrientation): Int = when (mode) {
