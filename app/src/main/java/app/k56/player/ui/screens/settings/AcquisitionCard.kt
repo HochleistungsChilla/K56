@@ -64,6 +64,7 @@ import kotlinx.coroutines.launch
 fun AcquisitionCard(
     modifier: Modifier = Modifier,
     onLibraryChanged: () -> Unit = {},
+    onOpenRequests: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val store = remember { AcquisitionStore(context.applicationContext) }
@@ -82,7 +83,6 @@ fun AcquisitionCard(
     var message by remember { mutableStateOf<String?>(null) }
     var isError by remember { mutableStateOf(false) }
     var searchOpen by remember { mutableStateOf(false) }
-    var requestsOpen by remember { mutableStateOf(false) }
 
     fun draft() = AcquisitionConfig(
         enabled = enabled,
@@ -229,7 +229,9 @@ fun AcquisitionCard(
             Spacer(Modifier.height(12.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Button(
-                    enabled = url.isNotBlank() && apiKey.isNotBlank(),
+                    // A saved key must be removable again, so Save only needs a
+                    // URL; Test, search and the request list still need the key.
+                    enabled = url.isNotBlank(),
                     onClick = {
                         store.save(draft())
                         isError = false
@@ -245,10 +247,12 @@ fun AcquisitionCard(
                     Text(stringResource(R.string.acquisition_search))
                 }
                 OutlinedButton(
-                    enabled = url.isNotBlank() && apiKey.isNotBlank(),
-                    onClick = { requestsOpen = true },
+                    // The screen reads the saved config, so the button must not
+                    // offer a draft that was never stored: Save first, then look.
+                    enabled = saved.isComplete,
+                    onClick = onOpenRequests,
                 ) {
-                    Text(stringResource(R.string.acquisition_requests))
+                    Text(stringResource(R.string.acquisition_open_requests))
                 }
             }
         }
@@ -258,14 +262,6 @@ fun AcquisitionCard(
         SearchDialog(
             config = draft(),
             onDismiss = { searchOpen = false },
-        )
-    }
-
-    if (requestsOpen) {
-        RequestsDialog(
-            config = draft(),
-            onDismiss = { requestsOpen = false },
-            onLibraryChanged = onLibraryChanged,
         )
     }
 }

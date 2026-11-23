@@ -20,7 +20,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -51,10 +54,13 @@ import app.k56.player.ui.screens.LayoutScreen
 import app.k56.player.ui.screens.LoginScreen
 import app.k56.player.ui.screens.PlaylistScreen
 import app.k56.player.ui.screens.PlayerScreen
+import app.k56.player.ui.screens.RequestsScreen
 import app.k56.player.ui.screens.SearchScreen
 import app.k56.player.ui.screens.SettingsScreen
 import app.k56.player.ui.screens.SyncLogScreen
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -90,6 +96,35 @@ private fun MainShell(container: AppContainer) {
     DisposableEffect(Unit) {
         onDispose { connection.release() }
     }
+    // A3: while the app is in the foreground, notice albums that finished in the
+    // acquisition queue and refresh the offline library once for them. Every five
+    // minutes is enough for a download queue; one toast for the batch, so ten
+    // finished albums do not mean ten pop-ups.
+    val lifecycleOwner = LocalLifecycleOwner.current
+    LaunchedEffect(lifecycleOwner) {
+        lifecycleOwner.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+            while (isActive) {
+                val arrived = runCatching { container.acquisitionWatcher.check() }
+                    .onFailure {
+                        if (BuildConfig.DEBUG) {
+                            android.util.Log.w("K56/Acquisition", "watcher check failed", it)
+                        }
+                    }
+                    .getOrDefault(emptyList())
+                if (arrived.isNotEmpty()) {
+                    container.librarySync.start()
+                    val text = if (arrived.size == 1) {
+                        context.getString(R.string.requests_arrived, arrived.first())
+                    } else {
+                        context.getString(R.string.requests_arrived_many, arrived.size)
+                    }
+                    android.widget.Toast.makeText(context, text, android.widget.Toast.LENGTH_LONG).show()
+                }
+                delay(5 * 60_000L)
+            }
+        }
+    }
+
 
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
@@ -478,6 +513,13 @@ private fun MainShell(container: AppContainer) {
                     onOpenCache = { navController.navigate("cache") },
                     onOpenSyncLog = { navController.navigate("synclog") },
                     onOpenLayout = { navController.navigate("layout") },
+                    onOpenRequests = { navController.navigate("requests") },
+                )
+            }
+            composable("requests") {
+                RequestsScreen(
+                    onBack = { navController.popBackStack() },
+                    onLibraryChanged = { container.librarySync.start() },
                 )
             }
             composable(

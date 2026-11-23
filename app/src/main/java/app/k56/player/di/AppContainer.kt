@@ -3,6 +3,8 @@ package app.k56.player.di
 import android.content.Context
 import app.k56.player.core.net.NetworkMonitor
 import app.k56.player.data.MediaRepository
+import app.k56.player.data.acquisition.AcquisitionStore
+import app.k56.player.data.acquisition.AcquisitionWatcher
 import app.k56.player.data.RepositoryRouter
 import app.k56.player.data.SessionStore
 import app.k56.player.data.SettingsStore
@@ -42,6 +44,10 @@ class AppContainer(context: Context) {
     val favoriteCache = FavoriteCache(repository, offlineStore, settingsStore, networkMonitor)
     val libraryDb = LibraryDb.get(appContext)
     val librarySync = LibrarySync(repository, libraryDb)
+
+    /** A3: shared acquisition settings and the import watcher behind them. */
+    val acquisitionStore = AcquisitionStore(appContext)
+    val acquisitionWatcher = AcquisitionWatcher(acquisitionStore)
 
     val mediaCache = MediaCache(appContext, settingsStore)
     val irLibrary = IrLibrary(appContext)

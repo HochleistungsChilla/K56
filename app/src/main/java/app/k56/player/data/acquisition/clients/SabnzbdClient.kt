@@ -1,11 +1,13 @@
 package app.k56.player.data.acquisition.clients
 
+import app.k56.player.core.net.parseBaseUrl
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import okhttp3.HttpUrl.Companion.toHttpUrl
+import okhttp3.HttpUrl
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.IOException
@@ -38,15 +40,21 @@ class SabnzbdClient(
         .readTimeout(20, TimeUnit.SECONDS)
         .build()
 
-    private fun base(): String {
-        val raw = config.baseUrl.trim().trimEnd('/')
-        if (raw.isBlank()) throw DownloadClientException("SABnzbd URL is empty")
-        return if (raw.startsWith("http://") || raw.startsWith("https://")) raw else "http://$raw"
+    /**
+     * A URL typed by a human. parseBaseUrl rejects "http://" and hosts with a
+     * space with IllegalArgumentException; that must become our own error, not
+     * an exception escaping the coroutine.
+     */
+    private fun requireBase(): HttpUrl = try {
+        parseBaseUrl(config.baseUrl)
+    } catch (e: IllegalArgumentException) {
+        throw DownloadClientException("SABnzbd URL is not valid", e)
     }
 
     private suspend fun call(mode: String, extra: Map<String, String> = emptyMap()): String =
         withContext(Dispatchers.IO) {
-            val url = (base() + "/api").toHttpUrl().newBuilder()
+            val url = requireBase().newBuilder()
+                .addPathSegments("api")
                 .addQueryParameter("mode", mode)
                 .addQueryParameter("output", "json")
                 .addQueryParameter("apikey", config.key)
@@ -93,7 +101,10 @@ class SabnzbdClient(
             val cat = category?.takeIf { it.isNotBlank() } ?: config.category.takeIf { it.isNotBlank() }
             cat?.let { put("cat", it) }
         }
-        val parsed = runCatching { json.decodeFromString<AddDto>(call("addurl", params)) }.getOrNull()
+        // Fetch first, then parse: a wrong key or an unreachable host must
+        // surface, not turn into "the client said no".
+        val raw = call("addurl", params)
+        val parsed = runCatching { json.decodeFromString<AddDto>(raw) }.getOrNull()
         return parsed?.status == true
     }
 
@@ -115,7 +126,8 @@ class SabnzbdClient(
     private data class QueueDto(val queue: QueueInner? = null)
 
     override suspend fun tasks(): List<DownloadTask> {
-        val parsed = runCatching { json.decodeFromString<QueueDto>(call("queue")) }.getOrNull()
+        val raw = call("queue")
+        val parsed = runCatching { json.decodeFromString<QueueDto>(raw) }.getOrNull()
         return parsed?.queue?.slots.orEmpty().map { slot ->
             val percent = slot.percentage.replace(',', '.').toFloatOrNull() ?: 0f
             val totalMb = slot.mb?.toFloatOrNull()

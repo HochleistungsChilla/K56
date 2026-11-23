@@ -5,7 +5,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
-enum class DownloadClientKind { NONE, SABNZBD, QBITTORRENT }
+enum class DownloadClientKind { NONE, SABNZBD, QBITTORRENT, SLSKD }
 
 data class DownloadClientConfig(
     val kind: DownloadClientKind = DownloadClientKind.NONE,
@@ -20,6 +20,7 @@ data class DownloadClientConfig(
             DownloadClientKind.NONE -> false
             DownloadClientKind.SABNZBD -> baseUrl.isNotBlank() && key.isNotBlank()
             DownloadClientKind.QBITTORRENT -> baseUrl.isNotBlank()
+            DownloadClientKind.SLSKD -> baseUrl.isNotBlank() && key.isNotBlank()
         }
 
     /** The adapter for this configuration, or null when nothing is configured. */
@@ -35,6 +36,9 @@ data class DownloadClientConfig(
                 passwd = passwd,
                 category = category,
             ),
+        )
+        DownloadClientKind.SLSKD -> SlskdClient(
+            SlskdConfig(baseUrl = baseUrl, apiKey = key),
         )
     }
 }

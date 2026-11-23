@@ -15,3 +15,9 @@ docs/BACKLOG.md
 
 # reference checkout, never part of this repo
 symfonik-re/
+
+# locally built APKs and screenshots
+files/
+
+# Kotlin session caches (204 MB of APKs/screenshots in the main tree)
+.kotlin/

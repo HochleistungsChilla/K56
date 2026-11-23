@@ -13,6 +13,8 @@ data class DownloadTask(
     val state: String,
     val etaSeconds: Long? = null,
     val sizeBytes: Long? = null,
+    /** Bytes already downloaded, when the client reports it separately. */
+    val transferredBytes: Long? = null,
     val speedBytesPerSecond: Long? = null,
     val error: String? = null,
 ) {
