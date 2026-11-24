@@ -68,7 +68,9 @@ import app.k56.player.ui.components.TrackRow
 import app.k56.player.ui.userMessage
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class AlbumViewModel(
     private val repository: MediaRepository,
@@ -117,14 +119,24 @@ class AlbumViewModel(
                     .take(12)
                 offlineCopy = false
             } catch (e: Exception) {
-                val album = libraryDb.albumById(albumId)
-                if (album != null) {
-                    details = AlbumDetails(album = album, tracks = libraryDb.tracksByAlbum(albumId))
-                    moreFromArtist = album.artistId
-                        ?.let { libraryDb.albumsByArtist(it) }
-                        ?.filter { it.id != albumId }
-                        ?.take(12)
-                        .orEmpty()
+                // Local reads on IO: the fallback runs exactly when the device is
+                // already busy waiting for a timeout.
+                val fallback = withContext(Dispatchers.IO) {
+                    val album = libraryDb.albumById(albumId) ?: return@withContext null
+                    album to AlbumDetails(
+                        album = album,
+                        tracks = libraryDb.tracksByAlbum(albumId),
+                    )
+                }
+                if (fallback != null) {
+                    details = fallback.second
+                    moreFromArtist = withContext(Dispatchers.IO) {
+                        fallback.first.artistId
+                            ?.let { libraryDb.albumsByArtist(it) }
+                            ?.filter { it.id != albumId }
+                            ?.take(12)
+                            .orEmpty()
+                    }
                     offlineCopy = true
                     error = null
                 } else {
