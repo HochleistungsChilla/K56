@@ -26,6 +26,24 @@ X-Emby-Authorization: <same value>
 X-Emby-Token: <access-token>
 ```
 
+### Token transport
+
+Jellyfin 10.10 reads the token from `X-Emby-Token`. Jellyfin 12.x ignores that
+header and only accepts a token inside `Authorization`, as a `Token="…"`
+parameter of the `MediaBrowser` value:
+
+```
+Authorization: MediaBrowser Client="K56", Device="Android",
+    DeviceId="…", Version="…", Token="…"
+```
+
+K56 puts the token in both places on every call. The extra header costs
+nothing and one code path covers the whole supported range.
+
+Media URLs (`/Audio/{id}/stream`, `/Audio/{id}/universal`) stay on the
+`api_key` query parameter: ExoPlayer receives them as plain URLs, where
+headers cannot be attached.
+
 - `POST /Users/AuthenticateByName` with `{"Username": "...", "Pw": "..."}`
 - `POST /Users/AuthenticateWithQuickConnect` with `{"Secret": "..."}`
 - `GET /QuickConnect/Enabled`, `POST /QuickConnect/Initiate`,
@@ -40,9 +58,17 @@ X-Emby-Token: <access-token>
 | Artists | `GET /Artists?Recursive=true&SortBy=SortName` |
 | Album tracks | `GET /Items?ParentId={albumId}&IncludeItemTypes=Audio` |
 | Search | `GET /Items?SearchTerm=…&IncludeItemTypes=MusicAlbum,MusicArtist,Audio` |
+| Playlists | `GET /Items?IncludeItemTypes=Playlist&Recursive=true&SortBy=SortName` |
+| Playlist tracks | `GET /Items?ParentId={playlistId}&IncludeItemTypes=Audio` |
 | Favourite | `POST/DELETE /UserFavoriteItems/{itemId}?userId={userId}` |
 
 Images: `GET /Items/{id}/Images/Primary?maxHeight=700&maxWidth=700&tag=…&api_key=…`
+
+`GET /Playlists` is not usable on Jellyfin 12.4: the route answers
+`405 Method Not Allowed`. Reading playlists therefore goes through the
+generic item query, which exists in both 10.10.7 and 12.4. Creating, renaming
+and deleting still target `/Playlists` and `/Playlists/{id}`; those mutations
+were not part of the 12.4 verification run.
 
 Why these two routes: `Users/{userId}/Views` and
 `Users/{userId}/FavoriteItems/{itemId}` still exist in 10.10.7 but are marked
@@ -96,6 +122,7 @@ The answer is JSON with `Address`, `Id`, `Name`.
 ## Tested server versions
 
 - Target/minimum: **10.10.7**
+- Verified: **12.4.0** (sign-in, library load, streaming) against a live server
 - Newer 10.10.x / 10.11.x are accepted
 
 Not supported: servers that require endpoints removed before 10.10.
@@ -104,5 +131,9 @@ Not supported: servers that require endpoints removed before 10.10.
 
 The endpoint inventory above was checked against the Jellyfin API sources at
 tag `v10.10.7` (`Jellyfin.Api/Controllers/{UserViews,UserLibrary,Items,Audio}Controller.cs`)
-and against the current OpenAPI description. The client has not yet been run
-against a live server in this repository; see the roadmap.
+and against the current OpenAPI description.
+
+The client has since been run against a live Jellyfin 12.4.0 server: sign-in
+with a Quick Connect token, library load and streaming. A live 10.10.7
+instance was not part of that run; the 10.10-specific routes above rest on the
+API sources at tag `v10.10.7`.
