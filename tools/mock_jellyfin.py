@@ -187,8 +187,6 @@ class H(BaseHTTPRequestHandler):
                 "ServerName": "k56-mock", "Version": "10.10.7", "Id": "mock-server-id",
                 "OperatingSystem": "Linux",
             })
-        if path == "/Users/Me":
-            return self._send(200, {"Id": "mock-user", "Name": "tester"})
         if path == "/UserViews":
             return self._send(200, page([
                 {"Name": "Music", "Id": "lib-music", "Type": "CollectionFolder",

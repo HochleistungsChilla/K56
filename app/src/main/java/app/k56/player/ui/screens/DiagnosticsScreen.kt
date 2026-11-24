@@ -13,7 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.ContentCopy
@@ -110,7 +110,9 @@ fun DiagnosticsScreen(onBack: () -> Unit) {
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            items(entries, key = { "${it.atEpochMs}-${it.method}-${it.path}-${it.status}" }) { entry ->
+            // No stable key: two calls finishing in the same millisecond would
+            // collide and crash exactly when the log matters most.
+            itemsIndexed(entries) { _, entry ->
                 DiagnosticsRow(entry)
             }
         }

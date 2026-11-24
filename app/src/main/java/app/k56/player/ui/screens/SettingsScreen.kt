@@ -76,6 +76,7 @@ import app.k56.player.data.offline.OfflineStore
 import app.k56.player.data.offline.DownloadState
 import app.k56.player.dsp.DspState
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import app.k56.player.ui.formatBytes
@@ -333,6 +334,13 @@ fun SettingsScreen(
                     MaterialTheme.colorScheme.error
                 },
             )
+            if (checked != null && !checked.reachable && !checked.error.isNullOrBlank()) {
+                Text(
+                    text = checked.error,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
             if (checked != null && checked.reachable && checked.latencyMs > 0) {
                 Text(
                     text = stringResource(R.string.conn_latency, checked.latencyMs),
@@ -348,8 +356,11 @@ fun SettingsScreen(
                         if (testing) return@OutlinedButton
                         testing = true
                         scope.launch {
-                            report = runCatching { repository.testConnection() }.getOrNull()
-                            testing = false
+                            try {
+                                report = testConnectionReport(repository)
+                            } finally {
+                                testing = false
+                            }
                         }
                     },
                     enabled = !testing,
@@ -374,7 +385,7 @@ fun SettingsScreen(
                             qcCode = null
                             qcJob = scope.launch {
                                 val backend = session?.backend ?: BackendKind.JELLYFIN
-                                runCatching {
+                                try {
                                     repository.quickConnect(
                                         backend = backend,
                                         internalUrl = session?.internalUrl
@@ -382,13 +393,16 @@ fun SettingsScreen(
                                         externalUrl = session?.externalUrl,
                                         onCode = { qcCode = it },
                                     )
-                                }.onSuccess {
                                     qcCode = null
-                                    report = runCatching { repository.testConnection() }.getOrNull()
-                                }.onFailure { e ->
+                                    report = testConnectionReport(repository)
+                                } catch (e: CancellationException) {
+                                    // Dialog dismissed: keep the cancel, show nothing.
+                                    throw e
+                                } catch (e: Exception) {
                                     qcError = e.userMessage(context)
+                                } finally {
+                                    qcBusy = false
                                 }
-                                qcBusy = false
                             }
                         },
                         enabled = !qcBusy,
@@ -1591,6 +1605,28 @@ private fun QuickConnectDialog(
         },
     )
 }
+
+/**
+ * [MediaRepository.testConnection] normally returns a report, but a wrapped
+ * repository can still throw. Turn that into a report so the row shows the
+ * failure instead of falling back to "Not checked yet".
+ */
+private suspend fun testConnectionReport(repository: MediaRepository): ConnectionReport =
+    try {
+        repository.testConnection()
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        ConnectionReport(
+            reachable = false,
+            serverName = null,
+            serverVersion = null,
+            authOk = false,
+            latencyMs = 0,
+            error = e.message ?: e.javaClass.simpleName,
+            errorKind = ConnectionErrorKind.IO,
+        )
+    }
 
 /** Phrase for a failed check, from the backend's coarse error class. */
 @Composable
