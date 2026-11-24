@@ -250,10 +250,13 @@ class OfflineStore(
         val saved = readQueue()
         if (saved.isEmpty()) return
         val reconciled = saved.map { entry ->
-            if (isDownloaded(entry.trackId)) {
-                entry.copy(state = DownloadState.DONE)
-            } else {
-                entry.copy(state = DownloadState.QUEUED, attempts = 0)
+            when {
+                isDownloaded(entry.trackId) -> entry.copy(state = DownloadState.DONE)
+                // A failed entry stays failed: the user asked for a retry, and
+                // silently re-queueing every restart turns one broken link into
+                // a loop that keeps hitting the network.
+                entry.state == DownloadState.FAILED -> entry
+                else -> entry.copy(state = DownloadState.QUEUED, attempts = 0)
             }
         }
         _entries.value = reconciled
@@ -354,6 +357,18 @@ class OfflineStore(
 
     fun resume() {
         _paused.value = false
+    }
+
+    /** Re-queues one failed entry (attempts reset). No-op for other states. */
+    fun retry(trackId: String) {
+        val entry = _entries.value.firstOrNull { it.trackId == trackId } ?: return
+        if (entry.state != DownloadState.FAILED) return
+        _entries.value = _entries.value.map {
+            if (it.trackId == trackId) it.copy(state = DownloadState.QUEUED, attempts = 0) else it
+        }
+        persistQueue()
+        refreshAggregate()
+        pump(listOf(trackId))
     }
 
     /** Re-queues every failed entry (attempts reset). */
