@@ -50,6 +50,13 @@ class PlaybackService : MediaSessionService() {
     private var playSessionId: String = UUID.randomUUID().toString()
     private var currentItemId: String? = null
 
+    /**
+     * Item whose start report is still owed. A media item transition happens
+     * before a single byte is decoded, so reporting from there produced
+     * "playing" entries for tracks that never made a sound.
+     */
+    private var pendingStartId: String? = null
+
     /** Last few tracks, used as seeds for the similarity-based continuation. */
     private val recentIds = ArrayDeque<String>()
     private var autoplayBusy = false
@@ -99,13 +106,19 @@ class PlaybackService : MediaSessionService() {
                         appContainer.libraryDb.recordPlay(id)
                     }
                     resumeIfAvailable(id)
-                    reportStart(id)
+                    pendingStartId = id
                     extendWithSimilar(autoStart = false)
                 }
             }
 
             override fun onIsPlayingChanged(isPlaying: Boolean) {
-                if (isPlaying) startProgressLoop() else {
+                if (isPlaying) {
+                    pendingStartId?.let { id ->
+                        pendingStartId = null
+                        reportStart(id)
+                    }
+                    startProgressLoop()
+                } else {
                     stopProgressLoop()
                     saveResume()
                 }
@@ -299,6 +312,7 @@ class PlaybackService : MediaSessionService() {
     private fun reportStopped() {
         val itemId = currentItemId ?: return
         currentItemId = null
+        pendingStartId = null
         val sessionId = playSessionId
         val positionTicks = runCatching { player.currentPosition.coerceAtLeast(0L) }
             .getOrDefault(0L) * TICKS_PER_MS
