@@ -249,16 +249,7 @@ class OfflineStore(
     private fun restore() {
         val saved = readQueue()
         if (saved.isEmpty()) return
-        val reconciled = saved.map { entry ->
-            when {
-                isDownloaded(entry.trackId) -> entry.copy(state = DownloadState.DONE)
-                // A failed entry stays failed: the user asked for a retry, and
-                // silently re-queueing every restart turns one broken link into
-                // a loop that keeps hitting the network.
-                entry.state == DownloadState.FAILED -> entry
-                else -> entry.copy(state = DownloadState.QUEUED, attempts = 0)
-            }
-        }
+        val reconciled = QueuePolicy.reconcile(saved) { isDownloaded(it) }
         _entries.value = reconciled
         persistQueue()
         refreshAggregate()
@@ -361,30 +352,22 @@ class OfflineStore(
 
     /** Re-queues one failed entry (attempts reset). No-op for other states. */
     fun retry(trackId: String) {
-        val entry = _entries.value.firstOrNull { it.trackId == trackId } ?: return
-        if (entry.state != DownloadState.FAILED) return
-        _entries.value = _entries.value.map {
-            if (it.trackId == trackId) it.copy(state = DownloadState.QUEUED, attempts = 0) else it
-        }
+        val (updated, toPump) = QueuePolicy.retryOne(_entries.value, trackId)
+        if (toPump.isEmpty()) return
+        _entries.value = updated
         persistQueue()
         refreshAggregate()
-        pump(listOf(trackId))
+        pump(toPump)
     }
 
     /** Re-queues every failed entry (attempts reset). */
     fun retryFailed() {
-        val failed = _entries.value.filter { it.state == DownloadState.FAILED }
-        if (failed.isEmpty()) return
-        _entries.value = _entries.value.map {
-            if (it.state == DownloadState.FAILED) {
-                it.copy(state = DownloadState.QUEUED, attempts = 0)
-            } else {
-                it
-            }
-        }
+        val (updated, toPump) = QueuePolicy.retryAll(_entries.value)
+        if (toPump.isEmpty()) return
+        _entries.value = updated
         persistQueue()
         refreshAggregate()
-        pump(failed.map { it.trackId })
+        pump(toPump)
     }
 
     /** Removes finished entries from the list (they are never persisted anyway). */
