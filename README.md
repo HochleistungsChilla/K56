@@ -21,8 +21,13 @@ Tagline: “56k for your ears.”
 | Requirement | Value |
 |---|---|
 | Android | **9 (API 28) or newer** |
-| Jellyfin | **10.10.7 or newer** (checked at sign-in) |
+| Jellyfin | **10.10.7 or newer** (checked at sign-in); verified against **12.4.0** |
 | Build | JDK 17+ (tested with 21), Android SDK 35 |
+
+Jellyfin **12.4.0** is verified against a live server: sign-in and library
+load on the device, and the stream endpoint answered `206`. 12.x only reads
+the access token from the `Authorization` header; the client sends that and
+the legacy `X-Emby-Token` header, so older servers keep working.
 
 ## Supported sources
 
