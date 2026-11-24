@@ -55,6 +55,8 @@ data class Session(
     val token: String,
     val deviceId: String,
     val extra: Map<String, String> = emptyMap(),
+    /** True when this session talks plain HTTP to a host on the local network. */
+    val cleartext: Boolean = false,
 )
 
 data class LibraryView(
