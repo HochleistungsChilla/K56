@@ -38,13 +38,19 @@ class DiagnosticsStoreTest {
 
     @Test
     fun anEntryCarriesNoPayloadByDesign() {
-        // The data class has no field for headers, bodies or query values; this
-        // test documents that, so adding one would deliberately fail the build.
+        // No field can carry headers, bodies or query *values*; the one addition
+        // is [DiagnosticsEntry.queryNames], which holds parameter names only and
+        // is filled for failed requests so a 400 can be read. Adding a value
+        // field fails this test on purpose.
         val fields = DiagnosticsEntry::class.java.declaredFields.map { it.name }.toSet()
         assertEquals(
-            setOf("atEpochMs", "method", "path", "status", "durationMs", "errorKind"),
+            setOf(
+                "atEpochMs", "method", "path", "status", "durationMs", "errorKind",
+                "source", "queryNames",
+            ),
             fields.filterNot { it.contains('$') }.toSet(),
         )
         assertNull(entry(1).errorKind)
+        assertTrue(entry(1).queryNames.isEmpty())
     }
 }

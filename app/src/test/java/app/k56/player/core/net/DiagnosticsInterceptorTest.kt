@@ -71,6 +71,37 @@ class DiagnosticsInterceptorTest {
     }
 
     @Test
+    fun aFailedRequestKeepsTheNamesButNotTheValues() {
+        server.enqueue(MockResponse().setResponseCode(400).setBody("{}"))
+
+        client.newCall(
+            Request.Builder()
+                .url(server.url("/Items?api_key=TOPSECRET&IncludeItemTypes=Audio&SortBy="))
+                .build(),
+        ).execute().close()
+
+        val entry = DiagnosticsStore.entries.value.single()
+        assertEquals(400, entry.status)
+        assertEquals(listOf("IncludeItemTypes", "SortBy", "api_key"), entry.queryNames)
+        val dump = entry.queryNames.joinToString("&")
+        assertFalse("query value leaked: $dump", dump.contains("TOPSECRET"))
+        assertFalse("query value leaked: $dump", dump.contains("Audio"))
+    }
+
+    @Test
+    fun aSuccessfulRequestStoresNoParameterNames() {
+        server.enqueue(MockResponse().setResponseCode(200).setBody("{}"))
+
+        client.newCall(
+            Request.Builder().url(server.url("/Items?api_key=TOPSECRET&Recursive=true")).build(),
+        ).execute().close()
+
+        val entry = DiagnosticsStore.entries.value.single()
+        assertEquals(200, entry.status)
+        assertTrue(entry.queryNames.isEmpty())
+    }
+
+    @Test
     fun aDeadHostIsRecordedAsIo() {
         server.shutdown()
 

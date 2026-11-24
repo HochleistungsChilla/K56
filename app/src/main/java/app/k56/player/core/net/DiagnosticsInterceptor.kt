@@ -21,6 +21,7 @@ class DiagnosticsInterceptor : Interceptor {
         val started = System.nanoTime()
         return try {
             val response = chain.proceed(request)
+            val failed = !response.isSuccessful && !response.isRedirect
             DiagnosticsStore.record(
                 DiagnosticsEntry(
                     atEpochMs = System.currentTimeMillis(),
@@ -28,11 +29,12 @@ class DiagnosticsInterceptor : Interceptor {
                     path = request.url.encodedPath.take(160),
                     status = response.code,
                     durationMs = (System.nanoTime() - started) / 1_000_000,
-                    errorKind = if (response.isSuccessful || response.isRedirect) {
+                    errorKind = if (!failed) {
                         null
                     } else {
                         DiagnosticsErrorKind.HTTP
                     },
+                    queryNames = if (failed) request.url.queryParameterNames.sorted() else emptyList(),
                 ),
             )
             response
@@ -45,6 +47,7 @@ class DiagnosticsInterceptor : Interceptor {
                     status = null,
                     durationMs = (System.nanoTime() - started) / 1_000_000,
                     errorKind = classify(e),
+                    queryNames = request.url.queryParameterNames.sorted(),
                 ),
             )
             throw e

@@ -20,6 +20,7 @@ import androidx.media3.session.MediaSessionService
 import app.k56.player.K56App
 import app.k56.player.core.model.PlaybackSource
 import app.k56.player.core.net.NetworkTransport
+import app.k56.player.core.net.DiagnosticsDataSourceFactory
 import app.k56.player.dsp.DspProcessor
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -262,9 +263,11 @@ class PlaybackService : MediaSessionService() {
 
     /** Upstream HTTP wrapped in the shared bounded cache (see MediaCache). */
     private fun buildCachedDataSourceFactory(): DataSource.Factory {
-        val upstream = DefaultHttpDataSource.Factory()
-            .setDefaultRequestProperties(repository.playbackHeaders())
-            .setAllowCrossProtocolRedirects(true)
+        val upstream = DiagnosticsDataSourceFactory(
+            DefaultHttpDataSource.Factory()
+                .setDefaultRequestProperties(repository.playbackHeaders())
+                .setAllowCrossProtocolRedirects(true)
+        )
 
         val cache = appContainer.mediaCache.get() ?: return upstream
         return CacheDataSource.Factory()
