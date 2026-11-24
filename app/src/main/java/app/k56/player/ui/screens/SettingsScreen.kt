@@ -56,6 +56,8 @@ import android.widget.Toast
 import app.k56.player.R
 import app.k56.player.BuildConfig
 import app.k56.player.core.model.BackendKind
+import app.k56.player.data.ConnectionErrorKind
+import app.k56.player.data.ConnectionReport
 import app.k56.player.core.model.LibraryCounts
 import app.k56.player.core.net.NetworkTransport
 import app.k56.player.data.MediaRepository
@@ -74,6 +76,7 @@ import app.k56.player.data.offline.OfflineStore
 import app.k56.player.data.offline.DownloadState
 import app.k56.player.dsp.DspState
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import app.k56.player.ui.formatBytes
@@ -88,6 +91,11 @@ import app.k56.player.ui.screens.settings.SettingsSection
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Surface
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material.icons.rounded.Refresh
+import androidx.compose.material.icons.rounded.QrCode2
+import app.k56.player.ui.userMessage
+import kotlinx.coroutines.Job
 
 @Composable
 fun SettingsScreen(
@@ -100,6 +108,7 @@ fun SettingsScreen(
     onOpenDsp: () -> Unit = {},
     onOpenCache: () -> Unit = {},
     onOpenSyncLog: () -> Unit = {},
+    onOpenDiagnostics: () -> Unit = {},
     onOpenLayout: () -> Unit = {},
     onOpenRequests: () -> Unit = {},
 ) {
@@ -246,6 +255,13 @@ fun SettingsScreen(
         }
     }
 
+    var report by remember { mutableStateOf<ConnectionReport?>(null) }
+    var testing by remember { mutableStateOf(false) }
+    var qcCode by remember { mutableStateOf<String?>(null) }
+    var qcError by remember { mutableStateOf<String?>(null) }
+    var qcBusy by remember { mutableStateOf(false) }
+    var qcJob by remember { mutableStateOf<Job?>(null) }
+
     var editOpen by remember { mutableStateOf(false) }
     var editBusy by remember { mutableStateOf(false) }
     var editError by remember { mutableStateOf<String?>(null) }
@@ -291,6 +307,129 @@ fun SettingsScreen(
                     else -> stringResource(R.string.route_lan_if_available)
                 },
             )
+            Spacer(Modifier.height(8.dp))
+            // Connection health: one line, refreshed on demand, never a dialog.
+            val checked = report
+            val statusText = when {
+                testing -> stringResource(R.string.conn_testing)
+                checked == null -> stringResource(R.string.conn_not_checked)
+                !checked.reachable -> stringResource(
+                    R.string.conn_unreachable,
+                    connectionErrorText(checked.errorKind),
+                )
+                !checked.authOk -> stringResource(R.string.conn_reachable_auth_bad)
+                else -> stringResource(
+                    R.string.conn_ok_line,
+                    checked.serverVersion ?: checked.serverName ?: "—",
+                    stringResource(R.string.conn_auth_ok),
+                    timeOfDay(System.currentTimeMillis()),
+                )
+            }
+            Text(
+                text = statusText,
+                style = MaterialTheme.typography.bodySmall,
+                color = if (checked?.reachable == true && checked.authOk) {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                } else {
+                    MaterialTheme.colorScheme.error
+                },
+            )
+            if (checked != null && !checked.reachable && !checked.error.isNullOrBlank()) {
+                Text(
+                    text = checked.error,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            if (checked != null && checked.reachable && checked.latencyMs > 0) {
+                Text(
+                    text = stringResource(R.string.conn_latency, checked.latencyMs),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+
+            Spacer(Modifier.height(10.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedButton(
+                    onClick = {
+                        if (testing) return@OutlinedButton
+                        testing = true
+                        scope.launch {
+                            try {
+                                report = testConnectionReport(repository)
+                            } finally {
+                                testing = false
+                            }
+                        }
+                    },
+                    enabled = !testing,
+                ) {
+                    if (testing) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            strokeWidth = 2.dp,
+                        )
+                    } else {
+                        Icon(Icons.Rounded.Refresh, contentDescription = null)
+                    }
+                    Spacer(Modifier.width(8.dp))
+                    Text(stringResource(R.string.conn_test))
+                }
+                if (session?.backend == BackendKind.JELLYFIN) {
+                    OutlinedButton(
+                        onClick = {
+                            if (qcBusy) return@OutlinedButton
+                            qcBusy = true
+                            qcError = null
+                            qcCode = null
+                            qcJob = scope.launch {
+                                val backend = session?.backend ?: BackendKind.JELLYFIN
+                                try {
+                                    repository.quickConnect(
+                                        backend = backend,
+                                        internalUrl = session?.internalUrl
+                                            ?: session?.serverUrl.orEmpty(),
+                                        externalUrl = session?.externalUrl,
+                                        onCode = { qcCode = it },
+                                    )
+                                    qcCode = null
+                                    report = testConnectionReport(repository)
+                                } catch (e: CancellationException) {
+                                    // Dialog dismissed: keep the cancel, show nothing.
+                                    throw e
+                                } catch (e: Exception) {
+                                    qcError = e.userMessage(context)
+                                } finally {
+                                    qcBusy = false
+                                }
+                            }
+                        },
+                        enabled = !qcBusy,
+                    ) {
+                        if (qcBusy) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp),
+                                strokeWidth = 2.dp,
+                            )
+                        } else {
+                            Icon(Icons.Rounded.QrCode2, contentDescription = null)
+                        }
+                        Spacer(Modifier.width(8.dp))
+                        Text(stringResource(R.string.conn_quick_connect))
+                    }
+                }
+            }
+
+            if (session?.cleartext == true) {
+                Spacer(Modifier.height(10.dp))
+                Text(
+                    text = stringResource(R.string.conn_cleartext_warning),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error,
+                )
+            }
+
             Spacer(Modifier.height(12.dp))
             OutlinedButton(
                 onClick = { editOpen = true },
@@ -371,6 +510,14 @@ fun SettingsScreen(
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text(stringResource(R.string.sync_log_open))
+            }
+            Spacer(Modifier.height(8.dp))
+            OutlinedButton(
+                onClick = onOpenDiagnostics,
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(stringResource(R.string.diagnostics_open))
             }
             Spacer(Modifier.height(8.dp))
             Text(
@@ -703,6 +850,21 @@ fun SettingsScreen(
                     Text(stringResource(R.string.offline_clear))
                 }
             }
+        }
+
+        if (qcBusy || qcCode != null || qcError != null) {
+            QuickConnectDialog(
+                code = qcCode,
+                error = qcError,
+                onDismiss = {
+                    // Cancel the poll loop, otherwise it keeps hitting the server.
+                    qcJob?.cancel()
+                    qcJob = null
+                    qcCode = null
+                    qcError = null
+                    qcBusy = false
+                },
+            )
         }
 
         if (editOpen && session != null) {
@@ -1403,6 +1565,84 @@ private fun themeLabel(mode: ThemeMode): Int = when (mode) {
     ThemeMode.Light -> R.string.theme_light
     ThemeMode.Dark -> R.string.theme_dark
 }
+
+/** Shown while a Quick Connect attempt waits for the code to be confirmed. */
+@Composable
+private fun QuickConnectDialog(
+    code: String?,
+    error: String?,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.conn_quick_connect)) },
+        text = {
+            Column {
+                Text(stringResource(R.string.conn_qc_body))
+                if (code != null) {
+                    Spacer(Modifier.height(12.dp))
+                    Text(
+                        text = code,
+                        style = MaterialTheme.typography.headlineMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                } else if (error == null) {
+                    Spacer(Modifier.height(12.dp))
+                    CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                }
+                if (error != null) {
+                    Spacer(Modifier.height(12.dp))
+                    Text(
+                        text = error,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_close)) }
+        },
+    )
+}
+
+/**
+ * [MediaRepository.testConnection] normally returns a report, but a wrapped
+ * repository can still throw. Turn that into a report so the row shows the
+ * failure instead of falling back to "Not checked yet".
+ */
+private suspend fun testConnectionReport(repository: MediaRepository): ConnectionReport =
+    try {
+        repository.testConnection()
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        ConnectionReport(
+            reachable = false,
+            serverName = null,
+            serverVersion = null,
+            authOk = false,
+            latencyMs = 0,
+            error = e.message ?: e.javaClass.simpleName,
+            errorKind = ConnectionErrorKind.IO,
+        )
+    }
+
+/** Phrase for a failed check, from the backend's coarse error class. */
+@Composable
+private fun connectionErrorText(kind: ConnectionErrorKind?): String = when (kind) {
+    ConnectionErrorKind.TIMEOUT -> stringResource(R.string.err_timeout)
+    ConnectionErrorKind.DNS -> stringResource(R.string.err_dns)
+    ConnectionErrorKind.TLS -> stringResource(R.string.err_tls)
+    ConnectionErrorKind.INSECURE -> stringResource(R.string.err_https_required)
+    ConnectionErrorKind.AUTH -> stringResource(R.string.err_credentials)
+    ConnectionErrorKind.NOT_CONFIGURED -> stringResource(R.string.err_server_address_missing)
+    ConnectionErrorKind.UNSUPPORTED -> stringResource(R.string.conn_unsupported)
+    ConnectionErrorKind.HTTP, ConnectionErrorKind.IO, null -> stringResource(R.string.err_unreachable)
+}
+
+private fun timeOfDay(at: Long): String =
+    java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault()).format(java.util.Date(at))
 
 private fun paletteLabel(palette: ThemePalette): Int = when (palette) {
     ThemePalette.Warm -> R.string.theme_palette_warm

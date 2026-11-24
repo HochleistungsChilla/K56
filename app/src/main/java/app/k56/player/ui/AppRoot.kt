@@ -57,6 +57,7 @@ import app.k56.player.ui.screens.PlayerScreen
 import app.k56.player.ui.screens.RequestsScreen
 import app.k56.player.ui.screens.SearchScreen
 import app.k56.player.ui.screens.SettingsScreen
+import app.k56.player.ui.screens.DiagnosticsScreen
 import app.k56.player.ui.screens.SyncLogScreen
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -472,6 +473,9 @@ private fun MainShell(container: AppContainer) {
                     onBack = { navController.popBackStack() },
                 )
             }
+            composable("diagnostics") {
+                DiagnosticsScreen(onBack = { navController.popBackStack() })
+            }
             composable("synclog") {
                 SyncLogScreen(onBack = { navController.popBackStack() })
             }
@@ -512,6 +516,7 @@ private fun MainShell(container: AppContainer) {
                     onOpenDsp = { navController.navigate("dsp") },
                     onOpenCache = { navController.navigate("cache") },
                     onOpenSyncLog = { navController.navigate("synclog") },
+                    onOpenDiagnostics = { navController.navigate("diagnostics") },
                     onOpenLayout = { navController.navigate("layout") },
                     onOpenRequests = { navController.navigate("requests") },
                 )
