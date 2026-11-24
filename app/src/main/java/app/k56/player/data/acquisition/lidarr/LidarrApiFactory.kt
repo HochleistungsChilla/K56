@@ -3,6 +3,7 @@ package app.k56.player.data.acquisition.lidarr
 import app.k56.player.core.net.ServerUrl
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
+import app.k56.player.core.net.DiagnosticsInterceptor
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
@@ -24,6 +25,7 @@ object LidarrApiFactory {
 
     fun create(baseUrl: String, apiKey: String): LidarrApi {
         val client = OkHttpClient.Builder()
+            .addInterceptor(DiagnosticsInterceptor())
             .connectTimeout(15, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
             .writeTimeout(30, TimeUnit.SECONDS)
