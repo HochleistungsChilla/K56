@@ -20,6 +20,10 @@ interface JellyfinApi {
     @GET("System/Info/Public")
     suspend fun publicSystemInfo(): PublicSystemInfoDto
 
+    /** Who the stored token belongs to; the cheapest proof that auth still works. */
+    @GET("Users/Me")
+    suspend fun me(): UserDto
+
     // Present in Jellyfin 10.10 and still in current releases; the
     // per-user route `Users/{userId}/Views` was dropped later on.
     @GET("UserViews")
