@@ -131,10 +131,11 @@ class SearchViewModel(
                     remember(term)
                 } else {
                     val noCopy = withContext(Dispatchers.IO) { libraryDb.isEmpty() }
-                    error = if (noCopy) {
-                        appContext.getString(R.string.offline_search_no_copy)
-                    } else {
-                        e.userMessage(appContext)
+                    error = when {
+                        // Offline and the local copy simply has no match: that is
+                        // not a network error and must not read like one.
+                        !noCopy -> appContext.getString(R.string.offline_search_no_match)
+                        else -> appContext.getString(R.string.offline_search_no_copy)
                     }
                 }
             } finally {

@@ -2,8 +2,8 @@ package app.k56.player.data.offline
 
 import android.content.Context
 import app.k56.player.core.model.Track
-import org.json.JSONArray
-import org.json.JSONObject
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 import java.io.File
 
 /** What a playlist looked like the last time it could be loaded. */
@@ -20,27 +20,41 @@ data class CachedPlaylist(
  * Playlists are not part of the offline library index: they change too often
  * and are too small to justify a table plus a sync step. One JSON file per
  * playlist, written atomically, is enough and stays out of `LibraryDb`.
+ *
+ * The on-disk shape is a plain kotlinx structure rather than `Track` itself, so
+ * the format is explicit, tolerant to added fields, and unit-testable on the
+ * JVM without an Android runtime.
  */
-class PlaylistCacheStore(context: Context) {
+class PlaylistCacheStore(
+    private val dir: File,
+) {
 
-    private val dir = File(context.applicationContext.filesDir, "playlist-cache")
+    constructor(context: Context) : this(File(context.applicationContext.filesDir, "playlist-cache"))
+
+    private val json = Json {
+        ignoreUnknownKeys = true
+        encodeDefaults = true
+    }
 
     fun save(playlistId: String, name: String, tracks: List<Track>) {
         if (playlistId.isBlank() || tracks.isEmpty()) return
         runCatching {
             dir.mkdirs()
             prune()
-            val payload = JSONObject()
-                .put("name", name)
-                .put("savedAt", System.currentTimeMillis())
-                .put("tracks", JSONArray().apply {
-                    tracks.forEach { put(it.toJson()) }
-                })
-            val text = payload.toString()
+            val cachedTracks = tracks.map { it.toCached() }
             val target = fileFor(playlistId)
-            // Opening the same playlist repeatedly must not rewrite the file.
-            if (target.isFile && target.readText() == text) return
-            val tmp = File(dir, "${target.name}.tmp")
+            // Opening the same playlist repeatedly must not rewrite the file -
+            // and must keep the original timestamp, so the banner does not claim
+            // a refresh that never happened.
+            val existing = readPayload(target)
+            if (existing != null && existing.name == name && existing.tracks == cachedTracks) {
+                return
+            }
+            val text = json.encodeToString(
+                CachedPayload.serializer(),
+                CachedPayload(name = name, savedAt = System.currentTimeMillis(), tracks = cachedTracks),
+            )
+            val tmp = File(dir, "${target.name}.${System.nanoTime()}.tmp")
             tmp.writeText(text)
             if (!tmp.renameTo(target)) {
                 target.writeText(text)
@@ -50,18 +64,13 @@ class PlaylistCacheStore(context: Context) {
     }
 
     fun load(playlistId: String): CachedPlaylist? = runCatching {
-        val file = fileFor(playlistId)
-        if (!file.isFile) return null
-        val payload = JSONObject(file.readText())
-        val array = payload.optJSONArray("tracks") ?: return null
-        val tracks = (0 until array.length()).mapNotNull { index ->
-            array.optJSONObject(index)?.toTrack()
-        }
-        if (tracks.isEmpty()) return null
+        val target = fileFor(playlistId)
+        val payload = readPayload(target) ?: return null
+        if (payload.tracks.isEmpty()) return null
         CachedPlaylist(
-            name = payload.optString("name"),
-            tracks = tracks,
-            savedAt = payload.optLong("savedAt"),
+            name = payload.name,
+            tracks = payload.tracks.map { it.toTrack() },
+            savedAt = payload.savedAt,
         )
     }.getOrNull()
 
@@ -69,11 +78,23 @@ class PlaylistCacheStore(context: Context) {
         runCatching { fileFor(playlistId).delete() }
     }
 
+    private fun readPayload(file: File): CachedPayload? {
+        if (!file.isFile) return null
+        return runCatching {
+            json.decodeFromString(CachedPayload.serializer(), file.readText())
+        }.getOrNull()
+    }
+
     /** Files for playlists that no longer exist would otherwise stay forever. */
     private fun prune() {
-        val cutoff = System.currentTimeMillis() - MAX_AGE_MS
+        val now = System.currentTimeMillis()
+        val cutoff = now - MAX_AGE_MS
+        val partialCutoff = now - PARTIAL_MAX_AGE_MS
         dir.listFiles()?.forEach { file ->
-            if (file.isFile && file.lastModified() < cutoff) file.delete()
+            if (!file.isFile) return@forEach
+            val modified = file.lastModified()
+            val stalePartial = file.name.endsWith(".tmp") && modified < partialCutoff
+            if (modified < cutoff || stalePartial) file.delete()
         }
     }
 
@@ -83,45 +104,64 @@ class PlaylistCacheStore(context: Context) {
         return File(dir, "$safe.json")
     }
 
-    private fun Track.toJson(): JSONObject = JSONObject()
-        .put("id", id)
-        .put("title", title)
-        .put("albumId", albumId)
-        .put("albumName", albumName)
-        .put("artistName", artistName)
-        .put("durationMs", durationMs)
-        .put("indexNumber", indexNumber)
-        .put("discNumber", discNumber)
-        .put("container", container)
-        .put("bitrate", bitrate)
-        .put("imageUrl", imageUrl)
-        .put("streamKey", streamKey)
-        .put("isFavorite", isFavorite)
+    private fun Track.toCached() = CachedTrack(
+        id = id,
+        title = title,
+        albumId = albumId,
+        albumName = albumName,
+        artistName = artistName,
+        durationMs = durationMs,
+        indexNumber = indexNumber,
+        discNumber = discNumber,
+        container = container,
+        bitrate = bitrate,
+        imageUrl = imageUrl,
+        streamKey = streamKey,
+        isFavorite = isFavorite,
+    )
 
-    private fun JSONObject.toTrack(): Track? {
-        val id = optString("id").takeIf { it.isNotBlank() } ?: return null
-        return Track(
-            id = id,
-            title = optString("title"),
-            albumId = optStringOrNull("albumId"),
-            albumName = optStringOrNull("albumName"),
-            artistName = optStringOrNull("artistName"),
-            durationMs = optLong("durationMs"),
-            indexNumber = optIntOrNull("indexNumber"),
-            discNumber = optIntOrNull("discNumber"),
-            container = optStringOrNull("container"),
-            bitrate = optIntOrNull("bitrate"),
-            imageUrl = optStringOrNull("imageUrl"),
-            streamKey = optStringOrNull("streamKey"),
-            isFavorite = optBoolean("isFavorite"),
-        )
+    private fun CachedTrack.toTrack() = Track(
+        id = id,
+        title = title,
+        albumId = albumId,
+        albumName = albumName,
+        artistName = artistName,
+        durationMs = durationMs,
+        indexNumber = indexNumber,
+        discNumber = discNumber,
+        container = container,
+        bitrate = bitrate,
+        imageUrl = imageUrl,
+        streamKey = streamKey,
+        isFavorite = isFavorite,
+    )
+
+    @Serializable
+    private data class CachedPayload(
+        val name: String = "",
+        val savedAt: Long = 0L,
+        val tracks: List<CachedTrack> = emptyList(),
+    )
+
+    @Serializable
+    private data class CachedTrack(
+        val id: String,
+        val title: String = "",
+        val albumId: String? = null,
+        val albumName: String? = null,
+        val artistName: String? = null,
+        val durationMs: Long = 0L,
+        val indexNumber: Int? = null,
+        val discNumber: Int? = null,
+        val container: String? = null,
+        val bitrate: Int? = null,
+        val imageUrl: String? = null,
+        val streamKey: String? = null,
+        val isFavorite: Boolean = false,
+    )
+
+    private companion object {
+        const val MAX_AGE_MS = 30L * 24 * 60 * 60 * 1000
+        const val PARTIAL_MAX_AGE_MS = 24L * 60 * 60 * 1000
     }
-
-    private fun JSONObject.optStringOrNull(key: String): String? =
-        if (isNull(key)) null else optString(key).takeIf { it.isNotEmpty() }
-
-    private fun JSONObject.optIntOrNull(key: String): Int? =
-        if (isNull(key)) null else optInt(key)
 }
-
-private const val MAX_AGE_MS = 30L * 24 * 60 * 60 * 1000
