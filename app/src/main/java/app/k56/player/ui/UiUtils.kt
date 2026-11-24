@@ -49,12 +49,35 @@ fun Throwable.userMessage(context: Context): String = when (this) {
     is QuickConnectTimeoutException ->
         context.getString(R.string.err_quick_connect_unconfirmed)
 
-    is HttpException -> when (code()) {
-        400 -> context.getString(R.string.err_request_rejected)
-        401, 403 -> context.getString(R.string.err_login_rejected)
-        404 -> context.getString(R.string.err_not_found_at_address)
+    is HttpException -> when {
+        code() == 401 -> context.getString(R.string.err_credentials)
+        code() == 403 -> context.getString(R.string.err_forbidden)
+        code() == 404 -> context.getString(R.string.err_route_missing)
+        code() == 400 -> context.getString(R.string.err_request_rejected)
+        code() >= 500 -> {
+            // The server often explains itself; keep the body short and readable.
+            val detail = runCatching {
+                response()?.errorBody()?.string()?.trim()?.take(160)
+            }.getOrNull()
+            when {
+                detail.isNullOrBlank() -> context.getString(R.string.err_http, code())
+                else -> context.getString(R.string.err_http_detail, code(), detail)
+            }
+        }
         else -> context.getString(R.string.err_http, code())
     }
+
+    // Cleartext is refused by the platform, not by the server, and says so.
+    is java.net.UnknownServiceException ->
+        if (message?.contains("CLEARTEXT", ignoreCase = true) == true) {
+            context.getString(R.string.err_https_required)
+        } else {
+            context.getString(R.string.err_unreachable)
+        }
+
+    is java.net.SocketTimeoutException -> context.getString(R.string.err_timeout)
+    is java.net.UnknownHostException -> context.getString(R.string.err_dns)
+    is javax.net.ssl.SSLException -> context.getString(R.string.err_tls)
 
     is IOException ->
         context.getString(R.string.err_unreachable)
