@@ -633,6 +633,11 @@ fun SettingsScreen(
                                     .height(4.dp),
                             )
                         }
+                        if (entry.state == DownloadState.FAILED) {
+                            TextButton(onClick = { offlineStore.retry(entry.trackId) }) {
+                                Text(stringResource(R.string.download_queue_retry_one))
+                            }
+                        }
                     }
                 }
                 Spacer(Modifier.height(4.dp))

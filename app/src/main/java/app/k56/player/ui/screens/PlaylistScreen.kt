@@ -32,17 +32,22 @@ import androidx.lifecycle.viewModelScope
 import app.k56.player.R
 import app.k56.player.core.model.Track
 import app.k56.player.data.MediaRepository
+import android.content.Context
 import app.k56.player.data.offline.OfflineStore
+import app.k56.player.data.offline.PlaylistCacheStore
 import app.k56.player.ui.appViewModel
 import app.k56.player.ui.components.EmptyState
 import app.k56.player.ui.components.LoadingState
 import app.k56.player.ui.components.TrackRow
 import app.k56.player.ui.enqueueDownloads
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class PlaylistViewModel(
     private val repository: MediaRepository,
     private val playlistId: String,
+    context: Context,
 ) : ViewModel() {
 
     var name by mutableStateOf("")
@@ -51,6 +56,21 @@ class PlaylistViewModel(
         private set
     var loading by mutableStateOf(true)
         private set
+    var offlineCopy by mutableStateOf(false)
+        private set
+    private var cachedAt by mutableStateOf(0L)
+
+    private val cache = PlaylistCacheStore(context)
+
+    /** When the offline copy was last refreshed, or 0 when it came from nowhere. */
+    fun cachedAtLabel(): String? = if (cachedAt > 0) {
+        java.text.DateFormat.getDateTimeInstance(
+            java.text.DateFormat.SHORT,
+            java.text.DateFormat.SHORT,
+        ).format(java.util.Date(cachedAt))
+    } else {
+        null
+    }
 
     init {
         load()
@@ -59,10 +79,44 @@ class PlaylistViewModel(
     fun load() {
         loading = true
         viewModelScope.launch {
-            name = runCatching {
+            val loadedName = runCatching {
                 repository.playlists().firstOrNull { it.id == playlistId }?.name.orEmpty()
-            }.getOrDefault("")
-            tracks = runCatching { repository.playlistTracks(playlistId) }.getOrDefault(emptyList())
+            }.getOrNull()
+            val loadedTracks = runCatching { repository.playlistTracks(playlistId) }.getOrNull()
+
+            if (loadedTracks != null) {
+                // The list call can fail while the track call works; keep the
+                // last known name instead of showing the generic header.
+                val previousName = withContext(Dispatchers.IO) { cache.load(playlistId)?.name }
+                name = loadedName?.takeIf { it.isNotBlank() }
+                    ?: previousName.orEmpty()
+                tracks = loadedTracks
+                offlineCopy = false
+                cachedAt = 0L
+                withContext(Dispatchers.IO) {
+                    if (loadedTracks.isEmpty()) {
+                        // The server answered with an empty playlist: the old
+                        // copy is stale and must not come back later.
+                        cache.clear(playlistId)
+                    } else {
+                        cache.save(playlistId, name, loadedTracks)
+                    }
+                }
+            } else {
+                // Server unreachable: show the last known contents instead of an
+                // empty screen, and say that this is an offline copy.
+                val cached = withContext(Dispatchers.IO) { cache.load(playlistId) }
+                if (cached != null) {
+                    name = cached.name.ifBlank { name }
+                    tracks = cached.tracks
+                    cachedAt = cached.savedAt
+                    offlineCopy = true
+                } else {
+                    name = loadedName.orEmpty()
+                    tracks = emptyList()
+                    offlineCopy = false
+                }
+            }
             loading = false
         }
     }
@@ -78,7 +132,8 @@ fun PlaylistScreen(
     onPlayNext: (Track) -> Unit = {},
     onAddToQueue: (Track) -> Unit = {},
 ) {
-    val vm = appViewModel { PlaylistViewModel(repository, playlistId) }
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val vm = appViewModel { PlaylistViewModel(repository, playlistId, context.applicationContext) }
     val scope = rememberCoroutineScope()
     val offline by offlineStore.tracks.collectAsState()
     val downloadedIds = offline.map { it.id }.toSet()
@@ -117,6 +172,17 @@ fun PlaylistScreen(
             ) {
                 Icon(Icons.Rounded.PlayArrow, contentDescription = stringResource(R.string.common_play))
             }
+        }
+
+        if (vm.offlineCopy && !vm.loading) {
+            Text(
+                text = vm.cachedAtLabel()
+                    ?.let { stringResource(R.string.library_offline_copy, it) }
+                    ?: stringResource(R.string.offline_copy),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+            )
         }
 
         when {

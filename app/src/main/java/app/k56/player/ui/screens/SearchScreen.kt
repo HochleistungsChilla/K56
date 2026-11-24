@@ -67,7 +67,9 @@ import app.k56.player.ui.components.TrackRow
 import app.k56.player.ui.userMessage
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.json.JSONArray
 
 class SearchViewModel(
@@ -110,16 +112,31 @@ class SearchViewModel(
                 offlineCopy = false
                 remember(term)
             } catch (e: Exception) {
-                val tracks = libraryDb.searchTracks(term)
-                val albums = libraryDb.searchAlbums(term)
-                val artists = libraryDb.searchArtists(term)
-                if (tracks.isNotEmpty() || albums.isNotEmpty() || artists.isNotEmpty()) {
-                    results = SearchResults(albums = albums, artists = artists, tracks = tracks)
+                // The local copy lives in SQLite; reading it on the main thread
+                // would stall the UI on a 60k-track library.
+                val offlineResults = withContext(Dispatchers.IO) {
+                    SearchResults(
+                        albums = libraryDb.searchAlbums(term),
+                        artists = libraryDb.searchArtists(term),
+                        tracks = libraryDb.searchTracks(term),
+                    )
+                }
+                if (offlineResults.albums.isNotEmpty() ||
+                    offlineResults.artists.isNotEmpty() ||
+                    offlineResults.tracks.isNotEmpty()
+                ) {
+                    results = offlineResults
                     offlineCopy = true
                     error = null
                     remember(term)
                 } else {
-                    error = e.userMessage(appContext)
+                    val noCopy = withContext(Dispatchers.IO) { libraryDb.isEmpty() }
+                    error = when {
+                        // Offline and the local copy simply has no match: that is
+                        // not a network error and must not read like one.
+                        !noCopy -> appContext.getString(R.string.offline_search_no_match)
+                        else -> appContext.getString(R.string.offline_search_no_copy)
+                    }
                 }
             } finally {
                 searching = false

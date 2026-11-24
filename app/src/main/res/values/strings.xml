@@ -405,6 +405,7 @@
     <string name="download_queue_pause">Pause</string>
     <string name="download_queue_resume">Resume</string>
     <string name="download_queue_retry">Retry failed</string>
+    <string name="download_queue_retry_one">Retry</string>
     <string name="download_queue_clear_finished">Clear finished</string>
     <string name="download_queue_title">Downloads</string>
     <string name="download_queue_paused">Paused</string>
@@ -436,6 +437,8 @@
     <string name="library_loaded_count">%1$d of %2$d loaded</string>
     <string name="library_offline_copy">Offline — device copy from %1$s</string>
     <string name="offline_copy">Offline copy</string>
+    <string name="offline_search_no_copy">Offline — no local copy yet. Open the library once while online.</string>
+    <string name="offline_search_no_match">Offline — nothing matches in the local copy.</string>
     <string name="library_syncing">Syncing %1$s · %2$d / %3$d</string>
     <string name="library_sync_failed">Sync failed — tap to retry</string>
     <string name="sync_title">Library sync</string>

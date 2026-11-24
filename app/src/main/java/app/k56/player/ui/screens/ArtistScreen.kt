@@ -65,7 +65,9 @@ import app.k56.player.ui.components.ScreenHeader
 import app.k56.player.ui.components.SectionHeader
 import app.k56.player.ui.components.TrackRow
 import app.k56.player.ui.userMessage
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class ArtistViewModel(
     private val repository: MediaRepository,
@@ -100,14 +102,17 @@ class ArtistViewModel(
                 details = repository.artistDetails(artistId)
                 offlineCopy = false
             } catch (e: Exception) {
-                val artist = libraryDb.artistById(artistId)
-                if (artist != null) {
-                    details = ArtistDetails(
+                val fallback = withContext(Dispatchers.IO) {
+                    val artist = libraryDb.artistById(artistId) ?: return@withContext null
+                    ArtistDetails(
                         artist = artist,
                         albums = libraryDb.albumsByArtist(artistId),
                         topTracks = libraryDb.tracksByArtist(artist.name).take(10),
                         appearsOn = emptyList(),
                     )
+                }
+                if (fallback != null) {
+                    details = fallback
                     offlineCopy = true
                     error = null
                 } else {
