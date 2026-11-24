@@ -68,9 +68,22 @@ private class DiagnosticsDataSource(private val delegate: DataSource) : DataSour
                 durationMs = (System.nanoTime() - started) / 1_000_000,
                 errorKind = kind,
                 source = DiagnosticsSource.MEDIA,
-                queryNames = if (kind == null) emptyList() else dataSpec.uri.queryParameterNames?.sorted().orEmpty(),
+                queryNames = if (kind == null && !DiagnosticsStore.verbose) {
+                    emptyList()
+                } else {
+                    dataSpec.uri.queryParameterNames?.sorted().orEmpty()
+                },
+                detail = queryDetail(dataSpec.uri),
             ),
         )
+    }
+
+    /** Values only in verbose mode; `api_key` stays redacted either way. */
+    private fun queryDetail(uri: Uri): String? {
+        if (!DiagnosticsStore.verbose) return null
+        val names = uri.queryParameterNames?.sorted().orEmpty()
+        val pairs = names.map { name -> name to (uri.getQueryParameter(name) ?: "") }
+        return DiagnosticsRedaction.format(pairs).ifEmpty { null }
     }
 
     private fun classify(e: IOException): DiagnosticsErrorKind = when (e) {

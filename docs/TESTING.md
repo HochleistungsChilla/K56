@@ -154,3 +154,9 @@ Ein 503 bedeutet „Analyse im Web-UI noch nicht gelaufen", nicht „Key falsch"
 (~62k Tracks). Während des Syncs sind Schreibzugriffe auf `library.db`
 blockiert — DB-Arbeit gehört deshalb nie in die Composition oder in
 Player-Listener. Drei ANRs kamen genau daher (`101739d`, `2985509`).
+
+**Wiedergabe-Fehler:** Wenn „kein Ton" gemeldet wird, zuerst
+[`DIAGNOSTICS.md`](DIAGNOSTICS.md) einschalten (Debug-Build, Settings →
+Library sync → Ausführliche Diagnose). Ohne den Haken sieht man weder die
+Stream-Anfrage noch den Player-Zustand — genau daran ist die Meldung vom
+24.11. gescheitert.

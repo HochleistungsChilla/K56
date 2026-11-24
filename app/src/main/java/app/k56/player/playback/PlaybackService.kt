@@ -115,6 +115,7 @@ class PlaybackService : MediaSessionService() {
                     }
                     resumeIfAvailable(id)
                     pendingStartId = id
+                    logPlayer("transition")
                     extendWithSimilar(autoStart = false)
                 }
             }
@@ -130,6 +131,7 @@ class PlaybackService : MediaSessionService() {
                     stopProgressLoop()
                     saveResume()
                 }
+                logPlayer(if (isPlaying) "playing" else "paused")
             }
 
             override fun onPlayerError(error: PlaybackException) {
@@ -138,6 +140,7 @@ class PlaybackService : MediaSessionService() {
             }
 
             override fun onPlaybackStateChanged(playbackState: Int) {
+                logPlayer("state")
                 if (playbackState == Player.STATE_ENDED) {
                     reportStopped()
                     if (appContainer.settingsStore.circularQueue.value && player.mediaItemCount > 0) {
@@ -347,6 +350,8 @@ class PlaybackService : MediaSessionService() {
                 delay(PROGRESS_INTERVAL_MS)
                 val itemId = currentItemId ?: continue
                 val snapshot = withContext(Dispatchers.Main) {
+                    // Must stay on the main thread: ExoPlayer rejects reads from another one.
+                    logPlayer("tick")
                     ProgressSnapshot(
                         positionMs = player.currentPosition.coerceAtLeast(0L),
                         durationMs = runCatching { player.duration }.getOrDefault(0L),
@@ -379,6 +384,38 @@ class PlaybackService : MediaSessionService() {
     private fun stopProgressLoop() {
         progressJob?.cancel()
         progressJob = null
+    }
+
+    /**
+     * Verbose mode only: one line per player event. Answers the questions a
+     * "no sound" report cannot: is a source set at all, in which state is the
+     * player, how much is buffered, and where is the playhead.
+     */
+    private fun logPlayer(event: String) {
+        if (!DiagnosticsStore.verbose) return
+        val state = when (player.playbackState) {
+            Player.STATE_IDLE -> "IDLE"
+            Player.STATE_BUFFERING -> "BUFFERING"
+            Player.STATE_READY -> "READY"
+            Player.STATE_ENDED -> "ENDED"
+            else -> "?"
+        }
+        val mediaId = player.currentMediaItem?.mediaId.orEmpty()
+        val durationMs = runCatching { player.duration }.getOrDefault(0L)
+        DiagnosticsStore.record(
+            DiagnosticsEntry(
+                atEpochMs = System.currentTimeMillis(),
+                method = "PLAYER",
+                path = "$event state=$state src=${if (player.currentMediaItem == null) "none" else "set"}",
+                status = player.playerError?.errorCode,
+                durationMs = 0L,
+                errorKind = null,
+                source = DiagnosticsSource.PLAYER,
+                detail = "pos=${player.currentPosition}ms dur=${durationMs}ms " +
+                    "buf=${player.bufferedPosition}ms" +
+                    if (mediaId.isNotBlank()) " id=$mediaId" else "",
+            ),
+        )
     }
 
     /**

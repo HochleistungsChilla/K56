@@ -35,6 +35,7 @@ class DiagnosticsInterceptor : Interceptor {
                         DiagnosticsErrorKind.HTTP
                     },
                     queryNames = if (failed) request.url.queryParameterNames.sorted() else emptyList(),
+                    detail = queryDetail(request.url),
                 ),
             )
             response
@@ -48,10 +49,20 @@ class DiagnosticsInterceptor : Interceptor {
                     durationMs = (System.nanoTime() - started) / 1_000_000,
                     errorKind = classify(e),
                     queryNames = request.url.queryParameterNames.sorted(),
+                    detail = queryDetail(request.url),
                 ),
             )
             throw e
         }
+    }
+
+    /** Values only in verbose mode, and never for a parameter that holds a credential. */
+    private fun queryDetail(url: okhttp3.HttpUrl): String? {
+        if (!DiagnosticsStore.verbose) return null
+        val pairs = url.queryParameterNames.sorted().flatMap { name ->
+            url.queryParameterValues(name).map { value -> name to (value ?: "") }
+        }
+        return DiagnosticsRedaction.format(pairs).ifEmpty { null }
     }
 
     private fun classify(e: IOException): DiagnosticsErrorKind = when (e) {

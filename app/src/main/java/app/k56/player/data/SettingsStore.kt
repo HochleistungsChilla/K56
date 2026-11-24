@@ -210,6 +210,14 @@ class SettingsStore(context: Context) {
     private val _autoSync = MutableStateFlow(prefs.getBoolean(KEY_AUTO_SYNC, true))
     val autoSync: StateFlow<Boolean> = _autoSync.asStateFlow()
 
+    /**
+     * Keep every request, the query parameter values (redacted) and the player
+     * state. Off by default: it costs memory and puts more into a buffer that
+     * exists for support reports.
+     */
+    private val _verboseDiagnostics = MutableStateFlow(prefs.getBoolean(KEY_VERBOSE_DIAGNOSTICS, false))
+    val verboseDiagnostics: StateFlow<Boolean> = _verboseDiagnostics.asStateFlow()
+
     fun setForceTranscode(value: Boolean) {
         prefs.edit().putBoolean(KEY_FORCE_TRANSCODE, value).apply()
         _forceTranscode.value = value
@@ -335,6 +343,7 @@ class SettingsStore(context: Context) {
         _animatedProgress.value = prefs.getBoolean(KEY_ANIMATED_PROGRESS, false)
         _frugalMode.value = prefs.getBoolean(KEY_FRUGAL_MODE, false)
         _autoSync.value = prefs.getBoolean(KEY_AUTO_SYNC, true)
+        _verboseDiagnostics.value = prefs.getBoolean(KEY_VERBOSE_DIAGNOSTICS, false)
     }
 
     fun setWifiOnlyDownloads(value: Boolean) {
@@ -488,6 +497,11 @@ class SettingsStore(context: Context) {
         _autoSync.value = value
     }
 
+    fun setVerboseDiagnostics(value: Boolean) {
+        prefs.edit().putBoolean(KEY_VERBOSE_DIAGNOSTICS, value).apply()
+        _verboseDiagnostics.value = value
+    }
+
     companion object {
         private const val KEY_FORCE_TRANSCODE = "force_transcode"
         private const val KEY_PREFER_EXTERNAL = "prefer_external"
@@ -530,6 +544,7 @@ class SettingsStore(context: Context) {
         private const val KEY_NP_COMPACT = "np_compact"
         private const val KEY_FRUGAL_MODE = "frugal_mode"
         private const val KEY_AUTO_SYNC = "auto_sync"
+        private const val KEY_VERBOSE_DIAGNOSTICS = "verbose_diagnostics"
 
         val DEFAULT_HOME_SECTIONS = "recent,random_albums,random_artists"
 

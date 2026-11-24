@@ -159,6 +159,13 @@ private fun DiagnosticsRow(entry: DiagnosticsEntry) {
             style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace),
             color = MaterialTheme.colorScheme.onSurface,
         )
+        entry.detail?.takeIf { it.isNotBlank() }?.let { detail ->
+            Text(
+                text = detail,
+                style = MaterialTheme.typography.labelSmall.copy(fontFamily = FontFamily.Monospace),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
         if (entry.queryNames.isNotEmpty()) {
             Text(
                 text = "?" + entry.queryNames.joinToString("&"),
@@ -196,6 +203,10 @@ private fun copyDiagnostics(context: Context, entries: List<DiagnosticsEntry>) {
             if (e.queryNames.isNotEmpty()) {
                 append('?')
                 append(e.queryNames.joinToString("&"))
+            }
+            e.detail?.takeIf { it.isNotBlank() }?.let {
+                append(' ')
+                append(it)
             }
             append(' ')
             append(e.durationMs)

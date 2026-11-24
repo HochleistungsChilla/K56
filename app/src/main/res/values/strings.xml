@@ -576,5 +576,7 @@
     <string name="diagnostics_empty_title">Nothing recorded yet</string>
     <string name="diagnostics_empty_body">The last requests appear here once the app talks to the server.</string>
     <string name="diagnostics_open">Diagnostics</string>
+    <string name="diagnostics_verbose_title">Verbose diagnostics</string>
+    <string name="diagnostics_verbose_body">Keep every request, the query values (credentials redacted) and the player state. Costs memory; off by default.</string>
     <string name="conn_reachable_auth_bad">Server reachable, but the login is not valid.</string>
 </resources>

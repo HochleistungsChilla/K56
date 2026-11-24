@@ -9,7 +9,10 @@ import org.junit.Test
 class DiagnosticsStoreTest {
 
     @After
-    fun clean() = DiagnosticsStore.clear()
+    fun clean() {
+        DiagnosticsStore.setVerbose(false)
+        DiagnosticsStore.clear()
+    }
 
     private fun entry(index: Int) = DiagnosticsEntry(
         atEpochMs = index.toLong(),
@@ -30,6 +33,20 @@ class DiagnosticsStoreTest {
     }
 
     @Test
+    fun verboseModeKeepsMoreAndTrimsWhenSwitchedOff() {
+        DiagnosticsStore.setVerbose(true)
+        repeat(DiagnosticsStore.VERBOSE_CAPACITY + 10) { DiagnosticsStore.record(entry(it)) }
+        assertEquals(DiagnosticsStore.VERBOSE_CAPACITY, DiagnosticsStore.entries.value.size)
+
+        DiagnosticsStore.setVerbose(false)
+        assertEquals(DiagnosticsStore.CAPACITY, DiagnosticsStore.entries.value.size)
+        assertEquals(
+            (DiagnosticsStore.VERBOSE_CAPACITY + 9).toLong(),
+            DiagnosticsStore.entries.value.last().atEpochMs,
+        )
+    }
+
+    @Test
     fun clearEmptiesTheBuffer() {
         DiagnosticsStore.record(entry(1))
         DiagnosticsStore.clear()
@@ -46,7 +63,7 @@ class DiagnosticsStoreTest {
         assertEquals(
             setOf(
                 "atEpochMs", "method", "path", "status", "durationMs", "errorKind",
-                "source", "queryNames",
+                "source", "queryNames", "detail",
             ),
             fields.filterNot { it.contains('$') }.toSet(),
         )
