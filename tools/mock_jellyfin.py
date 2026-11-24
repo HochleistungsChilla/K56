@@ -172,11 +172,23 @@ class H(BaseHTTPRequestHandler):
             self._send(200, body, "audio/mpeg")
             return
 
+        if path == "/QuickConnect/Enabled":
+            return self._send(200, True)
+        if path == "/QuickConnect/Connect":
+            return self._send(200, {
+                "Secret": first("secret") or "mock-secret",
+                "Code": "123456",
+                "Authenticated": False,
+            })
+        if path == "/Users/Me":
+            return self._send(200, {"Id": "mock-user", "Name": "tester"})
         if path == "/System/Info/Public":
             return self._send(200, {
                 "ServerName": "k56-mock", "Version": "10.10.7", "Id": "mock-server-id",
                 "OperatingSystem": "Linux",
             })
+        if path == "/Users/Me":
+            return self._send(200, {"Id": "mock-user", "Name": "tester"})
         if path == "/UserViews":
             return self._send(200, page([
                 {"Name": "Music", "Id": "lib-music", "Type": "CollectionFolder",
@@ -267,6 +279,12 @@ class H(BaseHTTPRequestHandler):
         print(f"POST {u.path} {body}", flush=True)
         path = u.path.rstrip("/")
 
+        if path == "/QuickConnect/Initiate":
+            return self._send(200, {
+                "Secret": "mock-secret",
+                "Code": "123456",
+                "Authenticated": False,
+            })
         if path == "/Users/AuthenticateByName":
             return self._send(200, {
                 "User": {"Id": "mock-user", "Name": "tester"},
