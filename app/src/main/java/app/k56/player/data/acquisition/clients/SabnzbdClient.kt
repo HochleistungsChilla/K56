@@ -1,5 +1,7 @@
 package app.k56.player.data.acquisition.clients
 
+import app.k56.player.core.net.HostPolicy
+import app.k56.player.core.net.InsecureTransportException
 import app.k56.player.core.net.parseBaseUrl
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -48,9 +50,14 @@ class SabnzbdClient(
      * an exception escaping the coroutine.
      */
     private fun requireBase(): HttpUrl = try {
-        parseBaseUrl(config.baseUrl)
+        val parsed = parseBaseUrl(config.baseUrl)
+        // An API key must not travel in the clear to a public host.
+        HostPolicy.requireAllowed(parsed.toString())
+        parsed
     } catch (e: IllegalArgumentException) {
         throw DownloadClientException("SABnzbd URL is not valid", e)
+    } catch (e: InsecureTransportException) {
+        throw DownloadClientException(e.message ?: "HTTPS required", e)
     }
 
     private suspend fun call(mode: String, extra: Map<String, String> = emptyMap()): String =

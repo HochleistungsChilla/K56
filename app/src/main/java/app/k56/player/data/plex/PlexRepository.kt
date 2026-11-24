@@ -15,6 +15,7 @@ import app.k56.player.core.net.EndpointResolver
 import app.k56.player.core.net.NetworkMonitor
 import app.k56.player.core.net.NetworkStatus
 import app.k56.player.core.net.NetworkTransport
+import app.k56.player.core.net.HostPolicy
 import app.k56.player.core.net.ServerUrl
 import app.k56.player.data.MediaRepository
 import app.k56.player.data.NotAuthenticatedException
@@ -95,6 +96,9 @@ class PlexRepository(
 
                 val chosenUri = chosen.uri ?: throw IllegalStateException("Plex-Verbindung ohne URI.")
                 val normalizedServer = ServerUrl.normalize(chosenUri)
+                // A relay or a public address over plain HTTP would leak the
+                // server token; LAN addresses stay allowed.
+                HostPolicy.requireAllowed(normalizedServer)
                 val serverToken = resource.accessToken?.takeIf { it.isNotBlank() } ?: accountToken
 
                 val result = Session(
@@ -112,6 +116,7 @@ class PlexRepository(
                     token = serverToken,
                     deviceId = sessionStore.deviceId,
                     extra = mapOf(EXTRA_ACCOUNT_TOKEN to accountToken),
+                    cleartext = HostPolicy.isCleartextLocal(normalizedServer),
                 )
                 persist(result)
                 return result

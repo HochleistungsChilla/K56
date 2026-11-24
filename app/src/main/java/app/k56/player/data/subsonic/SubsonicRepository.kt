@@ -14,6 +14,8 @@ import app.k56.player.core.model.isSubsonicFamily
 import app.k56.player.core.net.EndpointResolver
 import app.k56.player.core.net.NetworkMonitor
 import app.k56.player.core.net.NetworkStatus
+import app.k56.player.core.net.HostPolicy
+import app.k56.player.core.net.InsecureTransportException
 import app.k56.player.core.net.ServerUrl
 import app.k56.player.data.MediaRepository
 import app.k56.player.data.NotAuthenticatedException
@@ -68,6 +70,10 @@ class SubsonicRepository(
         require(backend.isSubsonicFamily) { "SubsonicRepository kann ${backend.label} nicht anbinden." }
         val internal = ServerUrl.normalize(internalUrl)
         val external = externalUrl?.takeIf { it.isNotBlank() }?.let(ServerUrl::normalize)
+        // Plain HTTP is a LAN-only affordance; anything public must use https,
+        // otherwise the password or token travels in the clear.
+        HostPolicy.requireAllowed(internal)
+        external?.let(HostPolicy::requireAllowed)
         val candidates = listOfNotNull(internal, external).distinct()
 
         val salt = randomSalt()
@@ -91,9 +97,13 @@ class SubsonicRepository(
                     token = token,
                     deviceId = sessionStore.deviceId,
                     extra = mapOf(EXTRA_SALT to salt),
+                    cleartext = HostPolicy.isCleartextLocal(base),
                 )
                 persist(result)
                 return result
+            } catch (e: InsecureTransportException) {
+                // A policy decision, not a transient network failure.
+                throw e
             } catch (e: Exception) {
                 lastError = e
             }
