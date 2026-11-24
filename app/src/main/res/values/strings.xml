@@ -468,6 +468,8 @@
     <string name="sync_phase_incremental">Updating</string>
     <string name="sync_phase_start">Starting</string>
     <string name="err_offline_not_downloaded">Offline — this title is not downloaded</string>
+    <string name="playback_failed">Playback failed: %1$s</string>
+    <string name="playback_error_timeout">timeout while loading</string>
     <string name="album_download">Download album</string>
     <string name="artist_download_all">Download all</string>
     <string name="acquisition_title">Acquisition (Lidarr)</string>

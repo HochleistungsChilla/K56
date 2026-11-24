@@ -8,9 +8,16 @@ import kotlinx.coroutines.flow.update
 /** Coarse reason for a failed request, so the UI can name it without the payload. */
 enum class DiagnosticsErrorKind { TIMEOUT, DNS, TLS, HTTP, IO }
 
+/** Who issued the request: the API client or the media data source. */
+enum class DiagnosticsSource { API, MEDIA }
+
 /**
  * One finished request. [path] is the encoded path only — the query string is
  * dropped on purpose, because tokens and API keys live there.
+ *
+ * [queryNames] carries the parameter *names* of a failed request and nothing
+ * else: a server answering `400` is unreadable without knowing which parameters
+ * it rejected, and names cannot carry a credential.
  */
 data class DiagnosticsEntry(
     val atEpochMs: Long,
@@ -19,6 +26,8 @@ data class DiagnosticsEntry(
     val status: Int?,
     val durationMs: Long,
     val errorKind: DiagnosticsErrorKind?,
+    val source: DiagnosticsSource = DiagnosticsSource.API,
+    val queryNames: List<String> = emptyList(),
 )
 
 /**

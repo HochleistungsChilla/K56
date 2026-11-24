@@ -458,6 +458,8 @@
     <string name="sync_phase_incremental">Aktualisieren</string>
     <string name="sync_phase_start">Start</string>
     <string name="err_offline_not_downloaded">Offline — dieser Titel ist nicht heruntergeladen</string>
+    <string name="playback_failed">Wiedergabe fehlgeschlagen: %1$s</string>
+    <string name="playback_error_timeout">Zeitüberschreitung beim Laden</string>
     <string name="album_download">Album herunterladen</string>
     <string name="artist_download_all">Alles herunterladen</string>
     <string name="acquisition_title">Beschaffung (Lidarr)</string>

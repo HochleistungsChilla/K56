@@ -4,10 +4,12 @@ import android.content.Intent
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
+import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DataSource
 import androidx.media3.datasource.DefaultHttpDataSource
+import androidx.media3.datasource.HttpDataSource
 import androidx.media3.datasource.cache.CacheDataSource
 import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.DefaultLoadControl
@@ -18,9 +20,16 @@ import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
 import app.k56.player.K56App
+import app.k56.player.R
 import app.k56.player.core.model.PlaybackSource
 import app.k56.player.core.net.NetworkTransport
+import app.k56.player.core.net.DiagnosticsDataSourceFactory
+import app.k56.player.core.net.DiagnosticsEntry
+import app.k56.player.core.net.DiagnosticsErrorKind
+import app.k56.player.core.net.DiagnosticsSource
+import app.k56.player.core.net.DiagnosticsStore
 import app.k56.player.dsp.DspProcessor
+import android.widget.Toast
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -48,6 +57,13 @@ class PlaybackService : MediaSessionService() {
 
     private var playSessionId: String = UUID.randomUUID().toString()
     private var currentItemId: String? = null
+
+    /**
+     * Item whose start report is still owed. A media item transition happens
+     * before a single byte is decoded, so reporting from there produced
+     * "playing" entries for tracks that never made a sound.
+     */
+    private var pendingStartId: String? = null
 
     /** Last few tracks, used as seeds for the similarity-based continuation. */
     private val recentIds = ArrayDeque<String>()
@@ -98,16 +114,27 @@ class PlaybackService : MediaSessionService() {
                         appContainer.libraryDb.recordPlay(id)
                     }
                     resumeIfAvailable(id)
-                    reportStart(id)
+                    pendingStartId = id
                     extendWithSimilar(autoStart = false)
                 }
             }
 
             override fun onIsPlayingChanged(isPlaying: Boolean) {
-                if (isPlaying) startProgressLoop() else {
+                if (isPlaying) {
+                    pendingStartId?.let { id ->
+                        pendingStartId = null
+                        reportStart(id)
+                    }
+                    startProgressLoop()
+                } else {
                     stopProgressLoop()
                     saveResume()
                 }
+            }
+
+            override fun onPlayerError(error: PlaybackException) {
+                pendingStartId = null
+                playbackFailed(error)
             }
 
             override fun onPlaybackStateChanged(playbackState: Int) {
@@ -262,9 +289,16 @@ class PlaybackService : MediaSessionService() {
 
     /** Upstream HTTP wrapped in the shared bounded cache (see MediaCache). */
     private fun buildCachedDataSourceFactory(): DataSource.Factory {
-        val upstream = DefaultHttpDataSource.Factory()
-            .setDefaultRequestProperties(repository.playbackHeaders())
-            .setAllowCrossProtocolRedirects(true)
+        val upstream = DiagnosticsDataSourceFactory(
+            DefaultHttpDataSource.Factory()
+                .setDefaultRequestProperties(repository.playbackHeaders())
+                .setAllowCrossProtocolRedirects(true)
+                // The 8 s default is short for a server that is scanning or
+                // reading from a slow disk. Giving up there looks like "no
+                // sound" without any explanation, so the player waits longer.
+                .setConnectTimeoutMs(MEDIA_CONNECT_TIMEOUT_MS)
+                .setReadTimeoutMs(MEDIA_READ_TIMEOUT_MS),
+        )
 
         val cache = appContainer.mediaCache.get() ?: return upstream
         return CacheDataSource.Factory()
@@ -296,6 +330,7 @@ class PlaybackService : MediaSessionService() {
     private fun reportStopped() {
         val itemId = currentItemId ?: return
         currentItemId = null
+        pendingStartId = null
         val sessionId = playSessionId
         val positionTicks = runCatching { player.currentPosition.coerceAtLeast(0L) }
             .getOrDefault(0L) * TICKS_PER_MS
@@ -346,6 +381,44 @@ class PlaybackService : MediaSessionService() {
         progressJob = null
     }
 
+    /**
+     * The player has given up on the item. The data source has already recorded
+     * the failed request, but a decoder error never reaches it, so the failure
+     * is recorded here too and the user is told why the bar is not moving.
+     */
+    private fun playbackFailed(error: PlaybackException) {
+        val cause = error.cause
+        val httpCode = (cause as? HttpDataSource.InvalidResponseCodeException)?.responseCode
+        val path = runCatching {
+            player.currentMediaItem?.localConfiguration?.uri?.encodedPath
+        }.getOrNull().orEmpty()
+        DiagnosticsStore.record(
+            DiagnosticsEntry(
+                atEpochMs = System.currentTimeMillis(),
+                method = "PLAY",
+                path = path.take(160),
+                status = httpCode,
+                durationMs = 0L,
+                errorKind = if (httpCode != null) {
+                    DiagnosticsErrorKind.HTTP
+                } else {
+                    DiagnosticsErrorKind.IO
+                },
+                source = DiagnosticsSource.MEDIA,
+            ),
+        )
+        val reason = when {
+            httpCode != null -> "HTTP $httpCode"
+            cause is java.net.SocketTimeoutException -> getString(R.string.playback_error_timeout)
+            else -> cause?.javaClass?.simpleName ?: error.errorCodeName
+        }
+        Toast.makeText(
+            this,
+            getString(R.string.playback_failed, reason),
+            Toast.LENGTH_LONG,
+        ).show()
+    }
+
     private data class ProgressSnapshot(
         val positionMs: Long,
         val durationMs: Long,
@@ -363,5 +436,7 @@ class PlaybackService : MediaSessionService() {
     private companion object {
         const val PROGRESS_INTERVAL_MS = 10_000L
         const val TICKS_PER_MS = 10_000L
+        const val MEDIA_CONNECT_TIMEOUT_MS = 15_000
+        const val MEDIA_READ_TIMEOUT_MS = 30_000
     }
 }
