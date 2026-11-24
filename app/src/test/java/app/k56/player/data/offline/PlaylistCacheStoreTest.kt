@@ -121,6 +121,20 @@ class PlaylistCacheStoreTest {
     }
 
     @Test
+    fun ancientCopiesArePrunedOnSave() {
+        store.save("old", "Old", listOf(track("t1")))
+        val oldFile = File(dir, "old.json")
+        assertTrue(oldFile.isFile)
+        assertTrue(oldFile.setLastModified(System.currentTimeMillis() - 40L * 24 * 60 * 60 * 1000))
+
+        store.save("fresh", "Fresh", listOf(track("t2")))
+
+        assertFalse("stale copy was not pruned", oldFile.exists())
+        assertNotNull(store.load("fresh"))
+        assertNull(store.load("old"))
+    }
+
+    @Test
     fun aCorruptFileIsIgnoredInsteadOfThrowing() {
         dir.mkdirs()
         File(dir, "pl-1.json").writeText("{not json")
