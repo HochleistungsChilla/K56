@@ -35,17 +35,18 @@ object JellyfinApiFactory {
             .readTimeout(60, TimeUnit.SECONDS)
             .writeTimeout(30, TimeUnit.SECONDS)
             .addInterceptor { chain ->
+                // Jellyfin 12.4 no longer reads X-Emby-Token: a token only counts
+                // inside the Authorization header, as `Token="…"`. Older servers
+                // (<= 10.10) still use the X-Emby-Token header, so both are sent -
+                // the extra header costs nothing and keeps them working.
+                val credentials = buildString {
+                    append("MediaBrowser Client=\"K56\", Device=\"Android\", ")
+                    append("DeviceId=\"$deviceId\", Version=\"$clientVersion\"")
+                    if (!token.isNullOrBlank()) append(", Token=\"$token\"")
+                }
                 val builder = chain.request().newBuilder()
-                    .header(
-                        "Authorization",
-                        "MediaBrowser Client=\"K56\", Device=\"Android\", " +
-                            "DeviceId=\"$deviceId\", Version=\"$clientVersion\"",
-                    )
-                    .header(
-                        "X-Emby-Authorization",
-                        "MediaBrowser Client=\"K56\", Device=\"Android\", " +
-                            "DeviceId=\"$deviceId\", Version=\"$clientVersion\"",
-                    )
+                    .header("Authorization", credentials)
+                    .header("X-Emby-Authorization", credentials)
                 if (!token.isNullOrBlank()) {
                     builder.header("X-Emby-Token", token)
                 }
