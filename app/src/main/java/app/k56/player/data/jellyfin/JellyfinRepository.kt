@@ -804,6 +804,27 @@ class JellyfinRepository(
 
     // ------------------------------------------------------------ playback
 
+    /**
+     * Headers for every media request ExoPlayer makes.
+     *
+     * The URL carries `api_key` so it can be handed to the player as a plain
+     * string, and 10.10 uses exactly that. 12.x ignores the query parameter for
+     * media and wants the same `MediaBrowser` credential the API client sends,
+     * so the header goes with the request as well.
+     */
+    override fun playbackHeaders(): Map<String, String> {
+        val current = session ?: return emptyMap()
+        val credentials = JellyfinApiFactory.authorizationValue(
+            deviceId = current.deviceId,
+            clientVersion = BuildConfig.VERSION_NAME,
+            token = current.token,
+        )
+        return mapOf(
+            "Authorization" to credentials,
+            "X-Emby-Authorization" to credentials,
+        )
+    }
+
     override suspend fun playbackSource(track: Track): PlaybackSource {
         val current = session ?: throw NotAuthenticatedException()
         val base = baseUrl().ifBlank { current.serverUrl }
