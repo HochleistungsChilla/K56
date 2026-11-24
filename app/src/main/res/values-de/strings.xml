@@ -426,6 +426,7 @@
     <string name="library_loaded_count">%1$d von %2$d geladen</string>
     <string name="library_offline_copy">Offline — Kopie am Gerät, Stand %1$s</string>
     <string name="offline_copy">Offline-Kopie</string>
+    <string name="offline_search_no_copy">Offline — noch keine lokale Kopie. Die Bibliothek einmal online öffnen.</string>
     <string name="library_syncing">Synchronisiere %1$s · %2$d / %3$d</string>
     <string name="library_sync_failed">Sync fehlgeschlagen — tippen zum Wiederholen</string>
     <string name="sync_title">Bibliotheks-Sync</string>
