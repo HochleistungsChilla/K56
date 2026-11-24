@@ -23,6 +23,20 @@ object JellyfinApiFactory {
      */
     fun normalizeServerUrl(raw: String): String = ServerUrl.normalize(raw)
 
+    /**
+     * The `MediaBrowser` credential value Jellyfin reads from `Authorization`.
+     *
+     * Shared by the Retrofit client and the playback data source: 12.x ignores
+     * the `api_key` query parameter for media as well, so the stream needs the
+     * same header the API calls carry.
+     */
+    fun authorizationValue(deviceId: String, clientVersion: String, token: String?): String =
+        buildString {
+            append("MediaBrowser Client=\"K56\", Device=\"Android\", ")
+            append("DeviceId=\"$deviceId\", Version=\"$clientVersion\"")
+            if (!token.isNullOrBlank()) append(", Token=\"$token\"")
+        }
+
     fun create(
         baseUrl: String,
         deviceId: String,
@@ -39,11 +53,7 @@ object JellyfinApiFactory {
                 // inside the Authorization header, as `Token="…"`. Older servers
                 // (<= 10.10) still use the X-Emby-Token header, so both are sent -
                 // the extra header costs nothing and keeps them working.
-                val credentials = buildString {
-                    append("MediaBrowser Client=\"K56\", Device=\"Android\", ")
-                    append("DeviceId=\"$deviceId\", Version=\"$clientVersion\"")
-                    if (!token.isNullOrBlank()) append(", Token=\"$token\"")
-                }
+                val credentials = authorizationValue(deviceId, clientVersion, token)
                 val builder = chain.request().newBuilder()
                     .header("Authorization", credentials)
                     .header("X-Emby-Authorization", credentials)

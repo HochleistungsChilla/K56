@@ -21,6 +21,7 @@ class DiagnosticsInterceptor : Interceptor {
         val started = System.nanoTime()
         return try {
             val response = chain.proceed(request)
+            val failed = !response.isSuccessful && !response.isRedirect
             DiagnosticsStore.record(
                 DiagnosticsEntry(
                     atEpochMs = System.currentTimeMillis(),
@@ -28,11 +29,13 @@ class DiagnosticsInterceptor : Interceptor {
                     path = request.url.encodedPath.take(160),
                     status = response.code,
                     durationMs = (System.nanoTime() - started) / 1_000_000,
-                    errorKind = if (response.isSuccessful || response.isRedirect) {
+                    errorKind = if (!failed) {
                         null
                     } else {
                         DiagnosticsErrorKind.HTTP
                     },
+                    queryNames = if (failed) request.url.queryParameterNames.sorted() else emptyList(),
+                    detail = queryDetail(request.url),
                 ),
             )
             response
@@ -45,10 +48,21 @@ class DiagnosticsInterceptor : Interceptor {
                     status = null,
                     durationMs = (System.nanoTime() - started) / 1_000_000,
                     errorKind = classify(e),
+                    queryNames = request.url.queryParameterNames.sorted(),
+                    detail = queryDetail(request.url),
                 ),
             )
             throw e
         }
+    }
+
+    /** Values only in verbose mode, and never for a parameter that holds a credential. */
+    private fun queryDetail(url: okhttp3.HttpUrl): String? {
+        if (!DiagnosticsStore.verbose) return null
+        val pairs = url.queryParameterNames.sorted().flatMap { name ->
+            url.queryParameterValues(name).map { value -> name to (value ?: "") }
+        }
+        return DiagnosticsRedaction.format(pairs).ifEmpty { null }
     }
 
     private fun classify(e: IOException): DiagnosticsErrorKind = when (e) {

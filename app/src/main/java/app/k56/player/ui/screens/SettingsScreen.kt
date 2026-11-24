@@ -147,6 +147,7 @@ fun SettingsScreen(
         libraryServerCounts = snapshot.second
         lastSyncAt = snapshot.third
     }
+    val verboseDiagnostics by settingsStore.verboseDiagnostics.collectAsStateWithLifecycle()
     val storageLocation by settingsStore.storageLocation.collectAsStateWithLifecycle()
     val cacheLimitMb by settingsStore.cacheLimitMb.collectAsStateWithLifecycle()
     val autoplay by settingsStore.autoplay.collectAsStateWithLifecycle()
@@ -518,6 +519,27 @@ fun SettingsScreen(
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text(stringResource(R.string.diagnostics_open))
+            }
+            if (BuildConfig.DEBUG) {
+                Spacer(Modifier.height(12.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            stringResource(R.string.diagnostics_verbose_title),
+                            style = MaterialTheme.typography.titleMedium,
+                        )
+                        Text(
+                            stringResource(R.string.diagnostics_verbose_body),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    Spacer(Modifier.width(12.dp))
+                    Switch(
+                        checked = verboseDiagnostics,
+                        onCheckedChange = { settingsStore.setVerboseDiagnostics(it) },
+                    )
+                }
             }
             Spacer(Modifier.height(8.dp))
             Text(

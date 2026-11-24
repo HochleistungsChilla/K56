@@ -458,6 +458,8 @@
     <string name="sync_phase_incremental">Aktualisieren</string>
     <string name="sync_phase_start">Start</string>
     <string name="err_offline_not_downloaded">Offline — dieser Titel ist nicht heruntergeladen</string>
+    <string name="playback_failed">Wiedergabe fehlgeschlagen: %1$s</string>
+    <string name="playback_error_timeout">Zeitüberschreitung beim Laden</string>
     <string name="album_download">Album herunterladen</string>
     <string name="artist_download_all">Alles herunterladen</string>
     <string name="acquisition_title">Beschaffung (Lidarr)</string>
@@ -564,5 +566,7 @@
     <string name="diagnostics_empty_title">Noch keine Anfragen aufgezeichnet.</string>
     <string name="diagnostics_empty_body">Sobald die App mit dem Server spricht, stehen hier die letzten Anfragen.</string>
     <string name="diagnostics_open">Diagnose</string>
+    <string name="diagnostics_verbose_title">Ausführliche Diagnose</string>
+    <string name="diagnostics_verbose_body">Behält alle Anfragen, die Query-Werte (Zugangsdaten redigiert) und den Player-Zustand. Kostet Speicher; standardmäßig aus.</string>
     <string name="conn_reachable_auth_bad">Server erreichbar, aber der Login ist nicht gültig.</string>
 </resources>

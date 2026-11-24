@@ -38,6 +38,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.k56.player.R
 import app.k56.player.core.net.DiagnosticsEntry
 import app.k56.player.core.net.DiagnosticsErrorKind
+import app.k56.player.core.net.DiagnosticsSource
 import app.k56.player.core.net.DiagnosticsStore
 import app.k56.player.ui.components.EmptyState
 import java.text.SimpleDateFormat
@@ -158,6 +159,20 @@ private fun DiagnosticsRow(entry: DiagnosticsEntry) {
             style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace),
             color = MaterialTheme.colorScheme.onSurface,
         )
+        entry.detail?.takeIf { it.isNotBlank() }?.let { detail ->
+            Text(
+                text = detail,
+                style = MaterialTheme.typography.labelSmall.copy(fontFamily = FontFamily.Monospace),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        if (entry.queryNames.isNotEmpty()) {
+            Text(
+                text = "?" + entry.queryNames.joinToString("&"),
+                style = MaterialTheme.typography.labelSmall.copy(fontFamily = FontFamily.Monospace),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
     }
 }
 
@@ -183,7 +198,16 @@ private fun copyDiagnostics(context: Context, entries: List<DiagnosticsEntry>) {
             append(' ')
             append(e.status?.toString() ?: kindText(e.errorKind))
             append(' ')
+            if (e.source == DiagnosticsSource.MEDIA) append("media ")
             append(e.path)
+            if (e.queryNames.isNotEmpty()) {
+                append('?')
+                append(e.queryNames.joinToString("&"))
+            }
+            e.detail?.takeIf { it.isNotBlank() }?.let {
+                append(' ')
+                append(it)
+            }
             append(' ')
             append(e.durationMs)
             appendLine(" ms")

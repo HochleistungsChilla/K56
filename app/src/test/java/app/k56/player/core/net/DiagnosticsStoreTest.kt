@@ -9,7 +9,10 @@ import org.junit.Test
 class DiagnosticsStoreTest {
 
     @After
-    fun clean() = DiagnosticsStore.clear()
+    fun clean() {
+        DiagnosticsStore.setVerbose(false)
+        DiagnosticsStore.clear()
+    }
 
     private fun entry(index: Int) = DiagnosticsEntry(
         atEpochMs = index.toLong(),
@@ -30,6 +33,20 @@ class DiagnosticsStoreTest {
     }
 
     @Test
+    fun verboseModeKeepsMoreAndTrimsWhenSwitchedOff() {
+        DiagnosticsStore.setVerbose(true)
+        repeat(DiagnosticsStore.VERBOSE_CAPACITY + 10) { DiagnosticsStore.record(entry(it)) }
+        assertEquals(DiagnosticsStore.VERBOSE_CAPACITY, DiagnosticsStore.entries.value.size)
+
+        DiagnosticsStore.setVerbose(false)
+        assertEquals(DiagnosticsStore.CAPACITY, DiagnosticsStore.entries.value.size)
+        assertEquals(
+            (DiagnosticsStore.VERBOSE_CAPACITY + 9).toLong(),
+            DiagnosticsStore.entries.value.last().atEpochMs,
+        )
+    }
+
+    @Test
     fun clearEmptiesTheBuffer() {
         DiagnosticsStore.record(entry(1))
         DiagnosticsStore.clear()
@@ -38,13 +55,19 @@ class DiagnosticsStoreTest {
 
     @Test
     fun anEntryCarriesNoPayloadByDesign() {
-        // The data class has no field for headers, bodies or query values; this
-        // test documents that, so adding one would deliberately fail the build.
+        // No field can carry headers, bodies or query *values*; the one addition
+        // is [DiagnosticsEntry.queryNames], which holds parameter names only and
+        // is filled for failed requests so a 400 can be read. Adding a value
+        // field fails this test on purpose.
         val fields = DiagnosticsEntry::class.java.declaredFields.map { it.name }.toSet()
         assertEquals(
-            setOf("atEpochMs", "method", "path", "status", "durationMs", "errorKind"),
+            setOf(
+                "atEpochMs", "method", "path", "status", "durationMs", "errorKind",
+                "source", "queryNames", "detail",
+            ),
             fields.filterNot { it.contains('$') }.toSet(),
         )
         assertNull(entry(1).errorKind)
+        assertTrue(entry(1).queryNames.isEmpty())
     }
 }
