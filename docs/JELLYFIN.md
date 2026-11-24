@@ -66,9 +66,9 @@ Images: `GET /Items/{id}/Images/Primary?maxHeight=700&maxWidth=700&tag=…&api_k
 
 `GET /Playlists` is not usable on Jellyfin 12.4: the route answers
 `405 Method Not Allowed`. Reading playlists therefore goes through the
-generic item query, which exists in both 10.10.7 and 12.4. Creating, renaming
-and deleting still target `/Playlists` and `/Playlists/{id}`; those mutations
-were not part of the 12.4 verification run.
+generic item query, which exists in both 10.10.7 and 12.4. The mutations
+still target `/Playlists`, `/Playlists/{id}` and `/Playlists/{id}/Items`
+(add/remove tracks); none of them were part of the 12.4 verification run.
 
 Why these two routes: `Users/{userId}/Views` and
 `Users/{userId}/FavoriteItems/{itemId}` still exist in 10.10.7 but are marked
@@ -122,8 +122,9 @@ The answer is JSON with `Address`, `Id`, `Name`.
 ## Tested server versions
 
 - Target/minimum: **10.10.7**
-- Verified: **12.4.0** (sign-in, library load, streaming) against a live server
-- Newer 10.10.x / 10.11.x are accepted
+- Verified: **12.4.0** — sign-in and library load on device; the stream
+  endpoint answered `206`
+- Any version ≥ 10.10.7 passes the check; 12.x is verified, other lines are not
 
 Not supported: servers that require endpoints removed before 10.10.
 
@@ -134,6 +135,7 @@ tag `v10.10.7` (`Jellyfin.Api/Controllers/{UserViews,UserLibrary,Items,Audio}Con
 and against the current OpenAPI description.
 
 The client has since been run against a live Jellyfin 12.4.0 server: sign-in
-with a Quick Connect token, library load and streaming. A live 10.10.7
-instance was not part of that run; the 10.10-specific routes above rest on the
-API sources at tag `v10.10.7`.
+with a Quick Connect token and library load on the device, plus one measured
+`206` on `GET /Audio/{id}/stream?static=true`. A live 10.10.7 instance was not
+part of that run; the 10.10-specific routes above rest on the API sources at
+tag `v10.10.7`.
