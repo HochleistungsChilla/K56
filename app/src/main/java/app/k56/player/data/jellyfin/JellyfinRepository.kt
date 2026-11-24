@@ -21,7 +21,11 @@ import app.k56.player.core.net.EndpointResolver
 import app.k56.player.core.net.NetworkMonitor
 import app.k56.player.core.net.NetworkStatus
 import app.k56.player.core.net.NetworkTransport
+import app.k56.player.core.net.HostPolicy
+import app.k56.player.core.net.InsecureTransportException
 import app.k56.player.core.net.ServerUrl
+import app.k56.player.data.ConnectionErrorKind
+import app.k56.player.data.ConnectionReport
 import app.k56.player.data.MediaRepository
 import app.k56.player.data.NotAuthenticatedException
 import app.k56.player.data.SessionStore
@@ -82,6 +86,10 @@ class JellyfinRepository(
         require(backend.isJellyfinFamily) { "JellyfinRepository kann ${backend.label} nicht anbinden." }
         val internal = ServerUrl.normalize(internalUrl)
         val external = externalUrl?.takeIf { it.isNotBlank() }?.let(ServerUrl::normalize)
+        // Plain HTTP is a LAN-only affordance; anything public must use https,
+        // otherwise the password travels in the clear.
+        HostPolicy.requireAllowed(internal)
+        external?.let(HostPolicy::requireAllowed)
         val candidates = listOfNotNull(internal, external).distinct()
 
         var lastError: Exception? = null
@@ -116,9 +124,13 @@ class JellyfinRepository(
                     userName = auth.User.Name ?: username.trim(),
                     token = auth.AccessToken,
                     deviceId = sessionStore.deviceId,
+                    cleartext = HostPolicy.isCleartextLocal(base),
                 )
                 persist(result)
                 return result
+            } catch (e: InsecureTransportException) {
+                // A policy decision, not a transient network failure.
+                throw e
             } catch (e: Exception) {
                 lastError = e
             }
@@ -135,6 +147,8 @@ class JellyfinRepository(
         require(backend == BackendKind.JELLYFIN) { "Quick Connect gibt es nur bei Jellyfin." }
         val internal = ServerUrl.normalize(internalUrl)
         val external = externalUrl?.takeIf { it.isNotBlank() }?.let(ServerUrl::normalize)
+        HostPolicy.requireAllowed(internal)
+        external?.let(HostPolicy::requireAllowed)
         val base = findReachableBase(listOfNotNull(internal, external).distinct())
         val publicInfo = publicInfo(base)
         val version = publicInfo.Version.orEmpty()
@@ -173,6 +187,7 @@ class JellyfinRepository(
                     userName = auth.User.Name ?: "Jellyfin",
                     token = auth.AccessToken,
                     deviceId = sessionStore.deviceId,
+                    cleartext = HostPolicy.isCleartextLocal(base),
                 )
                 persist(result)
                 return result
@@ -180,6 +195,92 @@ class JellyfinRepository(
             delay(QUICK_CONNECT_INTERVAL_MS)
         }
         throw QuickConnectTimeoutException()
+    }
+
+    /**
+     * Two probes, no exception: the public info endpoint answers without a
+     * token, then `Users/Me` proves that the stored token still works. Both go
+     * through the normal Retrofit client, so the diagnostics buffer sees them.
+     */
+    override suspend fun testConnection(): ConnectionReport {
+        val current = session ?: return ConnectionReport(
+            reachable = false,
+            serverName = null,
+            serverVersion = null,
+            authOk = false,
+            latencyMs = 0,
+            error = "No session",
+            errorKind = ConnectionErrorKind.NOT_CONFIGURED,
+        )
+        val base = runCatching { resolver.resolve() }.getOrNull() ?: current.serverUrl
+        if (runCatching { HostPolicy.requireAllowed(base) }.isFailure) {
+            return ConnectionReport(
+                reachable = false,
+                serverName = null,
+                serverVersion = null,
+                authOk = false,
+                latencyMs = 0,
+                error = InsecureTransportException(ServerUrl.host(base)).message,
+                errorKind = ConnectionErrorKind.INSECURE,
+            )
+        }
+
+        val started = System.nanoTime()
+        val public = try {
+            publicInfo(base)
+        } catch (e: Exception) {
+            return ConnectionReport(
+                reachable = false,
+                serverName = null,
+                serverVersion = null,
+                authOk = false,
+                latencyMs = (System.nanoTime() - started) / 1_000_000,
+                error = e.message ?: "Server not reachable",
+                errorKind = classify(e),
+            )
+        }
+        val name = public.ServerName?.takeIf { it.isNotBlank() } ?: ServerUrl.host(base)
+        val version = public.Version
+
+        val authenticated = JellyfinApiFactory.create(
+            baseUrl = base,
+            deviceId = current.deviceId,
+            clientVersion = BuildConfig.VERSION_NAME,
+            token = current.token,
+        )
+        return try {
+            val me = authenticated.me()
+            ConnectionReport(
+                reachable = true,
+                serverName = name,
+                serverVersion = version,
+                authOk = !me.Id.isNullOrBlank(),
+                latencyMs = (System.nanoTime() - started) / 1_000_000,
+                error = null,
+                errorKind = null,
+            )
+        } catch (e: Exception) {
+            ConnectionReport(
+                reachable = true,
+                serverName = name,
+                serverVersion = version,
+                authOk = false,
+                latencyMs = (System.nanoTime() - started) / 1_000_000,
+                error = e.message ?: "Sign-in rejected",
+                errorKind = classify(e),
+            )
+        }
+    }
+
+    private fun classify(e: Exception): ConnectionErrorKind = when {
+        e is InsecureTransportException -> ConnectionErrorKind.INSECURE
+        e is java.net.SocketTimeoutException -> ConnectionErrorKind.TIMEOUT
+        e is java.net.UnknownHostException -> ConnectionErrorKind.DNS
+        e is javax.net.ssl.SSLException -> ConnectionErrorKind.TLS
+        e is retrofit2.HttpException && (e.code() == 401 || e.code() == 403) ->
+            ConnectionErrorKind.AUTH
+        e is retrofit2.HttpException -> ConnectionErrorKind.HTTP
+        else -> ConnectionErrorKind.IO
     }
 
     override suspend fun discoverLocalServers(): List<DiscoveredServer> =

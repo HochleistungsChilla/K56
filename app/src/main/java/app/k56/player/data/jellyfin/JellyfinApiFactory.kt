@@ -5,6 +5,7 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
+import app.k56.player.core.net.DiagnosticsInterceptor
 import app.k56.player.core.net.ServerUrl
 import java.util.concurrent.TimeUnit
 
@@ -29,6 +30,7 @@ object JellyfinApiFactory {
         token: String?,
     ): JellyfinApi {
         val client = OkHttpClient.Builder()
+            .addInterceptor(DiagnosticsInterceptor())
             .connectTimeout(20, TimeUnit.SECONDS)
             .readTimeout(60, TimeUnit.SECONDS)
             .writeTimeout(30, TimeUnit.SECONDS)

@@ -1,11 +1,14 @@
 package app.k56.player.data.acquisition.clients
 
+import app.k56.player.core.net.HostPolicy
+import app.k56.player.core.net.InsecureTransportException
 import app.k56.player.core.net.parseBaseUrl
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import okhttp3.HttpUrl
+import app.k56.player.core.net.DiagnosticsInterceptor
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.IOException
@@ -37,6 +40,7 @@ class SlskdClient(
     }
 
     private val http = OkHttpClient.Builder()
+            .addInterceptor(DiagnosticsInterceptor())
         .connectTimeout(10, TimeUnit.SECONDS)
         .readTimeout(20, TimeUnit.SECONDS)
         .writeTimeout(20, TimeUnit.SECONDS)
@@ -44,9 +48,14 @@ class SlskdClient(
 
     /** See SabnzbdClient.requireBase. */
     private fun requireBase(): HttpUrl = try {
-        parseBaseUrl(config.baseUrl)
+        val parsed = parseBaseUrl(config.baseUrl)
+        // An API key must not travel in the clear to a public host.
+        HostPolicy.requireAllowed(parsed.toString())
+        parsed
     } catch (e: IllegalArgumentException) {
         throw DownloadClientException("slskd URL is not valid", e)
+    } catch (e: InsecureTransportException) {
+        throw DownloadClientException(e.message ?: "HTTPS required", e)
     }
 
     private suspend fun get(path: String): String = withContext(Dispatchers.IO) {

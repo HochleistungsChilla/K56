@@ -53,6 +53,7 @@ class SessionStore(context: Context) {
             token = token,
             deviceId = deviceId,
             extra = extra,
+            cleartext = prefs.getBoolean(KEY_CLEARTEXT, false),
         )
     }
 
@@ -69,6 +70,7 @@ class SessionStore(context: Context) {
             .putString(KEY_USER_ID, session.userId)
             .putString(KEY_USER_NAME, session.userName)
             .putString(KEY_TOKEN, session.token)
+            .putBoolean(KEY_CLEARTEXT, session.cleartext)
             .putString(KEY_EXTRA, json.encodeToString(session.extra))
             .apply()
         _session.value = session
@@ -88,6 +90,7 @@ class SessionStore(context: Context) {
             .remove(KEY_USER_ID)
             .remove(KEY_USER_NAME)
             .remove(KEY_TOKEN)
+            .remove(KEY_CLEARTEXT)
             .remove(KEY_EXTRA)
             .apply()
         _session.value = null
@@ -106,6 +109,7 @@ class SessionStore(context: Context) {
         const val KEY_USER_ID = "user_id"
         const val KEY_USER_NAME = "user_name"
         const val KEY_TOKEN = "token"
+        const val KEY_CLEARTEXT = "cleartext"
         const val KEY_EXTRA = "extra_json"
     }
 }

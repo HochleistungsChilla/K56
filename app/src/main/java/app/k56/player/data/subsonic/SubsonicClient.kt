@@ -4,6 +4,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
+import app.k56.player.core.net.DiagnosticsInterceptor
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.IOException
@@ -31,6 +32,7 @@ class SubsonicClient(
     }
 
     private val client = OkHttpClient.Builder()
+            .addInterceptor(DiagnosticsInterceptor())
         .connectTimeout(15, TimeUnit.SECONDS)
         .readTimeout(30, TimeUnit.SECONDS)
         .writeTimeout(15, TimeUnit.SECONDS)

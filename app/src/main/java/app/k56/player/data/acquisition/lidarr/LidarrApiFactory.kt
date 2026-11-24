@@ -3,6 +3,9 @@ package app.k56.player.data.acquisition.lidarr
 import app.k56.player.core.net.ServerUrl
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
+import app.k56.player.core.net.DiagnosticsInterceptor
+import app.k56.player.core.net.HostPolicy
+import app.k56.player.core.net.InsecureTransportException
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
@@ -23,7 +26,14 @@ object LidarrApiFactory {
     fun normalizeUrl(raw: String): String = ServerUrl.normalize(raw)
 
     fun create(baseUrl: String, apiKey: String): LidarrApi {
+        // The API key must not travel in the clear to a public host.
+        try {
+            HostPolicy.requireAllowed(baseUrl)
+        } catch (e: InsecureTransportException) {
+            throw LidarrException(e.message ?: "HTTPS required", e)
+        }
         val client = OkHttpClient.Builder()
+            .addInterceptor(DiagnosticsInterceptor())
             .connectTimeout(15, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
             .writeTimeout(30, TimeUnit.SECONDS)

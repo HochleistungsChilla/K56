@@ -4,6 +4,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.json.Json
+import app.k56.player.core.net.DiagnosticsInterceptor
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.IOException
@@ -18,6 +19,7 @@ class PlexClient(
 ) {
 
     private val http = OkHttpClient.Builder()
+            .addInterceptor(DiagnosticsInterceptor())
         .connectTimeout(20, TimeUnit.SECONDS)
         .readTimeout(45, TimeUnit.SECONDS)
         .build()

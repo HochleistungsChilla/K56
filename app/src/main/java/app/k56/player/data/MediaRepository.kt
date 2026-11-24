@@ -35,6 +35,20 @@ interface MediaRepository {
 
     fun supportsQuickConnect(backend: BackendKind): Boolean = backend == BackendKind.JELLYFIN
 
+    /**
+     * Reachability and auth check for the stored session. Returns a report
+     * instead of throwing; backends that do not implement it say so.
+     */
+    suspend fun testConnection(): ConnectionReport = ConnectionReport(
+        reachable = false,
+        serverName = null,
+        serverVersion = null,
+        authOk = false,
+        latencyMs = 0,
+        error = "Not supported for this backend",
+        errorKind = ConnectionErrorKind.UNSUPPORTED,
+    )
+
     suspend fun login(
         backend: BackendKind,
         internalUrl: String,

@@ -118,6 +118,8 @@ class RepositoryRouter(
         delegateOrNull()?.setPreferExternal(value)
     }
 
+    override suspend fun testConnection(): ConnectionReport = delegate().testConnection()
+
     override suspend fun libraries(): List<LibraryView> = delegate().libraries()
 
     override suspend fun defaultLibraryId(): String? = delegate().defaultLibraryId()

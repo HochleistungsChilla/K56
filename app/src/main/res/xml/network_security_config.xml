@@ -1,8 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Jellyfin is commonly self-hosted on a LAN without TLS. Cleartext is therefore
-  allowed by base config; HTTPS endpoints still use the platform trust store.
-  User-installed CAs are trusted so private/self-signed Jellyfin setups work.
+  Jellyfin is commonly self-hosted on a LAN without TLS, so cleartext has to stay
+  possible. The platform config cannot express address ranges, so the decision
+  lives in code: HostPolicy allows http only for loopback, RFC 1918, IPv6
+  link-local/unique-local, *.local and single-label hosts, and rejects everything
+  else with InsecureTransportException before a request is made.
+  HTTPS endpoints use the platform trust store; user-installed CAs are trusted so
+  private/self-signed Jellyfin setups work.
 -->
 <network-security-config>
     <base-config cleartextTrafficPermitted="true">

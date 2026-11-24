@@ -1,5 +1,8 @@
 package app.k56.player.data.audiomuse
 
+import app.k56.player.core.net.HostPolicy
+import app.k56.player.core.net.InsecureTransportException
+import app.k56.player.core.net.parseBaseUrl
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
@@ -10,8 +13,9 @@ import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
-import okhttp3.HttpUrl.Companion.toHttpUrl
+import okhttp3.HttpUrl
 import okhttp3.MediaType.Companion.toMediaType
+import app.k56.player.core.net.DiagnosticsInterceptor
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -75,21 +79,20 @@ class AudioMuseApi(private val config: AudioMuseConfig) {
     }
 
     private val http = OkHttpClient.Builder()
+            .addInterceptor(DiagnosticsInterceptor())
         .connectTimeout(10, TimeUnit.SECONDS)
         .readTimeout(30, TimeUnit.SECONDS)
         .build()
 
-    private fun base(): String {
-        val raw = config.baseUrl.trim()
-        if (raw.isBlank()) throw AudioMuseException("AudioMuse URL is empty")
-        val withScheme = if (raw.contains("://")) raw else "http://$raw"
-        // Only drop trailing slashes when a host is actually there: "http://"
-        // must stay broken so it reaches the URL check in [call].
-        return if (withScheme.length > withScheme.indexOf("://") + 3) {
-            withScheme.trimEnd('/')
-        } else {
-            withScheme
-        }
+    private fun base(): HttpUrl = try {
+        val parsed = parseBaseUrl(config.baseUrl)
+        // The token must not travel in the clear to a public host.
+        HostPolicy.requireAllowed(parsed.toString())
+        parsed
+    } catch (e: IllegalArgumentException) {
+        throw AudioMuseException("AudioMuse URL is not valid", null, e)
+    } catch (e: InsecureTransportException) {
+        throw AudioMuseException(e.message ?: "HTTPS required", null, e)
     }
 
     private suspend fun get(path: String, query: Map<String, String> = emptyMap()): String =
@@ -111,7 +114,7 @@ class AudioMuseApi(private val config: AudioMuseConfig) {
             // Parse the base on its own first: appending a path to a broken
             // base like "http://" would otherwise yield "http:///api/…", which
             // OkHttp happily reads as host "api" instead of failing.
-            val url = base().toHttpUrl().newBuilder()
+            val url = base().newBuilder()
                 .addPathSegments(path.trimStart('/'))
                 .apply { query.forEach { (k, v) -> addQueryParameter(k, v) } }
                 .build()
