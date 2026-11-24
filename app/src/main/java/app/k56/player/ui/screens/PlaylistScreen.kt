@@ -85,12 +85,20 @@ class PlaylistViewModel(
             val loadedTracks = runCatching { repository.playlistTracks(playlistId) }.getOrNull()
 
             if (loadedTracks != null) {
-                name = loadedName.orEmpty()
+                // The list call can fail while the track call works; keep the
+                // last known name instead of showing the generic header.
+                val previousName = withContext(Dispatchers.IO) { cache.load(playlistId)?.name }
+                name = loadedName?.takeIf { it.isNotBlank() }
+                    ?: previousName.orEmpty()
                 tracks = loadedTracks
                 offlineCopy = false
                 cachedAt = 0L
-                if (loadedTracks.isNotEmpty()) {
-                    withContext(Dispatchers.IO) {
+                withContext(Dispatchers.IO) {
+                    if (loadedTracks.isEmpty()) {
+                        // The server answered with an empty playlist: the old
+                        // copy is stale and must not come back later.
+                        cache.clear(playlistId)
+                    } else {
                         cache.save(playlistId, name, loadedTracks)
                     }
                 }

@@ -29,17 +29,21 @@ class PlaylistCacheStore(context: Context) {
         if (playlistId.isBlank() || tracks.isEmpty()) return
         runCatching {
             dir.mkdirs()
+            prune()
             val payload = JSONObject()
                 .put("name", name)
                 .put("savedAt", System.currentTimeMillis())
                 .put("tracks", JSONArray().apply {
                     tracks.forEach { put(it.toJson()) }
                 })
+            val text = payload.toString()
             val target = fileFor(playlistId)
+            // Opening the same playlist repeatedly must not rewrite the file.
+            if (target.isFile && target.readText() == text) return
             val tmp = File(dir, "${target.name}.tmp")
-            tmp.writeText(payload.toString())
+            tmp.writeText(text)
             if (!tmp.renameTo(target)) {
-                target.writeText(payload.toString())
+                target.writeText(text)
                 tmp.delete()
             }
         }
@@ -63,6 +67,14 @@ class PlaylistCacheStore(context: Context) {
 
     fun clear(playlistId: String) {
         runCatching { fileFor(playlistId).delete() }
+    }
+
+    /** Files for playlists that no longer exist would otherwise stay forever. */
+    private fun prune() {
+        val cutoff = System.currentTimeMillis() - MAX_AGE_MS
+        dir.listFiles()?.forEach { file ->
+            if (file.isFile && file.lastModified() < cutoff) file.delete()
+        }
     }
 
     private fun fileFor(playlistId: String): File {
@@ -111,3 +123,5 @@ class PlaylistCacheStore(context: Context) {
     private fun JSONObject.optIntOrNull(key: String): Int? =
         if (isNull(key)) null else optInt(key)
 }
+
+private const val MAX_AGE_MS = 30L * 24 * 60 * 60 * 1000
